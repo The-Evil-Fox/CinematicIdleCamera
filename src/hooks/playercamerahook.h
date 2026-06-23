@@ -5,11 +5,19 @@
 
 namespace Hooks
 {
+    enum class POIAction {
+        None,
+        InScene,
+        Moving,
+        Idle
+    };
+
     class AutoVanityStateHook
     {
     public:
-        static void Install();
-        static RE::TESObjectREFR* FindBestPOI();
+        static void                Install();
+        static RE::TESObjectREFR* FindBestPOI(POIAction& a_outAction, float& a_outScore);
+        static POIAction           GetActorAction(RE::Actor* a_actor);
 
     private:
         static void Update(

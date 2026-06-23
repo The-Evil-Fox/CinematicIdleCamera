@@ -5,8 +5,8 @@
 
 namespace logger = SKSE::log;
 
-float UI::g_idleTimer = 30.0f;
-float UI::g_poiDetectionRadius = 1400.0f;
+float UI::g_idleTimer = 5.0f;
+float UI::g_poiDetectionRadius = 1050.0f;
 
 void UI::Register() {
 
@@ -21,31 +21,60 @@ void UI::DrawCinematicBars() {
 
     auto* playerCamera = RE::PlayerCamera::GetSingleton();
     if (!playerCamera || !playerCamera->currentState) return;
-    if (playerCamera->currentState->id != RE::CameraState::kAutoVanity) return;
+
+    const bool inVanity = playerCamera->currentState->id == RE::CameraState::kAutoVanity;
+
+    static float s_progress = 0.0f;
+
+    auto* io = ImGuiMCP::GetIO();
+    const float dt = io->DeltaTime;
+    const float slideSpeed = 2.0f;
+
+    if (inVanity) {
+        s_progress = std::min(1.0f, s_progress + slideSpeed * dt);
+    }
+    else {
+        s_progress = std::max(0.0f, s_progress - slideSpeed * dt);
+    }
+
+    if (s_progress <= 0.0f) return;
 
     auto* drawList = ImGuiMCP::GetForegroundDrawList();
-    auto* io = ImGuiMCP::GetIO();
     float screenW = io->DisplaySize.x;
     float screenH = io->DisplaySize.y;
 
     const float barHeight = screenH * 0.08f;
+
+    // Smoothstep easing
+    const float t = s_progress * s_progress * (3.0f - 2.0f * s_progress);
+
+    // At t=0: bars are fully off-screen. At t=1: bars are fully on-screen.
+    // Top bar slides down: at t=0 bottom edge is at 0 (hidden above), at t=1 bottom edge is at barHeight
+    const float topBarBottom = barHeight * t;
+
+    // Bottom bar slides up: at t=0 top edge is at screenH (hidden below), at t=1 top edge is at screenH - barHeight
+    const float botBarTop = screenH - barHeight * t;
+
     const ImGuiMCP::ImU32 barColor = ImGuiMCP::ColorConvertFloat4ToU32(
         ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 1.0f }
     );
 
+    // Top bar
     ImGuiMCP::ImDrawListManager::AddRectFilled(
         drawList,
-        ImGuiMCP::ImVec2{ 0.0f, 0.0f },
-        ImGuiMCP::ImVec2{ screenW, barHeight },
+        ImGuiMCP::ImVec2{ 0.0f,   topBarBottom - barHeight },
+        ImGuiMCP::ImVec2{ screenW, topBarBottom },
         barColor, 0.0f, 0
     );
 
+    // Bottom bar
     ImGuiMCP::ImDrawListManager::AddRectFilled(
         drawList,
-        ImGuiMCP::ImVec2{ 0.0f, screenH - barHeight },
-        ImGuiMCP::ImVec2{ screenW, screenH },
+        ImGuiMCP::ImVec2{ 0.0f,   botBarTop },
+        ImGuiMCP::ImVec2{ screenW, botBarTop + barHeight },
         barColor, 0.0f, 0
     );
+
 }
 
 void UI::Settings() {
@@ -56,20 +85,6 @@ void UI::Settings() {
     ImGuiMCP::Text("%s Cinematic Idle Camera - Settings", iconUtf8.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
-
-    bool ActivateIdleCam = ImGuiMCP::Button("Go Idle Camera Mode");
-
-    if (ActivateIdleCam) {
-
-        auto* playerCamera = RE::PlayerCamera::GetSingleton();
-
-        if (playerCamera) {
-
-            playerCamera->PushCameraState(RE::CameraState::kAutoVanity);
-
-        }
-
-    }
 
     ImGuiMCP::Separator();
 
@@ -106,4 +121,5 @@ void UI::Settings() {
         g_poiDetectionRadius = poiRadiusMeters * 70.0f;
         IniParser::Save();
     }
+
 }
