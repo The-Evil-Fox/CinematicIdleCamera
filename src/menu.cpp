@@ -6,13 +6,46 @@
 namespace logger = SKSE::log;
 
 float UI::g_idleTimer = 30.0f;
+float UI::g_poiDetectionRadius = 1400.0f;
 
 void UI::Register() {
 
     if (!SKSEMenuFramework::IsInstalled()) return;
     SKSEMenuFramework::SetSection("Cinematic Idle Camera");
     SKSEMenuFramework::AddSectionItem("Settings", Settings);
+    SKSEMenuFramework::AddHudElement(DrawCinematicBars);
 
+}
+
+void UI::DrawCinematicBars() {
+
+    auto* playerCamera = RE::PlayerCamera::GetSingleton();
+    if (!playerCamera || !playerCamera->currentState) return;
+    if (playerCamera->currentState->id != RE::CameraState::kAutoVanity) return;
+
+    auto* drawList = ImGuiMCP::GetForegroundDrawList();
+    auto* io = ImGuiMCP::GetIO();
+    float screenW = io->DisplaySize.x;
+    float screenH = io->DisplaySize.y;
+
+    const float barHeight = screenH * 0.08f;
+    const ImGuiMCP::ImU32 barColor = ImGuiMCP::ColorConvertFloat4ToU32(
+        ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 1.0f }
+    );
+
+    ImGuiMCP::ImDrawListManager::AddRectFilled(
+        drawList,
+        ImGuiMCP::ImVec2{ 0.0f, 0.0f },
+        ImGuiMCP::ImVec2{ screenW, barHeight },
+        barColor, 0.0f, 0
+    );
+
+    ImGuiMCP::ImDrawListManager::AddRectFilled(
+        drawList,
+        ImGuiMCP::ImVec2{ 0.0f, screenH - barHeight },
+        ImGuiMCP::ImVec2{ screenW, screenH },
+        barColor, 0.0f, 0
+    );
 }
 
 void UI::Settings() {
@@ -23,8 +56,6 @@ void UI::Settings() {
     ImGuiMCP::Text("%s Cinematic Idle Camera - Settings", iconUtf8.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
-
-    // To go idle whenever I want
 
     bool ActivateIdleCam = ImGuiMCP::Button("Go Idle Camera Mode");
 
@@ -42,7 +73,6 @@ void UI::Settings() {
 
     ImGuiMCP::Separator();
 
-    // Camera Idle Timer
     ImGuiMCP::Text("Camera Idle Timer");
     ImGuiMCP::SameLine();
     ImGuiMCP::SetNextItemWidth(200.0f);
@@ -64,5 +94,16 @@ void UI::Settings() {
             }
         }
 
+    }
+
+    ImGuiMCP::Separator();
+
+    ImGuiMCP::Text("POI Detection Radius");
+    ImGuiMCP::SameLine();
+    ImGuiMCP::SetNextItemWidth(200.0f);
+    float poiRadiusMeters = g_poiDetectionRadius / 70.0f;
+    if (ImGuiMCP::SliderFloat("##poiDetectionRadius", &poiRadiusMeters, 0.0f, 100.0f, "%.1f m")) {
+        g_poiDetectionRadius = poiRadiusMeters * 70.0f;
+        IniParser::Save();
     }
 }

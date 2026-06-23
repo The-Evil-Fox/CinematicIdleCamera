@@ -9,6 +9,7 @@ namespace Hooks
     {
     public:
         static void Install();
+        static RE::TESObjectREFR* FindBestPOI();
 
     private:
         static void Update(

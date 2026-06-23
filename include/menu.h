@@ -4,8 +4,10 @@
 
 namespace UI {
 
-	void Register();
-	extern float g_idleTimer;
-	void Settings();
+    void Register();
+    extern float g_idleTimer;
+    extern float g_poiDetectionRadius;
+    void Settings();
+    void DrawCinematicBars();
 
 }

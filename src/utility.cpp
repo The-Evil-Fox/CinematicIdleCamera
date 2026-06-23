@@ -9,7 +9,7 @@ void IniParser::Load() {
 
     if (!std::filesystem::exists(INI_PATH)) {
         logger::info("No config file found, creating default config");
-        IniParser::Save();  // creates the file with current defaults
+        IniParser::Save();
         return;
     }
 
@@ -33,6 +33,10 @@ void IniParser::Load() {
             UI::g_idleTimer = std::stof(value);
             logger::info("Loaded fIdleTimer: {}", UI::g_idleTimer);
         }
+        else if (key == "poiDetectionRadius") {
+            UI::g_poiDetectionRadius = std::stof(value);
+            logger::info("Loaded poiDetectionRadius: {}", UI::g_poiDetectionRadius);
+        }
     }
 
     logger::info("Config loaded successfully");
@@ -47,6 +51,9 @@ void IniParser::Save() {
 
     file << "; Camera Idle Timer\n";
     file << "fIdleTimer=" << UI::g_idleTimer << "\n";
+    file << "\n";
+    file << "; POI Detection Radius (Skyrim units, ~70 units per meter)\n";
+    file << "poiDetectionRadius=" << UI::g_poiDetectionRadius << "\n";
 
     logger::info("Config saved successfully");
 }

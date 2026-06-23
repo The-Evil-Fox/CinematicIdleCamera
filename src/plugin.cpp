@@ -34,6 +34,22 @@ static void MessageHandler(SKSE::MessagingInterface::Message* msg) {
 
         IniParser::Load();
 
+        // Used to manually set the idle timer for the vanity cam in the virtual copy of the skyrimprefs everytime the game is loaded
+        // So it doesn't overwrite user's existing params in skyrimprefs since this copy is not saved once the game is shut down
+
+        auto* iniSettings = RE::INISettingCollection::GetSingleton();
+
+        if (iniSettings) {
+            auto* setting = iniSettings->GetSetting("fAutoVanityModeDelay:Camera");
+
+            if (setting) {
+                setting->data.f = UI::g_idleTimer;
+            }
+            else {
+                logger::error("Setting not found in INISettingCollection for kDataLoaded!");
+            }
+        }
+
         break;
     }
     default:
