@@ -5,18 +5,65 @@ namespace logger = SKSE::log;
 
 namespace Hooks {
 
+    // ---------------------------------------------------------------------------
+    // POI state
+    // ---------------------------------------------------------------------------
+
     static RE::TESObjectREFR* s_currentPOI = nullptr;
     static float               s_currentScore = 0.0f;
 
-    // How long the camera must stay on a POI before it's allowed to switch to another
+    // How long the camera must stay on a POI before it's allowed to switch
     static constexpr float k_lockDuration = 5.0f;
+    static float           s_lockTimer = 0.0f;
 
-    // Counts down from k_lockDuration to 0 — switching is only allowed when this hits 0
-    static float s_lockTimer = 0.0f;
+    // ---------------------------------------------------------------------------
+    // Cinematic transition state
+    // ---------------------------------------------------------------------------
+
+    // The rotation we are blending FROM at the start of a transition
+    static float s_blendFromRot = 0.0f;
+
+    // The rotation we are blending TO (updated each frame while a POI is locked)
+    static float s_blendTargetRot = 0.0f;
+
+    // 0.0 = fully at blendFrom, 1.0 = fully at blendTarget
+    static float s_blendT = 1.0f;
+
+    // How many seconds a POI-switch / entry / exit blend takes
+    static constexpr float k_blendDuration = 1.2f;
+
+    // Head-track fade: 1.0 = full headtrack, 0.0 = released
+    // We drive this smoothly instead of toggling it abruptly
+    static float s_headTrackWeight = 0.0f;
+    static constexpr float k_headTrackFadeSpeed = 2.0f;   // units/sec
+
+    // ---------------------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------------------
+
+    // Standard smoothstep — gives an ease-in / ease-out feel to blends
+    static float Smoothstep(float t) {
+        t = std::clamp(t, 0.0f, 1.0f);
+        return t * t * (3.0f - 2.0f * t);
+    }
+
+    // Wrap an angle difference into (-π, π]
+    static float WrapAngle(float a) {
+        while (a > std::numbers::pi_v<float>) a -= 2.0f * std::numbers::pi_v<float>;
+        while (a < -std::numbers::pi_v<float>) a += 2.0f * std::numbers::pi_v<float>;
+        return a;
+    }
+
+    // Start a new blend from the camera's current rotation toward a new target.
+    // Call this whenever we switch POI, acquire the first POI, or lose all POIs.
+    static void BeginBlend(float currentRot, float targetRot) {
+        s_blendFromRot = currentRot;
+        s_blendTargetRot = targetRot;
+        s_blendT = 0.0f;
+    }
 
     // ---------------------------------------------------------------------------
 
-    // Classify what the actor is currently doing so we can score them
     POIAction AutoVanityStateHook::GetActorAction(RE::Actor* a_actor) {
 
         if (!a_actor) return POIAction::None;
@@ -53,7 +100,6 @@ namespace Hooks {
 
             if (!ref || ref == player) return RE::BSContainer::ForEachResult::kContinue;
 
-            // Only care about actors (NPCs, creatures, etc.)
             auto* actor = ref->As<RE::Actor>();
             if (!actor) return RE::BSContainer::ForEachResult::kContinue;
 
@@ -61,39 +107,24 @@ namespace Hooks {
             float     score = 0.0f;
 
             float dist = player->GetPosition().GetDistance(ref->GetPosition());
-
-            // Proximity factor: 1.0 when right next to the player, 0.0 at the edge of detection radius
             float proximityFactor = std::max(0.0f, (UI::g_poiDetectionRadius - dist) / UI::g_poiDetectionRadius);
 
             switch (action) {
-
-                // An NPC walking near the player is the most cinematic — score scales
-                // with how close they are so nearby walkers beat distant ones
             case POIAction::Moving:
                 score = 400.0f + proximityFactor * 150.0f;
                 break;
-
-                // A scripted scene is very interesting but fixed score since
-                // proximity matters less when something scripted is happening
             case POIAction::InScene:
                 score = 300.0f;
                 break;
-
-                // An idle NPC is the least interesting baseline
             case POIAction::Idle:
                 score = 10.0f;
                 break;
-
             default:
                 break;
-
             }
 
-            // Everyone also gets a small flat proximity bonus on top of their base score
-            // so that a nearby idle NPC can still beat a distant idle NPC
             score += proximityFactor * 50.0f;
 
-            // Keep track of whoever has the highest score so far
             if (score > bestScore) {
                 bestScore = score;
                 bestPOI = ref;
@@ -101,13 +132,10 @@ namespace Hooks {
             }
 
             return RE::BSContainer::ForEachResult::kContinue;
-
             };
 
-        // Search all refs within the detection radius
         RE::TES::GetSingleton()->ForEachReferenceInRange(player, UI::g_poiDetectionRadius, callback);
 
-        // Only return a result if we actually found something worth looking at
         if (bestScore > 0.0f) {
             a_outAction = bestAction;
             a_outScore = bestScore;
@@ -119,54 +147,70 @@ namespace Hooks {
     }
 
     // ---------------------------------------------------------------------------
+    // Head-tracking: weight-driven so we can fade in/out instead of toggling
+    // ---------------------------------------------------------------------------
 
-    // Drives the player's head toward the locked POI using the same technique
-    // as TrueDirectionalMovement: calling AIProcess::SetHeadtrackTarget with a
-    // world-space position rather than a TESObjectREFR. This is the only method
-    // confirmed to actually move the player's head in-game.
-    // Pass a_target = nullptr to release headtracking back to the game.
-    static void UpdatePlayerHeadtrack(RE::PlayerCharacter* a_player, RE::TESObjectREFR* a_target) {
+    static void UpdatePlayerHeadtrack(RE::PlayerCharacter* a_player,
+        RE::TESObjectREFR* a_target,
+        float                a_weight) {
 
         if (!a_player) return;
 
         auto* currentProcess = a_player->GetActorRuntimeData().currentProcess;
         if (!currentProcess) return;
 
-        if (a_target) {
+        const bool trackingActive = (a_weight > 0.01f);
 
-            // Enable BSLookAtModifier on the player — TDM sets this before
-            // calling SetHeadtrackTarget to ensure the engine honours the request
+        if (trackingActive && a_target) {
+
+            // Enable BSLookAtModifier (TDM technique)
             a_player->SetGraphVariableBool("IsNPC", true);
             a_player->AsActorState()->actorState2.headTracking = true;
 
-            // Target the POI at eye level — origins are at ground level so we
-            // offset upward by ~120 units to aim at face height.
-            // Must be a named variable — SetHeadtrackTarget takes a non-const ref
-            RE::NiPoint3 targetPos = a_target->GetPosition();
-            targetPos.z += 120.0f;
+            // Blend between a forward-facing position and the actual POI position
+            // so the head eases in rather than snapping to the target immediately
+            RE::NiPoint3 playerPos = a_player->GetPosition();
+            float        playerYaw = a_player->GetAngleZ();
 
-            // AIProcess::SetHeadtrackTarget(Actor* owner, NiPoint3& position) is
-            // the overload TDM uses for camera headtracking — it works for the
-            // player where the HighProcessData REFRhandle approach does not
-            currentProcess->SetHeadtrackTarget(a_player, targetPos);
+            RE::NiPoint3 forwardPos = {
+                playerPos.x + std::sin(playerYaw) * 500.0f,
+                playerPos.y + std::cos(playerYaw) * 500.0f,
+                playerPos.z + 120.0f
+            };
+
+            RE::NiPoint3 poiPos = a_target->GetPosition();
+            poiPos.z += 120.0f;   // eye-level offset
+
+            // Smoothstep the weight so the lerp itself has an ease curve
+            float easedW = Smoothstep(a_weight);
+
+            RE::NiPoint3 blendedPos = {
+                forwardPos.x + easedW * (poiPos.x - forwardPos.x),
+                forwardPos.y + easedW * (poiPos.y - forwardPos.y),
+                forwardPos.z + easedW * (poiPos.z - forwardPos.z)
+            };
+
+            currentProcess->SetHeadtrackTarget(a_player, blendedPos);
 
         }
         else {
 
-            // Release: point the head straight forward from the player's current
-            // position so the engine has a valid target to interpolate toward,
-            // rather than zero which causes the head to snap toward world origin
+            // Fade out: point straight ahead so the head doesn't snap to origin
             RE::NiPoint3 playerPos = a_player->GetPosition();
             float        playerYaw = a_player->GetAngleZ();
             RE::NiPoint3 forwardPos = {
                 playerPos.x + std::sin(playerYaw) * 500.0f,
                 playerPos.y + std::cos(playerYaw) * 500.0f,
-                playerPos.z + 120.0f   // eye level
+                playerPos.z + 120.0f
             };
 
             currentProcess->SetHeadtrackTarget(a_player, forwardPos);
-            a_player->AsActorState()->actorState2.headTracking = false;
-            a_player->SetGraphVariableBool("IsNPC", false);
+
+            if (a_weight <= 0.01f) {
+                // Fully released — disable modifier so idle anims can take over
+                a_player->AsActorState()->actorState2.headTracking = false;
+                a_player->SetGraphVariableBool("IsNPC", false);
+            }
 
         }
 
@@ -174,52 +218,59 @@ namespace Hooks {
 
     // ---------------------------------------------------------------------------
 
-    void AutoVanityStateHook::Update(RE::AutoVanityState* a_this, RE::BSTSmartPointer<RE::TESCameraState>& a_nextState) {
+    void AutoVanityStateHook::Update(RE::AutoVanityState* a_this,
+        RE::BSTSmartPointer<RE::TESCameraState>& a_nextState) {
 
-        // Save the current rotation before the vanilla update runs,
-        // so we can restore it if there's no POI to look at
         float savedRot = a_this->autoVanityRot;
         _Update(a_this, a_nextState);
 
         auto* player = RE::PlayerCharacter::GetSingleton();
         if (!player) return;
 
-        const float frameDelta = RE::BSTimer::GetSingleton()->realTimeDelta;
+        const float dt = RE::BSTimer::GetSingleton()->realTimeDelta;
 
-        // Tick the lock timer down every frame
-        if (s_lockTimer > 0.0f) {
-            s_lockTimer = std::max(0.0f, s_lockTimer - frameDelta);
-        }
+        // -----------------------------------------------------------------------
+        // 1. Tick the POI lock timer
+        // -----------------------------------------------------------------------
 
-        // --- Check if the current POI has become invalid (died, out of range) ---
-        // This bypasses the lock timer — a dead or gone POI is always released immediately
-        bool currentGone = false;
+        if (s_lockTimer > 0.0f)
+            s_lockTimer = std::max(0.0f, s_lockTimer - dt);
+
+        // -----------------------------------------------------------------------
+        // 2. Validate current POI (dead / out of range bypass the lock timer)
+        // -----------------------------------------------------------------------
 
         if (s_currentPOI) {
 
             auto* actor = s_currentPOI->As<RE::Actor>();
+            bool  gone = (!actor || actor->IsDead());
 
-            // Invalid if the actor no longer exists or has died
-            if (!actor || actor->IsDead()) {
-                currentGone = true;
-            }
-            else {
-                // Invalid if the actor walked out of detection range
+            if (!gone) {
                 float dist = player->GetPosition().GetDistance(s_currentPOI->GetPosition());
-                if (dist > UI::g_poiDetectionRadius) currentGone = true;
+                gone = (dist > UI::g_poiDetectionRadius);
             }
 
-            if (currentGone) {
-                logger::info("POI lost (dead or out of range), releasing immediately");
+            if (gone) {
+
+                logger::info("POI lost (dead or out of range) — beginning exit blend");
+
+                // Begin a smooth exit toward vanilla drift (savedRot is as good a
+                // target as any since we don't know where vanilla wants to go yet;
+                // the blend will naturally hand back to vanilla as blendT → 1)
+                BeginBlend(a_this->autoVanityRot, savedRot);
+
                 s_currentPOI = nullptr;
                 s_currentScore = 0.0f;
-                s_lockTimer = 0.0f; // Reset timer so we pick up a new POI right away
+                s_lockTimer = 0.0f;
+
             }
 
         }
 
-        // --- Only search for a new POI if the lock timer has expired ---
-        // While the timer is running we stay on the current POI no matter what
+        // -----------------------------------------------------------------------
+        // 3. Search for a new / better POI (only when lock timer has expired)
+        // -----------------------------------------------------------------------
+
         if (s_lockTimer <= 0.0f) {
 
             POIAction          foundAction = POIAction::None;
@@ -228,15 +279,20 @@ namespace Hooks {
 
             if (candidate && candidate != s_currentPOI) {
 
-                // Switch if we have no POI, or the candidate scores strictly better
                 if (!s_currentPOI || foundScore > s_currentScore) {
 
-                    logger::info("Locking POI: {} (score {:.1f})", candidate->GetName(), foundScore);
+                    logger::info("Switching POI to: {} (score {:.1f})", candidate->GetName(), foundScore);
+
+                    // Compute the angle to the incoming POI so the blend target is
+                    // already correct from frame 0 — no one-frame jump
+                    auto  dir = candidate->GetPosition() - player->GetPosition();
+                    float incomingRot = std::atan2(dir.x, dir.y);
+
+                    // Start blending from wherever the camera sits right now
+                    BeginBlend(a_this->autoVanityRot, incomingRot);
 
                     s_currentPOI = candidate;
                     s_currentScore = foundScore;
-
-                    // Start the lock timer — camera won't switch again until this expires
                     s_lockTimer = k_lockDuration;
 
                 }
@@ -244,9 +300,9 @@ namespace Hooks {
             }
             else if (!candidate) {
 
-                // Nothing in range at all — clear the lock
                 if (s_currentPOI) {
-                    logger::info("No POI in range, releasing lock");
+                    logger::info("No POI in range — beginning exit blend");
+                    BeginBlend(a_this->autoVanityRot, savedRot);
                 }
 
                 s_currentPOI = nullptr;
@@ -256,37 +312,72 @@ namespace Hooks {
 
         }
 
-        // --- Rotate the camera + turn the player's head toward the locked POI ---
+        // -----------------------------------------------------------------------
+        // 4. Drive the camera rotation
+        // -----------------------------------------------------------------------
+
         if (s_currentPOI) {
 
-            // Get the world-space direction from the player to the POI
-            auto  direction = s_currentPOI->GetPosition() - player->GetPosition();
-            float targetAngle = std::atan2(direction.x, direction.y);
+            // Recompute the world-space angle to the POI every frame (POI may be
+            // moving) and keep blendTargetRot chasing it with short-arc wrapping
+            auto  dir = s_currentPOI->GetPosition() - player->GetPosition();
+            float liveAngle = std::atan2(dir.x, dir.y);
 
-            // Find the shortest angular path to the target (avoids spinning the long way around)
-            float delta_angle = targetAngle - a_this->autoVanityRot;
-            while (delta_angle > std::numbers::pi_v<float>) delta_angle -= 2.0f * std::numbers::pi_v<float>;
-            while (delta_angle < -std::numbers::pi_v<float>) delta_angle += 2.0f * std::numbers::pi_v<float>;
+            // Keep blendTargetRot continuous (no sudden ±2π jumps as the POI moves)
+            s_blendTargetRot += WrapAngle(liveAngle - s_blendTargetRot);
 
-            // Exponential smoothing — camera eases toward the target rather than snapping
+            // Advance the blend
+            if (s_blendT < 1.0f)
+                s_blendT = std::min(1.0f, s_blendT + dt / k_blendDuration);
+
+            float easedT = Smoothstep(s_blendT);
+
+            // Interpolate from the starting rotation toward the live target angle,
+            // using short-arc delta so we never spin the long way around
+            float delta = WrapAngle(s_blendTargetRot - s_blendFromRot);
+            float blendedAngle = s_blendFromRot + easedT * delta;
+
+            // On top of the blend, apply gentle exponential smoothing so the
+            // camera keeps tracking a moving POI smoothly after the blend settles
+            float trackDelta = WrapAngle(liveAngle - blendedAngle);
             const float speed = 1.5f;
-            const float alpha = 1.0f - std::exp(-speed * frameDelta);
-            a_this->autoVanityRot = a_this->autoVanityRot + alpha * delta_angle;
+            const float alpha = 1.0f - std::exp(-speed * dt);
+            a_this->autoVanityRot = blendedAngle + alpha * trackDelta;
 
-            // Point the player's head at the POI using TDM's AIProcess approach
-            UpdatePlayerHeadtrack(player, s_currentPOI);
+            // Fade head-tracking in
+            s_headTrackWeight = std::min(1.0f, s_headTrackWeight + dt * k_headTrackFadeSpeed);
+            UpdatePlayerHeadtrack(player, s_currentPOI, s_headTrackWeight);
 
         }
         else {
 
-            // No POI — restore the pre-hook rotation so vanilla drift is unaffected
-            a_this->autoVanityRot = savedRot;
+            // No POI — play out any remaining exit blend, then hand back to vanilla
 
-            // Release head-track so idle animations can take over again
-            UpdatePlayerHeadtrack(player, nullptr);
+            if (s_blendT < 1.0f) {
+
+                s_blendT = std::min(1.0f, s_blendT + dt / k_blendDuration);
+                float easedT = Smoothstep(s_blendT);
+                float delta = WrapAngle(s_blendTargetRot - s_blendFromRot);
+                a_this->autoVanityRot = s_blendFromRot + easedT * delta;
+
+                // Once the exit blend finishes, let vanilla take over completely
+                if (s_blendT >= 1.0f)
+                    a_this->autoVanityRot = savedRot;
+
+            }
+            else {
+
+                // Fully idle — restore vanilla drift
+                a_this->autoVanityRot = savedRot;
+
+            }
+
+            // Fade head-tracking out
+            s_headTrackWeight = std::max(0.0f, s_headTrackWeight - dt * k_headTrackFadeSpeed);
+            UpdatePlayerHeadtrack(player, nullptr, s_headTrackWeight);
 
         }
 
     }
 
-}
+} // namespace Hooks
