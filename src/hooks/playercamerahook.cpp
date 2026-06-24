@@ -140,7 +140,7 @@ namespace Hooks {
             a_player->AsActorState()->actorState2.headTracking = true;
 
             // Target the POI at eye level — origins are at ground level so we
-            // offset upward by ~120 units to aim at face height
+            // offset upward by ~120 units to aim at face height.
             // Must be a named variable — SetHeadtrackTarget takes a non-const ref
             RE::NiPoint3 targetPos = a_target->GetPosition();
             targetPos.z += 120.0f;
@@ -153,9 +153,18 @@ namespace Hooks {
         }
         else {
 
-            // Release: clear the headtrack target and restore vanilla behaviour
-            RE::NiPoint3 zeroPos{ 0.f, 0.f, 0.f };
-            currentProcess->SetHeadtrackTarget(a_player, zeroPos);
+            // Release: point the head straight forward from the player's current
+            // position so the engine has a valid target to interpolate toward,
+            // rather than zero which causes the head to snap toward world origin
+            RE::NiPoint3 playerPos = a_player->GetPosition();
+            float        playerYaw = a_player->GetAngleZ();
+            RE::NiPoint3 forwardPos = {
+                playerPos.x + std::sin(playerYaw) * 500.0f,
+                playerPos.y + std::cos(playerYaw) * 500.0f,
+                playerPos.z + 120.0f   // eye level
+            };
+
+            currentProcess->SetHeadtrackTarget(a_player, forwardPos);
             a_player->AsActorState()->actorState2.headTracking = false;
             a_player->SetGraphVariableBool("IsNPC", false);
 
