@@ -95,11 +95,9 @@ namespace Hooks {
 
             // Keep track of whoever has the highest score so far
             if (score > bestScore) {
-
                 bestScore = score;
                 bestPOI = ref;
                 bestAction = action;
-
             }
 
             return RE::BSContainer::ForEachResult::kContinue;
@@ -117,6 +115,51 @@ namespace Hooks {
         }
 
         return nullptr;
+
+    }
+
+    // ---------------------------------------------------------------------------
+
+    // Drives the player's head toward the locked POI using the same technique
+    // as TrueDirectionalMovement: calling AIProcess::SetHeadtrackTarget with a
+    // world-space position rather than a TESObjectREFR. This is the only method
+    // confirmed to actually move the player's head in-game.
+    // Pass a_target = nullptr to release headtracking back to the game.
+    static void UpdatePlayerHeadtrack(RE::PlayerCharacter* a_player, RE::TESObjectREFR* a_target) {
+
+        if (!a_player) return;
+
+        auto* currentProcess = a_player->GetActorRuntimeData().currentProcess;
+        if (!currentProcess) return;
+
+        if (a_target) {
+
+            // Enable BSLookAtModifier on the player — TDM sets this before
+            // calling SetHeadtrackTarget to ensure the engine honours the request
+            a_player->SetGraphVariableBool("IsNPC", true);
+            a_player->AsActorState()->actorState2.headTracking = true;
+
+            // Target the POI at eye level — origins are at ground level so we
+            // offset upward by ~120 units to aim at face height
+            // Must be a named variable — SetHeadtrackTarget takes a non-const ref
+            RE::NiPoint3 targetPos = a_target->GetPosition();
+            targetPos.z += 120.0f;
+
+            // AIProcess::SetHeadtrackTarget(Actor* owner, NiPoint3& position) is
+            // the overload TDM uses for camera headtracking — it works for the
+            // player where the HighProcessData REFRhandle approach does not
+            currentProcess->SetHeadtrackTarget(a_player, targetPos);
+
+        }
+        else {
+
+            // Release: clear the headtrack target and restore vanilla behaviour
+            RE::NiPoint3 zeroPos{ 0.f, 0.f, 0.f };
+            currentProcess->SetHeadtrackTarget(a_player, zeroPos);
+            a_player->AsActorState()->actorState2.headTracking = false;
+            a_player->SetGraphVariableBool("IsNPC", false);
+
+        }
 
     }
 
@@ -204,7 +247,7 @@ namespace Hooks {
 
         }
 
-        // --- Rotate the camera toward the locked POI, or fall back to vanilla ---
+        // --- Rotate the camera + turn the player's head toward the locked POI ---
         if (s_currentPOI) {
 
             // Get the world-space direction from the player to the POI
@@ -213,21 +256,25 @@ namespace Hooks {
 
             // Find the shortest angular path to the target (avoids spinning the long way around)
             float delta_angle = targetAngle - a_this->autoVanityRot;
-
             while (delta_angle > std::numbers::pi_v<float>) delta_angle -= 2.0f * std::numbers::pi_v<float>;
             while (delta_angle < -std::numbers::pi_v<float>) delta_angle += 2.0f * std::numbers::pi_v<float>;
 
             // Exponential smoothing — camera eases toward the target rather than snapping
             const float speed = 1.5f;
             const float alpha = 1.0f - std::exp(-speed * frameDelta);
-
             a_this->autoVanityRot = a_this->autoVanityRot + alpha * delta_angle;
+
+            // Point the player's head at the POI using TDM's AIProcess approach
+            UpdatePlayerHeadtrack(player, s_currentPOI);
 
         }
         else {
 
             // No POI — restore the pre-hook rotation so vanilla drift is unaffected
             a_this->autoVanityRot = savedRot;
+
+            // Release head-track so idle animations can take over again
+            UpdatePlayerHeadtrack(player, nullptr);
 
         }
 
