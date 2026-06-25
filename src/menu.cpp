@@ -5,17 +5,37 @@
 
 namespace logger = SKSE::log;
 
+// ---------------------------------------------------------------------------
+// Default settings used when the ini doesn't exist when the game is started
+// ---------------------------------------------------------------------------
+
 float UI::g_idleTimer = 5.0f;
 float UI::g_poiDetectionRadius = 1050.0f;
+float UI::g_lockDuration = 3.0f;
+float UI::g_blendDuration = 3.0f;
+float UI::g_headTrackFadeSpeed = 2.0f;
+
+// ---------------------------------------------------------------------------
+// Font Awesome Icons
+// ---------------------------------------------------------------------------
+
+auto settingsIcon = FontAwesome::UnicodeToUtf8(0xf013);
+auto poiSystemIcon = FontAwesome::UnicodeToUtf8(0xf3c5);
+auto cameraIcon = FontAwesome::UnicodeToUtf8(0xf03d);
+auto playerIcon = FontAwesome::UnicodeToUtf8(0xf183);
 
 void UI::Register() {
 
     if (!SKSEMenuFramework::IsInstalled()) return;
     SKSEMenuFramework::SetSection("Cinematic Idle Camera");
-    SKSEMenuFramework::AddSectionItem("Settings", Settings);
+    SKSEMenuFramework::AddSectionItem(std::string("Settings") + " " + settingsIcon, Settings);
     SKSEMenuFramework::AddHudElement(DrawCinematicBars);
 
 }
+
+// ---------------------------------------------------------------------------
+// Black bars used to make the vanity mode more cinematic
+// ---------------------------------------------------------------------------
 
 void UI::DrawCinematicBars() {
 
@@ -77,18 +97,62 @@ void UI::DrawCinematicBars() {
 
 }
 
+// ---------------------------------------------------------------------------
+// Settings menu
+// ---------------------------------------------------------------------------
+
 void UI::Settings() {
 
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
     FontAwesome::PushSolid();
-    auto iconUtf8 = FontAwesome::UnicodeToUtf8(0xf0eb);
-    ImGuiMCP::Text("%s Cinematic Idle Camera - Settings", iconUtf8.c_str());
+    
+    // ---------------------------------------------------------------------------
+    // POI System Settings
+    // ---------------------------------------------------------------------------
+
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
+    ImGuiMCP::Text("%s POI System", poiSystemIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
+    ImGuiMCP::Separator();
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    ImGuiMCP::Text("Maximum Detection Radius");
+    ImGuiMCP::SameLine();
+    ImGuiMCP::SetNextItemWidth(200.0f);
+    float poiRadiusMeters = g_poiDetectionRadius / 70.0f;
+    if (ImGuiMCP::SliderFloat("##poiDetectionRadius", &poiRadiusMeters, 0.0f, 100.0f, "%.1f m")) {
+        g_poiDetectionRadius = poiRadiusMeters * 70.0f;
+        IniParser::Save();
+    }
 
     ImGuiMCP::Separator();
 
-    ImGuiMCP::Text("Camera Idle Timer");
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    ImGuiMCP::Text("Minimum Lock Duration");
+    ImGuiMCP::SameLine();
+    ImGuiMCP::SetNextItemWidth(200.0f);
+    if (ImGuiMCP::SliderFloat("##lockDuration", &g_lockDuration, 0.0f, 30.0f, "%.1f sec")) {
+        IniParser::Save();
+    }
+
+    ImGuiMCP::Separator();
+
+    // ---------------------------------------------------------------------------
+    // Camera settings
+    // ---------------------------------------------------------------------------
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 30.0f));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
+    ImGuiMCP::Text("%s Camera Settings", cameraIcon.c_str());
+    ImGuiMCP::PopStyleColor();
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Separator();
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    ImGuiMCP::Text("Timer");
     ImGuiMCP::SameLine();
     ImGuiMCP::SetNextItemWidth(200.0f);
     if (ImGuiMCP::SliderFloat("##idleTimer", &g_idleTimer, 1.0f, 300.0f, "%.0f sec")) {
@@ -113,12 +177,34 @@ void UI::Settings() {
 
     ImGuiMCP::Separator();
 
-    ImGuiMCP::Text("POI Detection Radius");
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    ImGuiMCP::Text("Blend Duration");
     ImGuiMCP::SameLine();
     ImGuiMCP::SetNextItemWidth(200.0f);
-    float poiRadiusMeters = g_poiDetectionRadius / 70.0f;
-    if (ImGuiMCP::SliderFloat("##poiDetectionRadius", &poiRadiusMeters, 0.0f, 100.0f, "%.1f m")) {
-        g_poiDetectionRadius = poiRadiusMeters * 70.0f;
+    if (ImGuiMCP::SliderFloat("##blendDuration", &g_blendDuration, 0.1f, 5.0f, "%.2f sec")) {
+        IniParser::Save();
+    }
+
+    ImGuiMCP::Separator();
+
+    // ---------------------------------------------------------------------------
+    // Player settings
+    // ---------------------------------------------------------------------------
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 30.0f));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
+    ImGuiMCP::Text("%s Player Settings", playerIcon.c_str());
+    ImGuiMCP::PopStyleColor();
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Separator();
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    ImGuiMCP::Text("Head-Tracking Fade Speed");
+    ImGuiMCP::SameLine();
+    ImGuiMCP::SetNextItemWidth(200.0f);
+    if (ImGuiMCP::SliderFloat("##headTrackFadeSpeed", &g_headTrackFadeSpeed, 0.1f, 10.0f, "%.1f units/s")) {
         IniParser::Save();
     }
 

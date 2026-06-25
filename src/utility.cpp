@@ -37,6 +37,18 @@ void IniParser::Load() {
             UI::g_poiDetectionRadius = std::stof(value);
             logger::info("Loaded poiDetectionRadius: {}", UI::g_poiDetectionRadius);
         }
+        else if (key == "lockDuration") {
+            UI::g_lockDuration = std::stof(value);
+            logger::info("Loaded lockDuration: {}", UI::g_lockDuration);
+        }
+        else if (key == "blendDuration") {
+            UI::g_blendDuration = std::stof(value);
+            logger::info("Loaded blendDuration: {}", UI::g_blendDuration);
+        }
+        else if (key == "headTrackFadeSpeed") {
+            UI::g_headTrackFadeSpeed = std::stof(value);
+            logger::info("Loaded headTrackFadeSpeed: {}", UI::g_headTrackFadeSpeed);
+        }
     }
 
     logger::info("Config loaded successfully");
@@ -54,6 +66,15 @@ void IniParser::Save() {
     file << "\n";
     file << "; POI Detection Radius (Skyrim units, ~70 units per meter)\n";
     file << "poiDetectionRadius=" << UI::g_poiDetectionRadius << "\n";
+    file << "\n";
+    file << "; POI Lock Duration (seconds the camera must stay on a POI before it can switch)\n";
+    file << "lockDuration=" << UI::g_lockDuration << "\n";
+    file << "\n";
+    file << "; Camera Blend Duration (seconds for a POI-switch / entry / exit blend)\n";
+    file << "blendDuration=" << UI::g_blendDuration << "\n";
+    file << "\n";
+    file << "; Head-Track Fade Speed (units/sec)\n";
+    file << "headTrackFadeSpeed=" << UI::g_headTrackFadeSpeed << "\n";
 
     logger::info("Config saved successfully");
 }
