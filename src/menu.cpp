@@ -14,21 +14,27 @@ float UI::g_poiDetectionRadius = 1050.0f;
 float UI::g_lockDuration = 3.0f;
 float UI::g_blendDuration = 3.0f;
 float UI::g_headTrackFadeSpeed = 2.0f;
+bool  UI::g_debugRaycasts = false;
 
 // ---------------------------------------------------------------------------
 // Font Awesome Icons
 // ---------------------------------------------------------------------------
 
-auto settingsIcon = FontAwesome::UnicodeToUtf8(0xf013);
-auto poiSystemIcon = FontAwesome::UnicodeToUtf8(0xf3c5);
-auto cameraIcon = FontAwesome::UnicodeToUtf8(0xf03d);
-auto playerIcon = FontAwesome::UnicodeToUtf8(0xf183);
+auto settingsIcon   =   FontAwesome::UnicodeToUtf8(0xf013);
+auto poiSystemIcon  =   FontAwesome::UnicodeToUtf8(0xf3c5);
+auto cameraIcon     =   FontAwesome::UnicodeToUtf8(0xf03d);
+auto playerIcon     =   FontAwesome::UnicodeToUtf8(0xf183);
 
 void UI::Register() {
 
-    if (!SKSEMenuFramework::IsInstalled()) return;
+    if (!SKSEMenuFramework::IsInstalled()) {
+
+        return;
+
+    }
+
     SKSEMenuFramework::SetSection("Cinematic Idle Camera");
-    SKSEMenuFramework::AddSectionItem(std::string("Settings") + " " + settingsIcon, Settings);
+    SKSEMenuFramework::AddSectionItem(std::string("Settings"), Settings);
     SKSEMenuFramework::AddHudElement(DrawCinematicBars);
 
 }
@@ -40,7 +46,12 @@ void UI::Register() {
 void UI::DrawCinematicBars() {
 
     auto* playerCamera = RE::PlayerCamera::GetSingleton();
-    if (!playerCamera || !playerCamera->currentState) return;
+
+    if (!playerCamera || !playerCamera->currentState) {
+
+        return;
+
+    }
 
     const bool inVanity = playerCamera->currentState->id == RE::CameraState::kAutoVanity;
 
@@ -51,13 +62,20 @@ void UI::DrawCinematicBars() {
     const float slideSpeed = 2.0f;
 
     if (inVanity) {
+
         s_progress = std::min(1.0f, s_progress + slideSpeed * dt);
-    }
-    else {
+
+    } else {
+
         s_progress = std::max(0.0f, s_progress - slideSpeed * dt);
+
     }
 
-    if (s_progress <= 0.0f) return;
+    if (s_progress <= 0.0f) {
+
+        return;
+
+    }
 
     auto* drawList = ImGuiMCP::GetForegroundDrawList();
     float screenW = io->DisplaySize.x;
@@ -75,25 +93,13 @@ void UI::DrawCinematicBars() {
     // Bottom bar slides up: at t=0 top edge is at screenH (hidden below), at t=1 top edge is at screenH - barHeight
     const float botBarTop = screenH - barHeight * t;
 
-    const ImGuiMCP::ImU32 barColor = ImGuiMCP::ColorConvertFloat4ToU32(
-        ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 1.0f }
-    );
+    const ImGuiMCP::ImU32 barColor = ImGuiMCP::ColorConvertFloat4ToU32(ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 1.0f });
 
     // Top bar
-    ImGuiMCP::ImDrawListManager::AddRectFilled(
-        drawList,
-        ImGuiMCP::ImVec2{ 0.0f,   topBarBottom - barHeight },
-        ImGuiMCP::ImVec2{ screenW, topBarBottom },
-        barColor, 0.0f, 0
-    );
+    ImGuiMCP::ImDrawListManager::AddRectFilled(drawList,ImGuiMCP::ImVec2{ 0.0f, topBarBottom - barHeight }, ImGuiMCP::ImVec2{ screenW, topBarBottom }, barColor, 0.0f, 0);
 
     // Bottom bar
-    ImGuiMCP::ImDrawListManager::AddRectFilled(
-        drawList,
-        ImGuiMCP::ImVec2{ 0.0f,   botBarTop },
-        ImGuiMCP::ImVec2{ screenW, botBarTop + barHeight },
-        barColor, 0.0f, 0
-    );
+    ImGuiMCP::ImDrawListManager::AddRectFilled(drawList,ImGuiMCP::ImVec2{ 0.0f, botBarTop }, ImGuiMCP::ImVec2{ screenW, botBarTop + barHeight }, barColor, 0.0f, 0);
 
 }
 
@@ -104,7 +110,7 @@ void UI::DrawCinematicBars() {
 void UI::Settings() {
 
     FontAwesome::PushSolid();
-    
+
     // ---------------------------------------------------------------------------
     // POI System Settings
     // ---------------------------------------------------------------------------
@@ -122,19 +128,33 @@ void UI::Settings() {
     ImGuiMCP::SetNextItemWidth(200.0f);
     float poiRadiusMeters = g_poiDetectionRadius / 70.0f;
     if (ImGuiMCP::SliderFloat("##poiDetectionRadius", &poiRadiusMeters, 0.0f, 100.0f, "%.1f m")) {
+
         g_poiDetectionRadius = poiRadiusMeters * 70.0f;
         IniParser::Save();
+
     }
 
     ImGuiMCP::Separator();
-
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
 
     ImGuiMCP::Text("Minimum Lock Duration");
     ImGuiMCP::SameLine();
     ImGuiMCP::SetNextItemWidth(200.0f);
     if (ImGuiMCP::SliderFloat("##lockDuration", &g_lockDuration, 0.0f, 30.0f, "%.1f sec")) {
+
         IniParser::Save();
+
+    }
+
+    ImGuiMCP::Separator();
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    ImGuiMCP::Text("Debug Raycast Visualization");
+    ImGuiMCP::SameLine();
+    if (ImGuiMCP::Checkbox("##debugRaycasts", &g_debugRaycasts)) {
+
+        IniParser::Save();
+
     }
 
     ImGuiMCP::Separator();
@@ -162,15 +182,20 @@ void UI::Settings() {
         auto* iniSettings = RE::INISettingCollection::GetSingleton();
 
         if (iniSettings) {
+
             auto* setting = iniSettings->GetSetting("fAutoVanityModeDelay:Camera");
 
             if (setting) {
+
                 setting->data.f = g_idleTimer;
                 logger::info("Camera Idle Timer Setting manually set to {} second(s)", g_idleTimer);
-            }
-            else {
+
+            } else {
+
                 logger::error("Setting not found in INISettingCollection!");
+
             }
+
         }
 
     }
@@ -183,7 +208,9 @@ void UI::Settings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::SetNextItemWidth(200.0f);
     if (ImGuiMCP::SliderFloat("##blendDuration", &g_blendDuration, 0.1f, 5.0f, "%.2f sec")) {
+
         IniParser::Save();
+
     }
 
     ImGuiMCP::Separator();
@@ -205,7 +232,9 @@ void UI::Settings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::SetNextItemWidth(200.0f);
     if (ImGuiMCP::SliderFloat("##headTrackFadeSpeed", &g_headTrackFadeSpeed, 0.1f, 10.0f, "%.1f units/s")) {
+
         IniParser::Save();
+
     }
 
 }

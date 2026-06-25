@@ -6,24 +6,28 @@
 namespace Hooks
 {
     enum class POIAction {
+
         None,
         InScene,
         Moving,
         Idle
+
     };
 
-    class AutoVanityStateHook
-    {
-    public:
-        static void                Install();
-        static RE::TESObjectREFR* FindBestPOI(POIAction& a_outAction, float& a_outScore);
-        static POIAction           GetActorAction(RE::Actor* a_actor);
+    class AutoVanityStateHook {
 
-    private:
-        static void Update(
-            RE::AutoVanityState* a_this,
-            RE::BSTSmartPointer<RE::TESCameraState>& a_nextState);
+        public:
+            static void                Install();
+            static RE::TESObjectREFR* FindBestPOI(POIAction& a_outAction, float& a_outScore);
+            static POIAction           GetActorAction(RE::Actor* a_actor);
 
-        inline static REL::Relocation<decltype(Update)> _Update;
+        private:
+            static void Update(RE::AutoVanityState* a_this, RE::BSTSmartPointer<RE::TESCameraState>& a_nextState);
+            inline static REL::Relocation<decltype(Update)> _Update;
+
+        private:
+            static void EndState(RE::AutoVanityState* a_this);
+            static inline REL::Relocation<decltype(EndState)> _EndState;
+
     };
 }

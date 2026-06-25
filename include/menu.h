@@ -10,6 +10,7 @@ namespace UI {
     extern float g_lockDuration;
     extern float g_blendDuration;
     extern float g_headTrackFadeSpeed;
+    extern bool  g_debugRaycasts;
     void Settings();
     void DrawCinematicBars();
 
