@@ -660,6 +660,30 @@ namespace Hooks {
         // Wipe all debug lines when vanity mode ends
         PurgeDebugLines();
 
+        // -----------------------------------------------------------------------
+        // Reset all POI/blend state so the next vanity session starts clean.
+        // Without this, s_currentPOI and the blend variables (s_blendFromRot,
+        // s_blendTargetRot, s_blendT) keep whatever value they had when this
+        // session ended. The next time the player goes AFK - possibly in a
+        // different spot, facing a different direction, with no relevant POI
+        // nearby at all - Update() can still see a stale s_currentPOI that
+        // happens to still be alive and in range, or can compute a blend from
+        // a stale s_blendFromRot/s_blendT pair that has nothing to do with the
+        // camera's actual current rotation. Either case can produce a sudden,
+        // unexplained rotation on entering vanity mode with no POI actually
+        // locked (and therefore no debug lines), which is exactly this bug.
+        // -----------------------------------------------------------------------
+
+        s_currentPOI = nullptr;
+        s_currentScore = 0.0f;
+        s_lockTimer = 0.0f;
+
+        s_blendFromRot = 0.0f;
+        s_blendTargetRot = 0.0f;
+        s_blendT = 1.0f;
+
+        s_headTrackWeight = 0.0f;
+
     }
 
 }
