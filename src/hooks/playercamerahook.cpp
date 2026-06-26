@@ -1,4 +1,4 @@
-#include "PlayerCameraHook.h"
+﻿#include "PlayerCameraHook.h"
 #include "menu.h"
 #include <DrawDebug.hpp>
 
@@ -20,27 +20,22 @@ namespace Hooks {
     // ---------------------------------------------------------------------------
 
 
-    // The starting rotation angle (in radians) at the moment a blend begins. It's captured either from the current camera rotation when a new POI is acquired
-    // or when a POI is lost and the camera needs to return to its default orbit.
+    // Starting rotation angle when a blend begins (captured at the moment a new POI is acquired or released).
 
     static float                s_blendFromRot = 0.0f;
 
-    // The destination rotation angle the camera is trying to reach � the angle pointing directly toward the current POI.
-    // It gets continuously updated each frame(s_blendTargetRot += WrapAngle(liveAngle - s_blendTargetRot)) 
-    // to track a moving target smoothly even while the blend is still in progress.
+    // Destination rotation angle the camera is blending toward (updated every frame to track a moving POI).
 
     static float                s_blendTargetRot = 0.0f;
 
-    // A normalized interpolation parameter ranging from 0.0 (blend just started) to 1.0 (blend complete / settled).
-    // It advances each frame based on elapsed time divided by g_blendDuration
+    // Normalized blend progress [0 = just started, 1 = settled]. Fed through Smoothstep for an eased curve.
 
     static float                s_blendT = 1.0f;
 
-    // A weight controlling how strongly the player character's head turns to look at the POI. 
-    // It fades in gradually when a POI is active (+= dt * g_headTrackFadeSpeed) and fades out when there's no POI
+    // Fade weight [0-1] for how strongly the player's head turns toward the POI. Eased in/out via Smoothstep.
 
     static float                s_headTrackWeight = 0.0f;
-
+    
     // ---------------------------------------------------------------------------
     // Debug-draw gating: Only draw a debug line when this is set to true
     // ---------------------------------------------------------------------------
@@ -51,12 +46,16 @@ namespace Hooks {
     // Helpers
     // ---------------------------------------------------------------------------
 
+    // Remaps t to a smooth [0,1] curve (slow start, fast middle, slow end) for natural-feeling transitions.
+
     static float Smoothstep(float t) {
 
         t = std::clamp(t, 0.0f, 1.0f);
         return t * t * (3.0f - 2.0f * t);
 
     }
+
+    // Wraps an angle to [-π, +π] so rotation deltas always take the shortest arc.
 
     static float WrapAngle(float a) {
 
@@ -65,6 +64,8 @@ namespace Hooks {
         return a;
 
     }
+
+    // Starts a new camera rotation blend from currentRot to targetRot by resetting s_blendT to 0.
 
     static void BeginBlend(float currentRot, float targetRot) {
 
@@ -133,8 +134,7 @@ namespace Hooks {
 
         if (canDraw) {
 
-            // Draw from the original (non-offset) start so the debug line
-            // reaches all the way from the player position visually.
+            // Draw from the original (non-offset) start so the debug line reaches all the way from the player position visually.
             DrawDebug::draw_line<100>(start, end, 2.0f, a_drawColor);
 
         }
@@ -145,9 +145,8 @@ namespace Hooks {
 
         }
 
-        // Layer filter: only treat kStatic, kTerrain, and kGround as real
-        // blockers. Hits against actors, character controllers, or any other
-        // collision layer are ignored, matching the engine's own LOS logic.
+        // Layer filter: only treat kStatic, kTerrain, and kGround as real blockers. 
+        // Hits against actors, character controllers, or any other collision layer are ignored, matching the engine's own LOS logic.
         auto* collidable = pickData.rayOutput.rootCollidable;
         if (collidable) {
 
@@ -280,6 +279,7 @@ namespace Hooks {
         // false on entry (set false at the end of Update() / by default),
         // but we force it here too so FindBestPOI is safe to call from
         // anywhere without leaking debug draws from a stale flag state.
+
         s_drawDebugForThisCall = false;
 
         auto callback = [&](RE::TESObjectREFR* ref) {
@@ -501,11 +501,9 @@ namespace Hooks {
 
             }
 
-            // If the POI is still in range and alive, also check whether it has
-            // become occluded since we locked onto it. If so, drop it so the
-            // system can immediately search for a visible alternative.
-            // This is the ONLY raycast call allowed to draw debug lines: it is
-            // checking the actor that is actually the current focus.
+            // If the POI is still in range and alive, also check whether it has become occluded since we locked onto it. 
+            // If so, drop it so the system can immediately search for a visible alternative. 
+            // This is the ONLY raycast call allowed to draw debug lines: it is checking the actor that is actually the current focus.
 
             s_drawDebugForThisCall = true;
             bool occluded = HasAnythingBetween(player->GetPosition(), s_currentPOI->GetPosition());
@@ -536,8 +534,7 @@ namespace Hooks {
         // 3. Search for a new / better POI
         // -----------------------------------------------------------------------
         // NOTE: FindBestPOI internally forces s_drawDebugForThisCall = false for
-        // its whole scan, so none of the candidate-checking raycasts draw here,
-        // regardless of UI::g_debugRaycasts.
+        // its whole scan, so none of the candidate-checking raycasts draw here
 
         if (s_lockTimer <= 0.0f) {
 
