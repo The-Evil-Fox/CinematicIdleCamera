@@ -9,12 +9,19 @@ namespace logger = SKSE::log;
 // Default settings used when the ini doesn't exist when the game is started
 // ---------------------------------------------------------------------------
 
-float UI::g_idleTimer = 5.0f;
-float UI::g_poiDetectionRadius = 1050.0f;
-float UI::g_lockDuration = 3.0f;
-float UI::g_blendDuration = 3.0f;
-float UI::g_headTrackFadeSpeed = 2.0f;
-bool  UI::g_debugRaycasts = false;
+static constexpr float k_defaultIdleTimer = 5.0f;
+static constexpr float k_defaultPoiDetectionRadius = 1050.0f;
+static constexpr float k_defaultLockDuration = 3.0f;
+static constexpr float k_defaultBlendDuration = 3.0f;
+static constexpr float k_defaultHeadTrackFadeSpeed = 2.0f;
+static constexpr bool  k_defaultDebugRaycasts = false;
+
+float UI::g_idleTimer = k_defaultIdleTimer;
+float UI::g_poiDetectionRadius = k_defaultPoiDetectionRadius;
+float UI::g_lockDuration = k_defaultLockDuration;
+float UI::g_blendDuration = k_defaultBlendDuration;
+float UI::g_headTrackFadeSpeed = k_defaultHeadTrackFadeSpeed;
+bool  UI::g_debugRaycasts = k_defaultDebugRaycasts;
 
 // ---------------------------------------------------------------------------
 // Font Awesome Icons
@@ -24,6 +31,7 @@ auto settingsIcon   =   FontAwesome::UnicodeToUtf8(0xf013);
 auto poiSystemIcon  =   FontAwesome::UnicodeToUtf8(0xf3c5);
 auto cameraIcon     =   FontAwesome::UnicodeToUtf8(0xf03d);
 auto playerIcon     =   FontAwesome::UnicodeToUtf8(0xf183);
+auto debugIcon      =   FontAwesome::UnicodeToUtf8(0xf7d9);
 
 void UI::Register() {
 
@@ -147,17 +155,6 @@ void UI::Settings() {
     }
 
     ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
-
-    ImGuiMCP::Text("Debug Raycast Visualization");
-    ImGuiMCP::SameLine();
-    if (ImGuiMCP::Checkbox("##debugRaycasts", &g_debugRaycasts)) {
-
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::Separator();
 
     // ---------------------------------------------------------------------------
     // Camera settings
@@ -232,6 +229,59 @@ void UI::Settings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::SetNextItemWidth(200.0f);
     if (ImGuiMCP::SliderFloat("##headTrackFadeSpeed", &g_headTrackFadeSpeed, 0.1f, 10.0f, "%.1f units/s")) {
+
+        IniParser::Save();
+
+    }
+
+    ImGuiMCP::Separator();
+
+    // ---------------------------------------------------------------------------
+    // Debug settings
+    // ---------------------------------------------------------------------------
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 30.0f));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
+    ImGuiMCP::Text("%s Debug Settings", debugIcon.c_str());
+    ImGuiMCP::PopStyleColor();
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Separator();
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    ImGuiMCP::Text("Debug Raycast Visualization");
+    ImGuiMCP::SameLine();
+    if (ImGuiMCP::Checkbox("##debugRaycasts", &g_debugRaycasts)) {
+
+        IniParser::Save();
+
+    }
+
+    ImGuiMCP::Separator();
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    ImGuiMCP::Text("Reset All Settings To Default");
+    ImGuiMCP::SameLine();
+    if (ImGuiMCP::Button("Reset##resetAll")) {
+
+        g_idleTimer = k_defaultIdleTimer;
+        g_poiDetectionRadius = k_defaultPoiDetectionRadius;
+        g_lockDuration = k_defaultLockDuration;
+        g_blendDuration = k_defaultBlendDuration;
+        g_headTrackFadeSpeed = k_defaultHeadTrackFadeSpeed;
+        g_debugRaycasts = k_defaultDebugRaycasts;
+
+        auto* iniSettings = RE::INISettingCollection::GetSingleton();
+        if (iniSettings) {
+
+            auto* setting = iniSettings->GetSetting("fAutoVanityModeDelay:Camera");
+            if (setting) {
+
+                setting->data.f = g_idleTimer;
+
+            }
+
+        }
 
         IniParser::Save();
 

@@ -290,8 +290,18 @@ namespace Hooks {
 
             }
 
+            // Skips everything that is not an actor (humans, creatures, etc).
+
             auto* actor = ref->As<RE::Actor>();
             if (!actor) {
+
+                return RE::BSContainer::ForEachResult::kContinue;
+
+            }
+
+            // Skips dead, deleted, unloaded or disabled actors.
+
+            if (actor->IsDead() || !actor->Is3DLoaded() || actor->IsDisabled()) {
 
                 return RE::BSContainer::ForEachResult::kContinue;
 
