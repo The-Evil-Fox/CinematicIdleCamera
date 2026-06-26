@@ -11,7 +11,7 @@ namespace Hooks {
     // POI state
     // ---------------------------------------------------------------------------
 
-    static RE::TESObjectREFR* s_currentPOI = nullptr;
+    static RE::TESObjectREFR*   s_currentPOI = nullptr;
     static float                s_currentScore = 0.0f;
     static float                s_lockTimer = 0.0f;
 
@@ -19,16 +19,33 @@ namespace Hooks {
     // Cinematic transition state
     // ---------------------------------------------------------------------------
 
-    static float s_blendFromRot = 0.0f;
-    static float s_blendTargetRot = 0.0f;
-    static float s_blendT = 1.0f;
-    static float s_headTrackWeight = 0.0f;
+
+    // The starting rotation angle (in radians) at the moment a blend begins. It's captured either from the current camera rotation when a new POI is acquired
+    // or when a POI is lost and the camera needs to return to its default orbit.
+
+    static float                s_blendFromRot = 0.0f;
+
+    // The destination rotation angle the camera is trying to reach — the angle pointing directly toward the current POI.
+    // It gets continuously updated each frame(s_blendTargetRot += WrapAngle(liveAngle - s_blendTargetRot)) 
+    // to track a moving target smoothly even while the blend is still in progress.
+
+    static float                s_blendTargetRot = 0.0f;
+
+    // A normalized interpolation parameter ranging from 0.0 (blend just started) to 1.0 (blend complete / settled).
+    // It advances each frame based on elapsed time divided by g_blendDuration
+
+    static float                s_blendT = 1.0f;
+
+    // A weight controlling how strongly the player character's head turns to look at the POI. 
+    // It fades in gradually when a POI is active (+= dt * g_headTrackFadeSpeed) and fades out when there's no POI
+
+    static float                s_headTrackWeight = 0.0f;
 
     // ---------------------------------------------------------------------------
     // Debug-draw gating: Only draw a debug line when this is set to true
     // ---------------------------------------------------------------------------
 
-    static bool s_drawDebugForThisCall = false;
+    static bool                 s_drawDebugForThisCall = false;
 
     // ---------------------------------------------------------------------------
     // Helpers
@@ -70,26 +87,36 @@ namespace Hooks {
     //
     // Visual contract (only relevant when UI::g_debugRaycasts && s_drawDebugForThisCall):
     //   - While the camera is still blending/rotating toward the focused POI
-    //     (s_blendT < 1.0f): draw all three staggered rays (low/mid/high) in BLUE.
+    //     (s_blendT < 1.0f): draw the ray in BLUE.
     //   - Once the camera has fully settled on the POI (s_blendT >= 1.0f): draw
-    //     only the single mid-height ray, in GREEN, as a steady "locked on" cue.
+    //     the ray in GREEN as a steady "locked on" cue.
     //
-    // TESRayHitStatic no longer colors by hit/miss - color is now purely a
-    // function of blend state, decided by the caller (HasAnythingBetween).
-    //
-    // Hit detection: ANY raycast collision counts as a hit now - we no longer
-    // filter by collision layer (static/terrain/ground) or by node name
-    // (wall/floor/intcor/etc, excluding shelf). The caller (HasAnythingBetween)
-    // is responsible for deciding how many hit rays are enough to reject a POI.
+    // Hit detection: only kStatic, kTerrain, and kGround hits count as blockers.
+    // Hits against actors, character controllers, or any other layer are ignored.
+    // The ray start is offset along the direction vector to avoid self-intersection
+    // with the player's own collision capsule.
     // ---------------------------------------------------------------------------
 
     inline bool TESRayHitStatic(RE::bhkWorld* world, RE::NiPoint3 start, RE::NiPoint3 end, const RE::NiColorA& a_drawColor, bool a_allowDraw) {
 
         const bool canDraw = UI::g_debugRaycasts && s_drawDebugForThisCall && a_allowDraw;
 
+        // Offset the start point along the ray direction to skip past the
+        // player's own collision capsule and avoid an immediate self-hit.
+        RE::NiPoint3 dir = end - start;
+        const float  len = dir.Length();
+        if (len < 0.01f) {
+
+            return false;
+
+        }
+        dir /= len;
+        const float  kSelfHitBias = 30.0f;   // units (Skyrim-scale)
+        RE::NiPoint3 adjustedStart = start + dir * kSelfHitBias;
+
         RE::bhkPickData pickData{};
         const float scale = RE::bhkWorld::GetWorldScale();
-        pickData.rayInput.from = start * scale;
+        pickData.rayInput.from = adjustedStart * scale;
         pickData.rayInput.to = end * scale;
         pickData.rayInput.enableShapeCollectionFilter = true;
 
@@ -106,6 +133,8 @@ namespace Hooks {
 
         if (canDraw) {
 
+            // Draw from the original (non-offset) start so the debug line
+            // reaches all the way from the player position visually.
             DrawDebug::draw_line<100>(start, end, 2.0f, a_drawColor);
 
         }
@@ -116,8 +145,25 @@ namespace Hooks {
 
         }
 
-        // Diagnostic only - no longer used to decide hit/miss. Any collision
-        // at all is treated as a hit now, regardless of what it is.
+        // Layer filter: only treat kStatic, kTerrain, and kGround as real
+        // blockers. Hits against actors, character controllers, or any other
+        // collision layer are ignored, matching the engine's own LOS logic.
+        auto* collidable = pickData.rayOutput.rootCollidable;
+        if (collidable) {
+
+            const auto layer = collidable->GetCollisionLayer();
+            if (layer != RE::COL_LAYER::kStatic &&
+                layer != RE::COL_LAYER::kTerrain &&
+                layer != RE::COL_LAYER::kGround) {
+
+                logger::debug("TESRayHitStatic: ignored hit on layer {}", static_cast<int>(layer));
+                return false;
+
+            }
+
+        }
+
+        // Diagnostic only.
         if (auto* niObj = RE::TES::GetSingleton()->Pick(pickData); niObj && !niObj->name.empty()) {
 
             logger::debug("TES::Pick hit node: {}", niObj->name.c_str());
@@ -154,74 +200,24 @@ namespace Hooks {
         // Settled = camera has finished blending onto the current focus target.
         const bool settled = (s_blendT >= 1.0f);
 
-        // While turning: all three rays draw, in blue.
-        // Once settled: only the mid ray draws, in green.
+        // While turning the camera: the debug ray is blue.
+        // Once settled: the debug ray is replaced by a green one.
         const RE::NiColorA turningColor = kBlue;
         const RE::NiColorA settledColor = kGreen;
 
-        // -----------------------------------------------------------------------
-        // Ray heights: anchored independently to each point's own body, not
-        // leveled to a shared plane. GetPosition() returns feet height, so
-        // "low/mid/high" are feet + an offset that approximates ankle/chest/
-        // head height for that specific point.
-        //
-        // This matters for floor-to-floor occlusion in interiors: if we level
-        // both ends of a ray at the same world Z (e.g. by interpolating
-        // between the player's feet Z and the target's feet Z), the ray
-        // travels mostly horizontally between two different floors and can
-        // skate straight through a stairwell gap, vent, or railing opening
-        // without ever actually crossing the floor slab that's between them.
-        // By anchoring start to the player's own body heights and end to the
-        // target's own body heights, a real difference in floor level now
-        // produces a genuinely diagonal ray (player's chest down/up to the
-        // target's chest, for example), which is what actually clips the
-        // floor/ceiling slab separating the two.
-        // -----------------------------------------------------------------------
-
-        const float ankleHeight = 35.0f;
         const float chestHeight = 70.0f;
-        const float headHeight = 105.0f;
 
-        RE::NiPoint3 startLow = start + RE::NiPoint3(0, 0, ankleHeight);
+        // From the player
         RE::NiPoint3 startMid = start + RE::NiPoint3(0, 0, chestHeight);
-        RE::NiPoint3 startHigh = start + RE::NiPoint3(0, 0, headHeight);
 
-        RE::NiPoint3 endLow = end + RE::NiPoint3(0, 0, ankleHeight);
+        // To the POI
         RE::NiPoint3 endMid = end + RE::NiPoint3(0, 0, chestHeight);
-        RE::NiPoint3 endHigh = end + RE::NiPoint3(0, 0, headHeight);
 
-        bool hitLow = TESRayHitStatic(world, startLow, endLow, turningColor, /*allowDraw*/ !settled);
+        bool hitMid = TESRayHitStatic(world, startMid, endMid, settled ? settledColor : turningColor, true);
 
-        bool hitMid = TESRayHitStatic(world, startMid, endMid, settled ? settledColor : turningColor, /*allowDraw*/ true);
+        logger::debug("Ray results: mid {}", hitMid);
 
-        bool hitHigh = TESRayHitStatic(world, startHigh, endHigh, turningColor, /*allowDraw*/ !settled);
-
-        logger::debug("Ray results: low {} mid {} high {}", hitLow, hitMid, hitHigh);
-
-        // Require at least two of the three rays to hit something before we
-        // treat the POI as blocked. A single ray hit (e.g. clipping a thin
-        // prop) is not enough to reject an otherwise visible POI.
-        int hitCount = (hitLow ? 1 : 0) + (hitMid ? 1 : 0) + (hitHigh ? 1 : 0);
-
-        // -----------------------------------------------------------------------
-        // Floor/ceiling guard: even if fewer than two of the staggered rays
-        // hit something, a large Z difference between the player and the
-        // candidate strongly suggests they're on different floors (e.g. one
-        // below the other through a gap), which our raycasts can still miss
-        // depending on the exact geometry. If the vertical gap is larger than
-        // a normal standing height difference, treat the POI as occluded
-        // regardless of ray results.
-        // -----------------------------------------------------------------------
-
-        const float maxReasonableZDiff = 150.0f;
-        if (std::abs(end.z - start.z) > maxReasonableZDiff) {
-
-            logger::debug("POI rejected: vertical gap {:.1f} exceeds same-floor threshold", end.z - start.z);
-            return true;
-
-        }
-
-        return hitCount >= 2;
+        return hitMid;
 
     }
 
@@ -302,15 +298,11 @@ namespace Hooks {
             }
 
             // --- Line-of-sight check: skip POIs that are fully occluded --------
-            // We cast three staggered rays (low / mid / high). Only if at least
-            // two of the three are blocked by something do we treat the POI as
-            // invisible. A partially-occluded actor (zero or one ray blocked)
-            // still counts.
             // NOTE: s_drawDebugForThisCall stays false for the whole scan, so
             // this never draws regardless of UI::g_debugRaycasts.
             if (HasAnythingBetween(player->GetPosition(), ref->GetPosition())) {
 
-                logger::debug("POI {} rejected: occluded by at least two of three rays", ref->GetName());
+                logger::debug("POI {} rejected: the reference is occluded !", ref->GetName());
                 return RE::BSContainer::ForEachResult::kContinue;
 
             }
@@ -344,6 +336,7 @@ namespace Hooks {
             }
 
             return RE::BSContainer::ForEachResult::kContinue;
+
             };
 
         RE::TES::GetSingleton()->ForEachReferenceInRange(player, UI::g_poiDetectionRadius, callback);
@@ -411,8 +404,7 @@ namespace Hooks {
 
             currentProcess->SetHeadtrackTarget(a_player, blendedPos);
 
-        }
-        else {
+        } else {
 
             RE::NiPoint3 playerPos = a_player->GetPosition();
             float        playerYaw = a_player->GetAngleZ();
@@ -510,9 +502,8 @@ namespace Hooks {
             }
 
             // If the POI is still in range and alive, also check whether it has
-            // become occluded (at least two of three rays blocked) since we
-            // locked onto it. If so, drop it so the system can immediately
-            // search for a visible alternative.
+            // become occluded since we locked onto it. If so, drop it so the
+            // system can immediately search for a visible alternative.
             // This is the ONLY raycast call allowed to draw debug lines: it is
             // checking the actor that is actually the current focus.
 
@@ -571,8 +562,7 @@ namespace Hooks {
 
                 }
 
-            }
-            else if (!candidate) {
+            } else if (!candidate) {
 
                 if (s_currentPOI) {
 
@@ -618,8 +608,7 @@ namespace Hooks {
             s_headTrackWeight = std::min(1.0f, s_headTrackWeight + dt * UI::g_headTrackFadeSpeed);
             UpdatePlayerHeadtrack(player, s_currentPOI, s_headTrackWeight);
 
-        }
-        else {
+        } else {
 
             if (s_blendT < 1.0f) {
 
@@ -634,8 +623,7 @@ namespace Hooks {
 
                 }
 
-            }
-            else {
+            } else {
 
                 a_this->autoVanityRot = savedRot;
 
@@ -662,16 +650,6 @@ namespace Hooks {
 
         // -----------------------------------------------------------------------
         // Reset all POI/blend state so the next vanity session starts clean.
-        // Without this, s_currentPOI and the blend variables (s_blendFromRot,
-        // s_blendTargetRot, s_blendT) keep whatever value they had when this
-        // session ended. The next time the player goes AFK - possibly in a
-        // different spot, facing a different direction, with no relevant POI
-        // nearby at all - Update() can still see a stale s_currentPOI that
-        // happens to still be alive and in range, or can compute a blend from
-        // a stale s_blendFromRot/s_blendT pair that has nothing to do with the
-        // camera's actual current rotation. Either case can produce a sudden,
-        // unexplained rotation on entering vanity mode with no POI actually
-        // locked (and therefore no debug lines), which is exactly this bug.
         // -----------------------------------------------------------------------
 
         s_currentPOI = nullptr;
