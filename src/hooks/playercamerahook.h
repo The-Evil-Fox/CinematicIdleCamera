@@ -8,9 +8,10 @@ namespace Hooks
     enum class POIAction {
 
         None,
+        Idle,
+        InCombat,
         InScene,
-        Moving,
-        Idle
+        Moving
 
     };
 

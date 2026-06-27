@@ -270,6 +270,8 @@ namespace Hooks {
 
         }
 
+        static RE::TESFaction* s_followerFaction = RE::TESForm::LookupByID<RE::TESFaction>(0x84D1B);
+
         RE::TESObjectREFR* bestPOI = nullptr;
         POIAction          bestAction = POIAction::None;
         float              bestScore = 0.0f;
@@ -295,15 +297,18 @@ namespace Hooks {
 
             auto* actor = ref->As<RE::Actor>();
             if (!actor) {
+                return RE::BSContainer::ForEachResult::kContinue;
+            }
+
+            if (actor->IsDead() || !actor->Is3DLoaded() || actor->IsDisabled()) {
 
                 return RE::BSContainer::ForEachResult::kContinue;
 
             }
 
-            // Skips dead, deleted, unloaded or disabled actors.
+            if (s_followerFaction && actor->IsInFaction(s_followerFaction)) {
 
-            if (actor->IsDead() || !actor->Is3DLoaded() || actor->IsDisabled()) {
-
+                logger::debug("POI {} rejected: actor is a follower.", ref->GetName());
                 return RE::BSContainer::ForEachResult::kContinue;
 
             }
@@ -313,7 +318,7 @@ namespace Hooks {
             // this never draws regardless of UI::g_debugRaycasts.
             if (HasAnythingBetween(player->GetPosition(), ref->GetPosition())) {
 
-                logger::debug("POI {} rejected: the reference is occluded !", ref->GetName());
+                logger::debug("POI {} rejected: the reference is occluded!", ref->GetName());
                 return RE::BSContainer::ForEachResult::kContinue;
 
             }
@@ -326,14 +331,11 @@ namespace Hooks {
 
             switch (action) {
 
-            case POIAction::Moving:  score = 400.0f + proximityFactor * 150.0f; break;
-
-            case POIAction::InScene: score = 300.0f; break;
-
-            case POIAction::Idle:    score = 10.0f;  break;
-
-            default: break;
-
+                case POIAction::InCombat:       score = 600.0f + proximityFactor * 200.0f;          break;
+                case POIAction::Moving:         score = 400.0f + proximityFactor * 150.0f;          break;
+                case POIAction::InScene:        score = 300.0f;                                     break;
+                case POIAction::Idle:           score = 10.0f;                                      break;
+                default:                                                                            break;
             }
 
             score += proximityFactor * 50.0f;
@@ -348,7 +350,7 @@ namespace Hooks {
 
             return RE::BSContainer::ForEachResult::kContinue;
 
-            };
+        };
 
         RE::TES::GetSingleton()->ForEachReferenceInRange(player, UI::g_poiDetectionRadius, callback);
 
@@ -647,8 +649,7 @@ namespace Hooks {
                 float delta = WrapAngle(s_blendTargetRot - s_blendFromRot);
                 a_this->autoVanityRot = s_blendFromRot + easedT * delta;
 
-            }
-            else {
+            } else {
 
                 a_this->autoVanityRot = baseRot;
 
