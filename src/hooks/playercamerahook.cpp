@@ -254,7 +254,7 @@ namespace Hooks {
         _Update = vtbl.write_vfunc(REL::Module::IsVR() ? 4 : 3, Update);
         _EndState = vtbl.write_vfunc(2, EndState);
 
-        logger::info("Hook installed");
+        logger::info("AutoVanity hook installed");
 
     }
 
@@ -462,7 +462,7 @@ namespace Hooks {
 
     void AutoVanityStateHook::Update(RE::AutoVanityState* a_this, RE::BSTSmartPointer<RE::TESCameraState>& a_nextState) {
 
-        float savedRot = a_this->autoVanityRot;
+        float baseRot = a_this->autoVanityRot;
         _Update(a_this, a_nextState);
 
         auto* player = RE::PlayerCharacter::GetSingleton();
@@ -476,8 +476,7 @@ namespace Hooks {
 
             DebugAPI::GetSingleton()->Update();
 
-        }
-        else {
+        } else {
 
             PurgeDebugLines();
 
@@ -493,6 +492,7 @@ namespace Hooks {
         if (s_lockTimer > 0.0f) {
 
             s_lockTimer = std::max(0.0f, s_lockTimer - dt);
+
         }
 
         // -----------------------------------------------------------------------
@@ -521,16 +521,16 @@ namespace Hooks {
 
             if (!gone && occluded) {
 
-                logger::info("Current POI {} became occluded - dropping lock", s_currentPOI->GetName());
+                logger::debug("Current POI {} became occluded - dropping lock", s_currentPOI->GetName());
                 gone = true;
 
             }
 
             if (gone) {
 
-                logger::info("POI lost (dead, out of range, or occluded) - beginning exit blend");
+                logger::debug("POI lost (dead, out of range, or occluded) - beginning exit blend");
 
-                BeginBlend(a_this->autoVanityRot, savedRot);
+                BeginBlend(a_this->autoVanityRot, baseRot);
 
                 s_currentPOI = nullptr;
                 s_currentScore = 0.0f;
@@ -556,7 +556,7 @@ namespace Hooks {
 
                 if (!s_currentPOI || foundScore > s_currentScore) {
 
-                    logger::info("Switching POI to: {} (score {:.1f})", candidate->GetName(), foundScore);
+                    logger::debug("Switching POI to: {} (score {:.1f})", candidate->GetName(), foundScore);
 
                     auto  dir = candidate->GetPosition() - player->GetPosition();
                     float incomingRot = std::atan2(dir.x, dir.y);
@@ -573,8 +573,8 @@ namespace Hooks {
 
                 if (s_currentPOI) {
 
-                    logger::info("No visible POI in range - beginning exit blend");
-                    BeginBlend(a_this->autoVanityRot, savedRot);
+                    logger::debug("No visible POI in range - beginning exit blend");
+                    BeginBlend(a_this->autoVanityRot, baseRot);
 
                 }
 
@@ -626,13 +626,13 @@ namespace Hooks {
 
                 if (s_blendT >= 1.0f) {
 
-                    a_this->autoVanityRot = savedRot;
+                    a_this->autoVanityRot = baseRot;
 
                 }
 
             } else {
 
-                a_this->autoVanityRot = savedRot;
+                a_this->autoVanityRot = baseRot;
 
             }
 
@@ -649,7 +649,7 @@ namespace Hooks {
 
     void AutoVanityStateHook::EndState(RE::AutoVanityState* a_this) {
 
-        logger::info("EndState hook fired");
+        logger::debug("EndState hook fired");
         _EndState(a_this);
 
         // Wipe all debug lines when vanity mode ends

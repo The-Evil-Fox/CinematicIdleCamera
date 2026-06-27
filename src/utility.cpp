@@ -9,7 +9,7 @@ void IniParser::Load() {
 
     if (!std::filesystem::exists(INI_PATH)) {
 
-        logger::info("No config file found, creating default config");
+        logger::info("No config file found, creating default config.");
         IniParser::Save();
         return;
 
@@ -19,7 +19,7 @@ void IniParser::Load() {
 
     if (!file.is_open()) {
 
-        logger::warn("Failed to open config file");
+        logger::warn("Failed to open config file !");
         return;
 
     }
@@ -46,38 +46,58 @@ void IniParser::Load() {
         if (key == "fIdleTimer") {
 
             UI::g_idleTimer = std::stof(value);
-            logger::info("Loaded fIdleTimer: {}", UI::g_idleTimer);
+            logger::debug("Loaded fIdleTimer: {}", UI::g_idleTimer);
 
-        } else if (key == "poiDetectionRadius") {
+        }
+        else if (key == "poiDetectionRadius") {
 
             UI::g_poiDetectionRadius = std::stof(value);
-            logger::info("Loaded poiDetectionRadius: {}", UI::g_poiDetectionRadius);
+            logger::debug("Loaded poiDetectionRadius: {}", UI::g_poiDetectionRadius);
 
-        } else if (key == "lockDuration") {
+        }
+        else if (key == "lockDuration") {
 
             UI::g_lockDuration = std::stof(value);
-            logger::info("Loaded lockDuration: {}", UI::g_lockDuration);
+            logger::debug("Loaded lockDuration: {}", UI::g_lockDuration);
 
-        } else if (key == "blendDuration") {
+        }
+        else if (key == "blendDuration") {
 
             UI::g_blendDuration = std::stof(value);
-            logger::info("Loaded blendDuration: {}", UI::g_blendDuration);
+            logger::debug("Loaded blendDuration: {}", UI::g_blendDuration);
 
-        } else if (key == "headTrackFadeSpeed") {
+        }
+        else if (key == "headTrackFadeSpeed") {
 
             UI::g_headTrackFadeSpeed = std::stof(value);
-            logger::info("Loaded headTrackFadeSpeed: {}", UI::g_headTrackFadeSpeed);
+            logger::debug("Loaded headTrackFadeSpeed: {}", UI::g_headTrackFadeSpeed);
 
-        } else if (key == "debugRaycasts") {
+        }
+        else if (key == "debugRaycasts") {
 
             UI::g_debugRaycasts = (value == "1" || value == "true");
-            logger::info("Loaded debugRaycasts: {}", UI::g_debugRaycasts);
+            logger::debug("Loaded debugRaycasts: {}", UI::g_debugRaycasts);
+
+        }
+        else if (key == "logginglevel") {
+
+            UI::g_loggingLevel = std::clamp(std::stoi(value), 0, 3);
+            logger::info("Logging level set to {}", UI::g_loggingLevel);
+
+            spdlog::level::level_enum lvl = spdlog::level::info;
+            if (UI::g_loggingLevel == 0) lvl = spdlog::level::critical;
+            else if (UI::g_loggingLevel == 1) lvl = spdlog::level::warn;
+            else if (UI::g_loggingLevel == 3) lvl = spdlog::level::debug;
+
+            spdlog::set_level(lvl);
+            spdlog::flush_on(lvl);
+            continue;
 
         }
 
     }
 
-    logger::info("Config loaded successfully");
+    logger::info("User config loaded successfully.");
 
 }
 
@@ -87,7 +107,7 @@ void IniParser::Save() {
 
     if (!file.is_open()) {
 
-        logger::warn("Failed to open config file for writing");
+        logger::warn("Failed to open config file for writing !");
         return;
 
     }
@@ -109,7 +129,10 @@ void IniParser::Save() {
     file << "\n";
     file << "; Debug Raycast Visualization (0 = off, 1 = on)\n";
     file << "debugRaycasts=" << (UI::g_debugRaycasts ? "1" : "0") << "\n";
+    file << "\n";
+    file << "; Log Level (0=Quiet/critical, 1=Warnings, 2=Info, 3=Debug)\n";
+    file << "logginglevel=" << UI::g_loggingLevel << "\n";
 
-    logger::info("Config saved successfully");
+    logger::info("User config saved successfully.");
 
 }

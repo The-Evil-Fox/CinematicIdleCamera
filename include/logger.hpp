@@ -5,7 +5,10 @@
 
 namespace logger = SKSE::log;
 
-inline void setupLog(const spdlog::level::level_enum& user_level) {
+// NOTE: This is only the startup default used before the ini is parsed.
+// IniParser::Load() (utility.cpp) reads the user's saved "logginglevel" and
+// calls spdlog::set_level/flush_on directly, overriding whatever is passed here.
+inline void setupLog(const spdlog::level::level_enum& user_level = spdlog::level::info) {
 
     auto logsFolder = SKSE::log::log_directory();
     

@@ -69,7 +69,7 @@ static void MessageHandler(SKSE::MessagingInterface::Message* msg) {
 
                 } else {
 
-                    logger::error("Setting not found in INISettingCollection for kDataLoaded!");
+                    logger::error("Setting not found in INISettingCollection !");
 
                 }
 
@@ -96,7 +96,7 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse) {
     SKSE::GetMessagingInterface()->RegisterListener(MessageHandler);
 
     Hooks::AutoVanityStateHook::Install();
-    logger::debug("Everything working... As it should be ?");
+    logger::info("Cinematic Camera Idle has fully loaded succesfully !");
 
     return true;
 

@@ -9,29 +9,62 @@ namespace logger = SKSE::log;
 // Default settings used when the ini doesn't exist when the game is started
 // ---------------------------------------------------------------------------
 
-static constexpr float k_defaultIdleTimer = 5.0f;
-static constexpr float k_defaultPoiDetectionRadius = 1050.0f;
-static constexpr float k_defaultLockDuration = 3.0f;
-static constexpr float k_defaultBlendDuration = 3.0f;
-static constexpr float k_defaultHeadTrackFadeSpeed = 2.0f;
-static constexpr bool  k_defaultDebugRaycasts = false;
+static constexpr float          k_defaultIdleTimer = 5.0f;
+static constexpr float          k_defaultPoiDetectionRadius = 1050.0f;
+static constexpr float          k_defaultLockDuration = 3.0f;
+static constexpr float          k_defaultBlendDuration = 3.0f;
+static constexpr float          k_defaultHeadTrackFadeSpeed = 2.0f;
+static constexpr bool           k_defaultDebugRaycasts = false;
+static constexpr int            k_defaultLoggingLevel = 2; // 0 = critical, 1 = warn, 2 = info, 3 = debug
 
-float UI::g_idleTimer = k_defaultIdleTimer;
-float UI::g_poiDetectionRadius = k_defaultPoiDetectionRadius;
-float UI::g_lockDuration = k_defaultLockDuration;
-float UI::g_blendDuration = k_defaultBlendDuration;
-float UI::g_headTrackFadeSpeed = k_defaultHeadTrackFadeSpeed;
-bool  UI::g_debugRaycasts = k_defaultDebugRaycasts;
+float                           UI::g_idleTimer = k_defaultIdleTimer;
+float                           UI::g_poiDetectionRadius = k_defaultPoiDetectionRadius;
+float                           UI::g_lockDuration = k_defaultLockDuration;
+float                           UI::g_blendDuration = k_defaultBlendDuration;
+float                           UI::g_headTrackFadeSpeed = k_defaultHeadTrackFadeSpeed;
+bool                            UI::g_debugRaycasts = k_defaultDebugRaycasts;
+int                             UI::g_loggingLevel = k_defaultLoggingLevel;
+
+// ---------------------------------------------------------------------------
+// Logging level names, indexed 0-3 to match the simplified scheme:
+// 0 = Quiet (critical only), 1 = Warnings, 2 = Info (default), 3 = Debug
+// ---------------------------------------------------------------------------
+
+static constexpr const char* k_loggingLevelNames[] = {
+
+    "Quiet",
+    "Warnings",
+    "Info",
+    "Debug"
+
+};
+
+static constexpr int k_loggingLevelCount = static_cast<int>(std::size(k_loggingLevelNames));
+
+// Mirrors the mapping used in IniParser::Load() / utility.cpp, so the slider's
+// live preview matches what gets applied and saved.
+static spdlog::level::level_enum LoggingLevelToSpdlog(int loggingLevel) {
+
+    switch (loggingLevel) {
+
+    case 0:  return spdlog::level::critical;
+    case 1:  return spdlog::level::warn;
+    case 3:  return spdlog::level::debug;
+    default: return spdlog::level::info;
+
+    }
+
+}
 
 // ---------------------------------------------------------------------------
 // Font Awesome Icons
 // ---------------------------------------------------------------------------
 
-auto settingsIcon   =   FontAwesome::UnicodeToUtf8(0xf013);
-auto poiSystemIcon  =   FontAwesome::UnicodeToUtf8(0xf3c5);
-auto cameraIcon     =   FontAwesome::UnicodeToUtf8(0xf03d);
-auto playerIcon     =   FontAwesome::UnicodeToUtf8(0xf183);
-auto debugIcon      =   FontAwesome::UnicodeToUtf8(0xf7d9);
+auto settingsIcon = FontAwesome::UnicodeToUtf8(0xf013);
+auto poiSystemIcon = FontAwesome::UnicodeToUtf8(0xf3c5);
+auto cameraIcon = FontAwesome::UnicodeToUtf8(0xf03d);
+auto playerIcon = FontAwesome::UnicodeToUtf8(0xf183);
+auto debugIcon = FontAwesome::UnicodeToUtf8(0xf7d9);
 
 void UI::Register() {
 
@@ -73,7 +106,8 @@ void UI::DrawCinematicBars() {
 
         s_progress = std::min(1.0f, s_progress + slideSpeed * dt);
 
-    } else {
+    }
+    else {
 
         s_progress = std::max(0.0f, s_progress - slideSpeed * dt);
 
@@ -104,10 +138,10 @@ void UI::DrawCinematicBars() {
     const ImGuiMCP::ImU32 barColor = ImGuiMCP::ColorConvertFloat4ToU32(ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 1.0f });
 
     // Top bar
-    ImGuiMCP::ImDrawListManager::AddRectFilled(drawList,ImGuiMCP::ImVec2{ 0.0f, topBarBottom - barHeight }, ImGuiMCP::ImVec2{ screenW, topBarBottom }, barColor, 0.0f, 0);
+    ImGuiMCP::ImDrawListManager::AddRectFilled(drawList, ImGuiMCP::ImVec2{ 0.0f, topBarBottom - barHeight }, ImGuiMCP::ImVec2{ screenW, topBarBottom }, barColor, 0.0f, 0);
 
     // Bottom bar
-    ImGuiMCP::ImDrawListManager::AddRectFilled(drawList,ImGuiMCP::ImVec2{ 0.0f, botBarTop }, ImGuiMCP::ImVec2{ screenW, botBarTop + barHeight }, barColor, 0.0f, 0);
+    ImGuiMCP::ImDrawListManager::AddRectFilled(drawList, ImGuiMCP::ImVec2{ 0.0f, botBarTop }, ImGuiMCP::ImVec2{ screenW, botBarTop + barHeight }, barColor, 0.0f, 0);
 
 }
 
@@ -187,7 +221,8 @@ void UI::Settings() {
                 setting->data.f = g_idleTimer;
                 logger::info("Camera Idle Timer Setting manually set to {} second(s)", g_idleTimer);
 
-            } else {
+            }
+            else {
 
                 logger::error("Setting not found in INISettingCollection!");
 
@@ -260,6 +295,24 @@ void UI::Settings() {
     ImGuiMCP::Separator();
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
 
+    ImGuiMCP::Text("Logging Level");
+    ImGuiMCP::SameLine();
+    ImGuiMCP::SetNextItemWidth(200.0f);
+    if (ImGuiMCP::SliderInt("##loggingLevel", &g_loggingLevel, 0, k_loggingLevelCount - 1, k_loggingLevelNames[g_loggingLevel])) {
+
+        g_loggingLevel = std::clamp(g_loggingLevel, 0, k_loggingLevelCount - 1);
+
+        auto lvl = LoggingLevelToSpdlog(g_loggingLevel);
+        spdlog::set_level(lvl);
+        spdlog::flush_on(lvl);
+        logger::info("Logging level manually set to '{}'", k_loggingLevelNames[g_loggingLevel]);
+        IniParser::Save();
+
+    }
+
+    ImGuiMCP::Separator();
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
     ImGuiMCP::Text("Reset All Settings To Default");
     ImGuiMCP::SameLine();
     if (ImGuiMCP::Button("Reset##resetAll")) {
@@ -270,6 +323,7 @@ void UI::Settings() {
         g_blendDuration = k_defaultBlendDuration;
         g_headTrackFadeSpeed = k_defaultHeadTrackFadeSpeed;
         g_debugRaycasts = k_defaultDebugRaycasts;
+        g_loggingLevel = k_defaultLoggingLevel;
 
         auto* iniSettings = RE::INISettingCollection::GetSingleton();
         if (iniSettings) {
@@ -282,6 +336,10 @@ void UI::Settings() {
             }
 
         }
+
+        auto lvl = LoggingLevelToSpdlog(g_loggingLevel);
+        spdlog::set_level(lvl);
+        spdlog::flush_on(lvl);
 
         IniParser::Save();
 
