@@ -24,7 +24,8 @@ namespace Hooks {
 
     static float                s_blendFromRot = 0.0f;
 
-    // Destination rotation angle the camera is blending toward (updated every frame to track a moving POI).
+    // Destination rotation angle the camera is blending toward (updated every frame to track a moving POI,
+    // and, during the exit-to-forward blend, to track the player's live forward-facing angle as well).
 
     static float                s_blendTargetRot = 0.0f;
 
@@ -35,7 +36,7 @@ namespace Hooks {
     // Fade weight [0-1] for how strongly the player's head turns toward the POI. Eased in/out via Smoothstep.
 
     static float                s_headTrackWeight = 0.0f;
-    
+
     // ---------------------------------------------------------------------------
     // Debug-draw gating: Only draw a debug line when this is set to true
     // ---------------------------------------------------------------------------
@@ -462,7 +463,18 @@ namespace Hooks {
 
     void AutoVanityStateHook::Update(RE::AutoVanityState* a_this, RE::BSTSmartPointer<RE::TESCameraState>& a_nextState) {
 
-        float baseRot = a_this->autoVanityRot;
+        // We still call vanilla's _Update() for whatever internal state-machine
+        // bookkeeping AutoVanityState does, but we deliberately do NOT use its
+        // autoVanityRot output as our "behind the player" reference. Vanilla
+        // auto-vanity slowly auto-rotates the camera around the player on its
+        // own; using that value as baseRot would reintroduce unwanted drift
+        // even when no POI is active at all.
+        //
+        // "Behind the player, looking over the shoulder" is simply the
+        // player's own facing yaw - so baseRot is derived directly from
+        // player->GetAngleZ() every frame, not from _Update(). This keeps the
+        // camera perfectly still relative to the player (it only changes if
+        // the player itself turns) instead of orbiting/drifting.
         _Update(a_this, a_nextState);
 
         auto* player = RE::PlayerCharacter::GetSingleton();
@@ -471,6 +483,8 @@ namespace Hooks {
             return;
 
         }
+
+        float baseRot = player->GetAngleZ();
 
         if (UI::g_debugRaycasts) {
 
@@ -619,18 +633,22 @@ namespace Hooks {
 
             if (s_blendT < 1.0f) {
 
+                // Keep retargeting to the LIVE forward angle every frame (just
+                // like the POI-tracking branch above retargets to liveAngle),
+                // instead of blending toward a stale snapshot taken back when
+                // BeginBlend() first fired. Without this, a player who keeps
+                // turning the camera while the exit blend is in progress would
+                // blend toward where "forward" used to be, then pop to the
+                // correct value the instant s_blendT reaches 1.0f.
+                s_blendTargetRot = baseRot;
+
                 s_blendT = std::min(1.0f, s_blendT + dt / std::max(0.01f, UI::g_blendDuration));
                 float easedT = Smoothstep(s_blendT);
                 float delta = WrapAngle(s_blendTargetRot - s_blendFromRot);
                 a_this->autoVanityRot = s_blendFromRot + easedT * delta;
 
-                if (s_blendT >= 1.0f) {
-
-                    a_this->autoVanityRot = baseRot;
-
-                }
-
-            } else {
+            }
+            else {
 
                 a_this->autoVanityRot = baseRot;
 
