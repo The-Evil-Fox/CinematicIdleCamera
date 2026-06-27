@@ -48,38 +48,32 @@ void IniParser::Load() {
             UI::g_idleTimer = std::stof(value);
             logger::debug("Loaded fIdleTimer: {}", UI::g_idleTimer);
 
-        }
-        else if (key == "poiDetectionRadius") {
+        } else if (key == "poiDetectionRadius") {
 
             UI::g_poiDetectionRadius = std::stof(value);
             logger::debug("Loaded poiDetectionRadius: {}", UI::g_poiDetectionRadius);
 
-        }
-        else if (key == "lockDuration") {
+        } else if (key == "lockDuration") {
 
             UI::g_lockDuration = std::stof(value);
             logger::debug("Loaded lockDuration: {}", UI::g_lockDuration);
 
-        }
-        else if (key == "blendDuration") {
+        } else if (key == "blendDuration") {
 
             UI::g_blendDuration = std::stof(value);
             logger::debug("Loaded blendDuration: {}", UI::g_blendDuration);
 
-        }
-        else if (key == "headTrackFadeSpeed") {
+        } else if (key == "headTrackFadeSpeed") {
 
             UI::g_headTrackFadeSpeed = std::stof(value);
             logger::debug("Loaded headTrackFadeSpeed: {}", UI::g_headTrackFadeSpeed);
 
-        }
-        else if (key == "debugRaycasts") {
+        } else if (key == "debugRaycasts") {
 
             UI::g_debugRaycasts = (value == "1" || value == "true");
             logger::debug("Loaded debugRaycasts: {}", UI::g_debugRaycasts);
 
-        }
-        else if (key == "logginglevel") {
+        } else if (key == "logginglevel") {
 
             UI::g_loggingLevel = std::clamp(std::stoi(value), 0, 3);
             logger::info("Logging level set to {}", UI::g_loggingLevel);

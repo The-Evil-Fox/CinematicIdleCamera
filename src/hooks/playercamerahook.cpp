@@ -1,4 +1,4 @@
-﻿#include "PlayerCameraHook.h"
+﻿#include "hooks/PlayerCameraHook.h"
 #include "menu.h"
 #include <DrawDebug.hpp>
 
@@ -107,11 +107,13 @@ namespace Hooks {
         // player's own collision capsule and avoid an immediate self-hit.
         RE::NiPoint3 dir = end - start;
         const float  len = dir.Length();
+
         if (len < 0.01f) {
 
             return false;
 
         }
+
         dir /= len;
         const float  kSelfHitBias = 30.0f;   // units (Skyrim-scale)
         RE::NiPoint3 adjustedStart = start + dir * kSelfHitBias;
@@ -177,6 +179,7 @@ namespace Hooks {
     inline bool HasAnythingBetween(RE::NiPoint3 start, RE::NiPoint3 end) {
 
         auto* player = RE::PlayerCharacter::GetSingleton();
+
         if (!player) {
 
             return false;
@@ -184,6 +187,7 @@ namespace Hooks {
         }
 
         auto* cell = player->GetParentCell();
+
         if (!cell) {
 
             return false;
@@ -191,6 +195,7 @@ namespace Hooks {
         }
 
         auto* world = cell->GetbhkWorld();
+
         if (!world) {
 
             return false;
@@ -264,6 +269,7 @@ namespace Hooks {
     RE::TESObjectREFR* AutoVanityStateHook::FindBestPOI(POIAction& a_outAction, float& a_outScore) {
 
         auto* player = RE::PlayerCharacter::GetSingleton();
+
         if (!player) {
 
             return nullptr;
@@ -294,8 +300,8 @@ namespace Hooks {
             }
 
             // Skips everything that is not an actor (humans, creatures, etc).
-
             auto* actor = ref->As<RE::Actor>();
+
             if (!actor) {
                 return RE::BSContainer::ForEachResult::kContinue;
             }
@@ -363,6 +369,7 @@ namespace Hooks {
         }
 
         return nullptr;
+
     }
 
     // ---------------------------------------------------------------------------
@@ -421,10 +428,13 @@ namespace Hooks {
 
             RE::NiPoint3 playerPos = a_player->GetPosition();
             float        playerYaw = a_player->GetAngleZ();
+
             RE::NiPoint3 forwardPos = {
+
                 playerPos.x + std::sin(playerYaw) * 500.0f,
                 playerPos.y + std::cos(playerYaw) * 500.0f,
                 playerPos.z + 120.0f
+
             };
 
             currentProcess->SetHeadtrackTarget(a_player, forwardPos);
@@ -447,14 +457,22 @@ namespace Hooks {
     static void PurgeDebugLines() {
 
         auto* dbg = DebugAPI::GetSingleton();
-
         auto hud = DebugAPI::GetHUD();
-        if (hud && hud->uiMovie)
+
+        if (hud && hud->uiMovie) {
+
             dbg->ClearLines2D(hud->uiMovie);
 
+        }
+
         std::unique_lock lock(dbg->mutex_);
-        for (auto* line : dbg->LinesToDraw)
+
+        for (auto* line : dbg->LinesToDraw) {
+
             delete line;
+
+        }
+            
         dbg->LinesToDraw.clear();
 
     }
@@ -480,6 +498,7 @@ namespace Hooks {
         _Update(a_this, a_nextState);
 
         auto* player = RE::PlayerCharacter::GetSingleton();
+
         if (!player) {
 
             return;
@@ -668,7 +687,7 @@ namespace Hooks {
 
     void AutoVanityStateHook::EndState(RE::AutoVanityState* a_this) {
 
-        logger::debug("EndState hook fired");
+        logger::debug("AutoVanity EndState hook fired");
         _EndState(a_this);
 
         // Wipe all debug lines when vanity mode ends

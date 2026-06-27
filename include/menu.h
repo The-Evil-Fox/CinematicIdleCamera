@@ -4,7 +4,6 @@
 
 namespace UI {
 
-    void Register();
     extern float g_idleTimer;
     extern float g_poiDetectionRadius;
     extern float g_lockDuration;
@@ -12,6 +11,8 @@ namespace UI {
     extern float g_headTrackFadeSpeed;
     extern bool  g_debugRaycasts;
     extern int   g_loggingLevel;
+
+    void Register();
     void Settings();
     void DrawCinematicBars();
 

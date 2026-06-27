@@ -47,10 +47,10 @@ static spdlog::level::level_enum LoggingLevelToSpdlog(int loggingLevel) {
 
     switch (loggingLevel) {
 
-    case 0:  return spdlog::level::critical;
-    case 1:  return spdlog::level::warn;
-    case 3:  return spdlog::level::debug;
-    default: return spdlog::level::info;
+        case 0:  return spdlog::level::critical;
+        case 1:  return spdlog::level::warn;
+        case 3:  return spdlog::level::debug;
+        default: return spdlog::level::info;
 
     }
 
@@ -60,11 +60,11 @@ static spdlog::level::level_enum LoggingLevelToSpdlog(int loggingLevel) {
 // Font Awesome Icons
 // ---------------------------------------------------------------------------
 
-auto settingsIcon = FontAwesome::UnicodeToUtf8(0xf013);
-auto poiSystemIcon = FontAwesome::UnicodeToUtf8(0xf3c5);
-auto cameraIcon = FontAwesome::UnicodeToUtf8(0xf03d);
-auto playerIcon = FontAwesome::UnicodeToUtf8(0xf183);
-auto debugIcon = FontAwesome::UnicodeToUtf8(0xf7d9);
+auto settingsIcon       =       FontAwesome::UnicodeToUtf8(0xf013);
+auto poiSystemIcon      =       FontAwesome::UnicodeToUtf8(0xf3c5);
+auto cameraIcon         =       FontAwesome::UnicodeToUtf8(0xf03d);
+auto playerIcon         =       FontAwesome::UnicodeToUtf8(0xf183);
+auto debugIcon          =       FontAwesome::UnicodeToUtf8(0xf7d9);
 
 void UI::Register() {
 
@@ -106,8 +106,7 @@ void UI::DrawCinematicBars() {
 
         s_progress = std::min(1.0f, s_progress + slideSpeed * dt);
 
-    }
-    else {
+    } else {
 
         s_progress = std::max(0.0f, s_progress - slideSpeed * dt);
 
@@ -169,6 +168,7 @@ void UI::Settings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::SetNextItemWidth(200.0f);
     float poiRadiusMeters = g_poiDetectionRadius / 70.0f;
+
     if (ImGuiMCP::SliderFloat("##poiDetectionRadius", &poiRadiusMeters, 0.0f, 100.0f, "%.1f m")) {
 
         g_poiDetectionRadius = poiRadiusMeters * 70.0f;
@@ -182,6 +182,7 @@ void UI::Settings() {
     ImGuiMCP::Text("Minimum Lock Duration");
     ImGuiMCP::SameLine();
     ImGuiMCP::SetNextItemWidth(200.0f);
+
     if (ImGuiMCP::SliderFloat("##lockDuration", &g_lockDuration, 0.0f, 30.0f, "%.1f sec")) {
 
         IniParser::Save();
@@ -206,6 +207,7 @@ void UI::Settings() {
     ImGuiMCP::Text("Timer");
     ImGuiMCP::SameLine();
     ImGuiMCP::SetNextItemWidth(200.0f);
+
     if (ImGuiMCP::SliderFloat("##idleTimer", &g_idleTimer, 1.0f, 300.0f, "%.0f sec")) {
 
         IniParser::Save();
@@ -221,8 +223,7 @@ void UI::Settings() {
                 setting->data.f = g_idleTimer;
                 logger::info("Camera Idle Timer Setting manually set to {} second(s)", g_idleTimer);
 
-            }
-            else {
+            } else {
 
                 logger::error("Setting not found in INISettingCollection!");
 
@@ -239,6 +240,7 @@ void UI::Settings() {
     ImGuiMCP::Text("Blend Duration");
     ImGuiMCP::SameLine();
     ImGuiMCP::SetNextItemWidth(200.0f);
+
     if (ImGuiMCP::SliderFloat("##blendDuration", &g_blendDuration, 0.1f, 5.0f, "%.2f sec")) {
 
         IniParser::Save();
@@ -263,6 +265,7 @@ void UI::Settings() {
     ImGuiMCP::Text("Head-Tracking Fade Speed");
     ImGuiMCP::SameLine();
     ImGuiMCP::SetNextItemWidth(200.0f);
+
     if (ImGuiMCP::SliderFloat("##headTrackFadeSpeed", &g_headTrackFadeSpeed, 0.1f, 10.0f, "%.1f units/s")) {
 
         IniParser::Save();
@@ -286,6 +289,7 @@ void UI::Settings() {
 
     ImGuiMCP::Text("Debug Raycast Visualization");
     ImGuiMCP::SameLine();
+
     if (ImGuiMCP::Checkbox("##debugRaycasts", &g_debugRaycasts)) {
 
         IniParser::Save();
@@ -298,6 +302,7 @@ void UI::Settings() {
     ImGuiMCP::Text("Logging Level");
     ImGuiMCP::SameLine();
     ImGuiMCP::SetNextItemWidth(200.0f);
+
     if (ImGuiMCP::SliderInt("##loggingLevel", &g_loggingLevel, 0, k_loggingLevelCount - 1, k_loggingLevelNames[g_loggingLevel])) {
 
         g_loggingLevel = std::clamp(g_loggingLevel, 0, k_loggingLevelCount - 1);
@@ -315,6 +320,7 @@ void UI::Settings() {
 
     ImGuiMCP::Text("Reset All Settings To Default");
     ImGuiMCP::SameLine();
+
     if (ImGuiMCP::Button("Reset##resetAll")) {
 
         g_idleTimer = k_defaultIdleTimer;
@@ -329,6 +335,7 @@ void UI::Settings() {
         if (iniSettings) {
 
             auto* setting = iniSettings->GetSetting("fAutoVanityModeDelay:Camera");
+
             if (setting) {
 
                 setting->data.f = g_idleTimer;
