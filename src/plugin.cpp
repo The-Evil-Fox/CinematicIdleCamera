@@ -11,77 +11,88 @@ static void MessageHandler(SKSE::MessagingInterface::Message* msg) {
 
     switch (msg->type) {
 
-        case SKSE::MessagingInterface::kPostLoad: {
+    case SKSE::MessagingInterface::kPostLoad: {
 
-            break;
+        Hooks::SmoothCamCompat::RegisterListener();
+        break;
+
+    }
+
+    case SKSE::MessagingInterface::kPostPostLoad: {
+
+        Hooks::SmoothCamCompat::RequestInterface();
+        break;
+
+    }
+
+    case SKSE::MessagingInterface::kSaveGame: {
+
+        break;
+
+    }
+
+    case SKSE::MessagingInterface::kPreLoadGame: {
+
+        break;
+
+    }
+
+    case SKSE::MessagingInterface::kPostLoadGame: {
+
+        break;
+
+    }
+
+    case SKSE::MessagingInterface::kNewGame: {
+
+        static bool registered = false;
+
+        if (!registered) {
+
+            DebugAPI_IMPL::DebugOverlayMenu::Register();
+            registered = true;
 
         }
 
-        case SKSE::MessagingInterface::kSaveGame: {
+        break;
 
-            break;
+    }
 
-        }
+    case SKSE::MessagingInterface::kDataLoaded: {
 
-        case SKSE::MessagingInterface::kPreLoadGame: {
+        IniParser::Load();
 
-            break;
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        // Used to manually set the idle timer for the vanity cam in the virtual copy of the skyrimprefs everytime the game is loaded.
+        // So it doesn't overwrite user's existing params in skyrimprefs since this copy is not saved once the game is shut down.
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-        }
+        auto* iniSettings = RE::INISettingCollection::GetSingleton();
 
-        case SKSE::MessagingInterface::kPostLoadGame: {
+        if (iniSettings) {
 
-            break;
-    
-        }
+            auto* vanityModeDelaySetting = iniSettings->GetSetting("fAutoVanityModeDelay:Camera");
 
-        case SKSE::MessagingInterface::kNewGame: {
+            if (vanityModeDelaySetting) {
 
-            static bool registered = false;
+                vanityModeDelaySetting->data.f = UI::g_idleTimer;
 
-            if (!registered) {
+            }
+            else {
 
-                DebugAPI_IMPL::DebugOverlayMenu::Register();
-                registered = true;
+                logger::error("Setting not found in INISettingCollection !");
 
             }
 
-            break;
-
         }
 
-        case SKSE::MessagingInterface::kDataLoaded: {
+        break;
 
-            IniParser::Load();
+    }
 
-            // Used to manually set the idle timer for the vanity cam in the virtual copy of the skyrimprefs everytime the game is loaded
-            // So it doesn't overwrite user's existing params in skyrimprefs since this copy is not saved once the game is shut down
+    default:
 
-            auto* iniSettings = RE::INISettingCollection::GetSingleton();
-
-            if (iniSettings) {
-
-                auto* setting = iniSettings->GetSetting("fAutoVanityModeDelay:Camera");
-
-                if (setting) {
-
-                    setting->data.f = UI::g_idleTimer;
-
-                } else {
-
-                    logger::error("Setting not found in INISettingCollection !");
-
-                }
-
-            }
-
-            break;
-
-        }
-
-        default:
-
-            break;
+        break;
 
     }
 
@@ -91,12 +102,15 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse) {
 
     SKSE::Init(skse);
 
+    SKSE::AllocTrampoline(256);
+
     UI::Register();
 
     SKSE::GetMessagingInterface()->RegisterListener(MessageHandler);
 
     Hooks::AutoVanityStateHook::Install();
-    logger::info("Cinematic Camera Idle has fully loaded succesfully !");
+    Hooks::AutoVanityState_GetTranslationHelper::Install();
+    logger::info("Cinematic Camera Idle has fully loaded successfully!");
 
     return true;
 

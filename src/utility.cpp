@@ -63,6 +63,21 @@ void IniParser::Load() {
             UI::g_blendDuration = std::stof(value);
             logger::debug("Loaded blendDuration: {}", UI::g_blendDuration);
 
+        } else if (key == "idleCameraOffsetX") {
+
+            UI::g_IdleCamOffsetX = std::stof(value);
+            logger::debug("Loaded idleCameraOffsetX: {}", UI::g_IdleCamOffsetX);
+
+        } else if (key == "idleCameraOffsetY") {
+
+            UI::g_IdleCamOffsetY = std::stof(value);
+            logger::debug("Loaded idleCameraOffsetY: {}", UI::g_IdleCamOffsetY);
+
+        } else if (key == "idleCameraOffsetZ") {
+
+            UI::g_IdleCamOffsetZ = std::stof(value);
+            logger::debug("Loaded idleCameraOffsetZ: {}", UI::g_IdleCamOffsetZ);
+
         } else if (key == "headTrackFadeSpeed") {
 
             UI::g_headTrackFadeSpeed = std::stof(value);
@@ -120,6 +135,11 @@ void IniParser::Save() {
     file << "\n";
     file << "; Head-Track Fade Speed (units/sec)\n";
     file << "headTrackFadeSpeed=" << UI::g_headTrackFadeSpeed << "\n";
+    file << "\n";
+    file << "; Idle Camera Offsets (Skyrim units)\n";
+    file << "idleCameraOffsetX=" << UI::g_IdleCamOffsetX << "\n";
+    file << "idleCameraOffsetY=" << UI::g_IdleCamOffsetY << "\n";
+    file << "idleCameraOffsetZ=" << UI::g_IdleCamOffsetZ << "\n";
     file << "\n";
     file << "; Debug Raycast Visualization (0 = off, 1 = on)\n";
     file << "debugRaycasts=" << (UI::g_debugRaycasts ? "1" : "0") << "\n";

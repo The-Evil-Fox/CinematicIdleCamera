@@ -7,18 +7,23 @@ namespace logger = SKSE::log;
 
 namespace Hooks {
 
-    // ---------------------------------------------------------------------------
-    // POI state
-    // ---------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  Default POI system state
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     static RE::TESObjectREFR*   s_currentPOI = nullptr;
     static float                s_currentScore = 0.0f;
     static float                s_lockTimer = 0.0f;
 
-    // ---------------------------------------------------------------------------
-    // Cinematic transition state
-    // ---------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  Debug-draw gating: Only draw a debug line when this is set to true
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+    static bool                 s_drawDebugForThisCall = false;
+
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  Cinematic transition state
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     // Starting rotation angle when a blend begins (captured at the moment a new POI is acquired or released).
 
@@ -37,15 +42,9 @@ namespace Hooks {
 
     static float                s_headTrackWeight = 0.0f;
 
-    // ---------------------------------------------------------------------------
-    // Debug-draw gating: Only draw a debug line when this is set to true
-    // ---------------------------------------------------------------------------
-
-    static bool                 s_drawDebugForThisCall = false;
-
-    // ---------------------------------------------------------------------------
-    // Helpers
-    // ---------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  Helpers for the camera Rotation
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     // Remaps t to a smooth [0,1] curve (slow start, fast middle, slow end) for natural-feeling transitions.
 
@@ -77,27 +76,31 @@ namespace Hooks {
     }
 
     // ---------------------------------------------------------------------------
-    // Debug lines colors
+    //  Debug lines colors
     // ---------------------------------------------------------------------------
 
     static const RE::NiColorA kBlue{ 0.0f, 0.4f, 1.0f, 1.0f };
     static const RE::NiColorA kGreen{ 0.0f, 1.0f, 0.0f, 1.0f };
 
-    // ---------------------------------------------------------------------------
-    // Line-of-sight raycasting
-    // ---------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  Line-of-sight raycasting
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  
+    //  NOTE:
+    // 
+    //  Visual contract (only relevant when UI::g_debugRaycasts && s_drawDebugForThisCall):
+    // 
+    //    - While the camera is still blending/rotating toward the focused POI
+    //      (s_blendT < 1.0f): draw the ray in BLUE.
+    // 
+    //    - Once the camera has fully settled on the POI (s_blendT >= 1.0f): draw
+    //      the ray in GREEN as a steady "locked on" cue.
     //
-    // Visual contract (only relevant when UI::g_debugRaycasts && s_drawDebugForThisCall):
-    //   - While the camera is still blending/rotating toward the focused POI
-    //     (s_blendT < 1.0f): draw the ray in BLUE.
-    //   - Once the camera has fully settled on the POI (s_blendT >= 1.0f): draw
-    //     the ray in GREEN as a steady "locked on" cue.
-    //
-    // Hit detection: only kStatic, kTerrain, and kGround hits count as blockers.
-    // Hits against actors, character controllers, or any other layer are ignored.
-    // The ray start is offset along the direction vector to avoid self-intersection
-    // with the player's own collision capsule.
-    // ---------------------------------------------------------------------------
+    //  Hit detection: only kStatic, kTerrain, and kGround hits count as blockers.
+    //  Hits against actors, character controllers, or any other layer are ignored.
+    //  The ray start is offset along the direction vector to avoid self-intersection
+    //  with the player's own collision capsule.
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     inline bool TESRayHitStatic(RE::bhkWorld* world, RE::NiPoint3 start, RE::NiPoint3 end, const RE::NiColorA& a_drawColor, bool a_allowDraw) {
 
@@ -176,6 +179,10 @@ namespace Hooks {
 
     }
 
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  To detect if the raycast is colliding with something between the player & the target
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
     inline bool HasAnythingBetween(RE::NiPoint3 start, RE::NiPoint3 end) {
 
         auto* player = RE::PlayerCharacter::GetSingleton();
@@ -226,7 +233,119 @@ namespace Hooks {
 
     }
 
-    // ---------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  SmoothCam compatibility using its API
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    void SmoothCamCompat::RegisterListener() noexcept {
+        // Registers a listener that fires when SmoothCam sends back its interface pointer.
+        // Must be called at kPostLoad, before SmoothCam itself processes kPostPostLoad.
+        const bool ok = SmoothCamAPI::RegisterInterfaceLoaderCallback(
+            SKSE::GetMessagingInterface(),
+            [](void* interfaceInstance, SmoothCamAPI::InterfaceVersion version) {
+                if (version < SmoothCamAPI::InterfaceVersion::V3) {
+                    logger::warn("SmoothCamCompat: got interface V{} but need V3 – compat inactive",
+                        static_cast<int>(version));
+                    return;
+                }
+                s_api = static_cast<SmoothCamAPI::IVSmoothCam3*>(interfaceInstance);
+                logger::info("SmoothCamCompat: IVSmoothCam3 acquired successfully");
+            }
+        );
+
+        if (!ok) {
+            logger::info("SmoothCamCompat: SmoothCam not present – compat layer inactive");
+        }
+    }
+
+    void SmoothCamCompat::RequestInterface() noexcept {
+        // Sends the actual interface request to SmoothCam.
+        // SmoothCam responds by invoking the callback registered above.
+        SmoothCamAPI::RequestInterface(
+            SKSE::GetMessagingInterface(),
+            SmoothCamAPI::InterfaceVersion::V3
+        );
+    }
+
+    void SmoothCamCompat::Acquire() noexcept {
+        if (!s_api || s_holding) return;
+
+        const auto result = s_api->RequestCameraControl(SKSE::GetPluginHandle());
+        if (result == SmoothCamAPI::APIResult::OK ||
+            result == SmoothCamAPI::APIResult::AlreadyGiven) {
+            s_holding = true;
+            logger::debug("SmoothCamCompat: camera control acquired");
+        }
+        else {
+            logger::warn("SmoothCamCompat: RequestCameraControl returned {}",
+                static_cast<int>(result));
+        }
+    }
+
+    void SmoothCamCompat::Release() noexcept {
+        if (!s_api || !s_holding) return;
+
+        const auto result = s_api->ReleaseCameraControl(SKSE::GetPluginHandle());
+        if (result == SmoothCamAPI::APIResult::OK ||
+            result == SmoothCamAPI::APIResult::NotOwner) {
+            s_holding = false;
+            logger::debug("SmoothCamCompat: camera control released");
+        }
+        else {
+            logger::warn("SmoothCamCompat: ReleaseCameraControl returned {}",
+                static_cast<int>(result));
+        }
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  Camera position offset hook
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    void Hooks::AutoVanityState_GetTranslationHelper::thunk(RE::AutoVanityState* a_this, std::int64_t param_2, RE::NiPoint3* param_3, std::int64_t param_4, std::uint32_t param_5) {
+        
+        func(a_this, param_2, param_3, param_4, param_5);
+
+        // param_2 is actually float* pointing to local_70 (x), local_6c (y), local_68 (z)
+        float* translation = reinterpret_cast<float*>(param_2);
+
+        if (translation) {
+
+            logger::debug("translation: {:.2f} {:.2f} {:.2f} before", translation[0], translation[1], translation[2]);
+
+            translation[0] += UI::g_IdleCamOffsetX;
+            translation[1] += UI::g_IdleCamOffsetY;
+            translation[2] += UI::g_IdleCamOffsetZ;
+
+            logger::debug("translation: {:.2f} {:.2f} {:.2f} after", translation[0], translation[1], translation[2]);
+
+        }
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  Install function of the custom translation for the vanity camera
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    void Hooks::AutoVanityState_GetTranslationHelper::Install()
+    {
+        SKSE::AllocTrampoline(1 << 7);
+        auto& trampoline = SKSE::GetTrampoline();
+
+        // Patch call site inside GetTranslation
+        REL::Relocation<std::uintptr_t> site1{ REL::Offset(0x8DDD39) };
+        // Patch call site inside Update  
+        REL::Relocation<std::uintptr_t> site2{ REL::Offset(0x8DDEC5) };
+
+        func = trampoline.write_call<5>(site1.address(), thunk);
+        trampoline.write_call<5>(site2.address(), thunk);
+
+        logger::debug("site1: {:x}", site1.address());
+        logger::debug("site2: {:x}", site2.address());
+        logger::debug("func.get(): {:x}", reinterpret_cast<std::uintptr_t>(func.get()));
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  Get the currently selected actor's action
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     POIAction AutoVanityStateHook::GetActorAction(RE::Actor* a_actor) {
 
@@ -242,6 +361,12 @@ namespace Hooks {
 
         }
 
+        if (a_actor->IsInCombat()) {
+
+            return POIAction::InCombat;
+
+        }
+
         if (a_actor->IsMoving()) {
 
             return POIAction::Moving;
@@ -252,7 +377,9 @@ namespace Hooks {
 
     }
 
-    // ---------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  Install Function Of The AutoVanityHook
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     void AutoVanityStateHook::Install() {
 
@@ -372,9 +499,9 @@ namespace Hooks {
 
     }
 
-    // ---------------------------------------------------------------------------
-    // Head-tracking: weight-driven so we can fade in/out instead of toggling
-    // ---------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  Head-tracking: weight-driven so we can fade in/out instead of toggling
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     static void UpdatePlayerHeadtrack(RE::PlayerCharacter* a_player, RE::TESObjectREFR* a_target, float a_weight) {
 
@@ -450,9 +577,9 @@ namespace Hooks {
 
     }
 
-    // ---------------------------------------------------------------------------
-    // Wipe all debug lines from the internal list and the screen
-    // ---------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  Used to wipe all debug lines from the internal list and the screen
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     static void PurgeDebugLines() {
 
@@ -477,24 +604,15 @@ namespace Hooks {
 
     }
 
-    // ---------------------------------------------------------------------------
-    // Vanity mode begins here
-    // ---------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  Vanity mode begins here
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     void AutoVanityStateHook::Update(RE::AutoVanityState* a_this, RE::BSTSmartPointer<RE::TESCameraState>& a_nextState) {
 
-        // We still call vanilla's _Update() for whatever internal state-machine
-        // bookkeeping AutoVanityState does, but we deliberately do NOT use its
-        // autoVanityRot output as our "behind the player" reference. Vanilla
-        // auto-vanity slowly auto-rotates the camera around the player on its
-        // own; using that value as baseRot would reintroduce unwanted drift
-        // even when no POI is active at all.
-        //
-        // "Behind the player, looking over the shoulder" is simply the
-        // player's own facing yaw - so baseRot is derived directly from
-        // player->GetAngleZ() every frame, not from _Update(). This keeps the
-        // camera perfectly still relative to the player (it only changes if
-        // the player itself turns) instead of orbiting/drifting.
+        
+        SmoothCamCompat::Acquire();
+
         _Update(a_this, a_nextState);
 
         auto* player = RE::PlayerCharacter::GetSingleton();
@@ -520,9 +638,9 @@ namespace Hooks {
 
         const float dt = RE::BSTimer::GetSingleton()->realTimeDelta;
 
-        // -----------------------------------------------------------------------
-        // 1. Tick the POI lock timer
-        // -----------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------------------------------------
+        //  1. Tick the POI lock timer
+        // ---------------------------------------------------------------------------------------------------------------------
 
         if (s_lockTimer > 0.0f) {
 
@@ -530,9 +648,9 @@ namespace Hooks {
 
         }
 
-        // -----------------------------------------------------------------------
-        // 2. Validate current POI
-        // -----------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------------------------------------
+        //  2. Validate current POI
+        // ---------------------------------------------------------------------------------------------------------------------
 
         if (s_currentPOI) {
 
@@ -546,9 +664,12 @@ namespace Hooks {
 
             }
 
-            // If the POI is still in range and alive, also check whether it has become occluded since we locked onto it. 
-            // If so, drop it so the system can immediately search for a visible alternative. 
-            // This is the ONLY raycast call allowed to draw debug lines: it is checking the actor that is actually the current focus.
+            // ---------------------------------------------------------------------------------------------------------------------
+            //  If the POI is still in range and alive, also check whether it has become occluded since we locked onto it. 
+            //  If so, drop it so the system can immediately search for a visible alternative. 
+            //  This is the ONLY raycast call allowed to draw debug lines: 
+            //  it is checking the actor that is actually the current focus.
+            // ---------------------------------------------------------------------------------------------------------------------
 
             s_drawDebugForThisCall = true;
             bool occluded = HasAnythingBetween(player->GetPosition(), s_currentPOI->GetPosition());
@@ -575,11 +696,15 @@ namespace Hooks {
 
         }
 
-        // -----------------------------------------------------------------------
-        // 3. Search for a new / better POI
-        // -----------------------------------------------------------------------
-        // NOTE: FindBestPOI internally forces s_drawDebugForThisCall = false for
-        // its whole scan, so none of the candidate-checking raycasts draw here
+        // ---------------------------------------------------------------------------------------------------------------------
+        //  3. Search for a new / better POI
+        // ---------------------------------------------------------------------------------------------------------------------
+        //
+        //  NOTE: 
+        // 
+        //  FindBestPOI internally forces s_drawDebugForThisCall = false for its whole scan,
+        //  so none of the candidate-checking raycasts draw here
+        // ---------------------------------------------------------------------------------------------------------------------
 
         if (s_lockTimer <= 0.0f) {
 
@@ -620,9 +745,9 @@ namespace Hooks {
 
         }
 
-        // -----------------------------------------------------------------------
-        // 4. Drive the camera rotation
-        // -----------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------------------------------------
+        //  4. Drive the camera rotation
+        // ---------------------------------------------------------------------------------------------------------------------
 
         if (s_currentPOI) {
 
@@ -654,13 +779,16 @@ namespace Hooks {
 
             if (s_blendT < 1.0f) {
 
-                // Keep retargeting to the LIVE forward angle every frame (just
-                // like the POI-tracking branch above retargets to liveAngle),
-                // instead of blending toward a stale snapshot taken back when
-                // BeginBlend() first fired. Without this, a player who keeps
-                // turning the camera while the exit blend is in progress would
-                // blend toward where "forward" used to be, then pop to the
-                // correct value the instant s_blendT reaches 1.0f.
+                // -----------------------------------------------------------------------------------
+                //  Keep retargeting to the LIVE forward angle every frame (just
+                //  like the POI-tracking branch above retargets to liveAngle),
+                //  instead of blending toward a stale snapshot taken back when
+                //  BeginBlend() first fired. Without this, a player who keeps
+                //  turning the camera while the exit blend is in progress would
+                //  blend toward where "forward" used to be, then pop to the
+                //  correct value the instant s_blendT reaches 1.0f.
+                // -----------------------------------------------------------------------------------
+
                 s_blendTargetRot = baseRot;
 
                 s_blendT = std::min(1.0f, s_blendT + dt / std::max(0.01f, UI::g_blendDuration));
@@ -681,21 +809,25 @@ namespace Hooks {
 
     }
 
-    // ---------------------------------------------------------------------------
-    // Vanity mode ends here, the code below executes once player leaves it
-    // ---------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  Vanity mode ends here, the code below executes once player leaves it
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     void AutoVanityStateHook::EndState(RE::AutoVanityState* a_this) {
 
         logger::debug("AutoVanity EndState hook fired");
         _EndState(a_this);
 
-        // Wipe all debug lines when vanity mode ends
+
+        // -----------------------------------------------------------------------------------
+        //  Wipe all debug lines when vanity mode ends
+        // -----------------------------------------------------------------------------------
+
         PurgeDebugLines();
 
-        // -----------------------------------------------------------------------
-        // Reset all POI/blend state so the next vanity session starts clean.
-        // -----------------------------------------------------------------------
+        // -----------------------------------------------------------------------------------
+        //  Reset all POI/blend state so the next vanity session starts clean.
+        // -----------------------------------------------------------------------------------
 
         s_currentPOI = nullptr;
         s_currentScore = 0.0f;
@@ -706,6 +838,13 @@ namespace Hooks {
         s_blendT = 1.0f;
 
         s_headTrackWeight = 0.0f;
+
+
+        // -----------------------------------------------------------------------------------
+        //  Give back the controls of the camera to SmoothCam after exiting Vanity Mode
+        // -----------------------------------------------------------------------------------
+
+        SmoothCamCompat::Release();
 
     }
 
