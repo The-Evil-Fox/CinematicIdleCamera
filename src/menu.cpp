@@ -13,8 +13,8 @@ static constexpr float          k_defaultIdleTimer = 5.0f;
 static constexpr float          k_defaultPoiDetectionRadius = 1050.0f;
 static constexpr float          k_defaultLockDuration = 3.0f;
 static constexpr float          k_defaultBlendDuration = 3.0f;
-static constexpr float          k_defaultVanityCamOffsetX = -150.0f;
-static constexpr float          k_defaultVanityCamOffsetY = 75.0f;
+static constexpr float          k_defaultVanityCamOffsetX = 100.0f;
+static constexpr float          k_defaultVanityCamOffsetY = 130.0f;
 static constexpr float          k_defaultVanityCamOffsetZ = 0.0f;
 static constexpr float          k_defaultHeadTrackFadeSpeed = 2.0f;
 static constexpr bool           k_defaultDebugRaycasts = false;
@@ -81,8 +81,7 @@ static void ApplyIdleTimerToIniSettings(std::string settingName, float value) {
 
             setting->data.f = value;
 
-        }
-        else {
+        } else {
 
             logger::error("Setting not found in INISettingCollection!");
 
@@ -212,8 +211,7 @@ void UI::DrawCinematicBars() {
 
         s_progress = std::min(1.0f, s_progress + slideSpeed * dt);
 
-    }
-    else {
+    } else {
 
         s_progress = std::max(0.0f, s_progress - slideSpeed * dt);
 

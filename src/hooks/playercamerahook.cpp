@@ -75,20 +75,13 @@ namespace Hooks {
 
     }
 
-    // ---------------------------------------------------------------------------
-    //  Debug lines colors
-    // ---------------------------------------------------------------------------
-
-    static const RE::NiColorA kBlue{ 0.0f, 0.4f, 1.0f, 1.0f };
-    static const RE::NiColorA kGreen{ 0.0f, 1.0f, 0.0f, 1.0f };
-
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     //  Line-of-sight raycasting
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     //  
     //  NOTE:
     // 
-    //  Visual contract (only relevant when UI::g_debugRaycasts && s_drawDebugForThisCall):
+    //  only relevant when UI::g_debugRaycasts && s_drawDebugForThisCall:
     // 
     //    - While the camera is still blending/rotating toward the focused POI
     //      (s_blendT < 1.0f): draw the ray in BLUE.
@@ -102,6 +95,13 @@ namespace Hooks {
     //  with the player's own collision capsule.
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+    // ---------------------------------------------------------------------------
+    //  Debug lines colors
+    // ---------------------------------------------------------------------------
+
+    static const RE::NiColorA kBlue{ 0.0f, 0.4f, 1.0f, 1.0f };
+    static const RE::NiColorA kGreen{ 0.0f, 1.0f, 0.0f, 1.0f };
+    
     inline bool TESRayHitStatic(RE::bhkWorld* world, RE::NiPoint3 start, RE::NiPoint3 end, const RE::NiColorA& a_drawColor, bool a_allowDraw) {
 
         const bool canDraw = UI::g_debugRaycasts && s_drawDebugForThisCall && a_allowDraw;
@@ -238,63 +238,81 @@ namespace Hooks {
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     void SmoothCamCompat::RegisterListener() noexcept {
+
         // Registers a listener that fires when SmoothCam sends back its interface pointer.
         // Must be called at kPostLoad, before SmoothCam itself processes kPostPostLoad.
         const bool ok = SmoothCamAPI::RegisterInterfaceLoaderCallback(
+
             SKSE::GetMessagingInterface(),
+
             [](void* interfaceInstance, SmoothCamAPI::InterfaceVersion version) {
+
                 if (version < SmoothCamAPI::InterfaceVersion::V3) {
-                    logger::warn("SmoothCamCompat: got interface V{} but need V3 – compat inactive",
-                        static_cast<int>(version));
+
+                    logger::warn("SmoothCamCompat: got interface V{} but need V3 – compat inactive", static_cast<int>(version));
                     return;
+
                 }
+
                 s_api = static_cast<SmoothCamAPI::IVSmoothCam3*>(interfaceInstance);
                 logger::info("SmoothCamCompat: IVSmoothCam3 acquired successfully");
+
             }
+
         );
 
         if (!ok) {
+
             logger::info("SmoothCamCompat: SmoothCam not present – compat layer inactive");
+
         }
+
     }
 
     void SmoothCamCompat::RequestInterface() noexcept {
+
         // Sends the actual interface request to SmoothCam.
         // SmoothCam responds by invoking the callback registered above.
-        SmoothCamAPI::RequestInterface(
-            SKSE::GetMessagingInterface(),
-            SmoothCamAPI::InterfaceVersion::V3
-        );
+        SmoothCamAPI::RequestInterface(SKSE::GetMessagingInterface(), SmoothCamAPI::InterfaceVersion::V3);
+
     }
 
     void SmoothCamCompat::Acquire() noexcept {
+
         if (!s_api || s_holding) return;
 
         const auto result = s_api->RequestCameraControl(SKSE::GetPluginHandle());
-        if (result == SmoothCamAPI::APIResult::OK ||
-            result == SmoothCamAPI::APIResult::AlreadyGiven) {
+
+        if (result == SmoothCamAPI::APIResult::OK || result == SmoothCamAPI::APIResult::AlreadyGiven) {
+
             s_holding = true;
             logger::debug("SmoothCamCompat: camera control acquired");
+
+        } else {
+
+            logger::warn("SmoothCamCompat: RequestCameraControl returned {}", static_cast<int>(result));
+
         }
-        else {
-            logger::warn("SmoothCamCompat: RequestCameraControl returned {}",
-                static_cast<int>(result));
-        }
+
     }
 
     void SmoothCamCompat::Release() noexcept {
+
         if (!s_api || !s_holding) return;
 
         const auto result = s_api->ReleaseCameraControl(SKSE::GetPluginHandle());
-        if (result == SmoothCamAPI::APIResult::OK ||
-            result == SmoothCamAPI::APIResult::NotOwner) {
+
+        if (result == SmoothCamAPI::APIResult::OK || result == SmoothCamAPI::APIResult::NotOwner) {
+
             s_holding = false;
             logger::debug("SmoothCamCompat: camera control released");
+
+        } else {
+
+            logger::warn("SmoothCamCompat: ReleaseCameraControl returned {}", static_cast<int>(result));
+
         }
-        else {
-            logger::warn("SmoothCamCompat: ReleaseCameraControl returned {}",
-                static_cast<int>(result));
-        }
+
     }
 
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -302,7 +320,7 @@ namespace Hooks {
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     void Hooks::AutoVanityState_GetTranslationHelper::thunk(RE::AutoVanityState* a_this, std::int64_t param_2, RE::NiPoint3* param_3, std::int64_t param_4, std::uint32_t param_5) {
-        
+
         func(a_this, param_2, param_3, param_4, param_5);
 
         // param_2 is actually float* pointing to local_70 (x), local_6c (y), local_68 (z)
@@ -312,13 +330,30 @@ namespace Hooks {
 
             logger::debug("translation: {:.2f} {:.2f} {:.2f} before", translation[0], translation[1], translation[2]);
 
-            translation[0] += UI::g_IdleCamOffsetX;
-            translation[1] += UI::g_IdleCamOffsetY;
-            translation[2] += UI::g_IdleCamOffsetZ;
+            // The user-facing sliders are defined in *local* camera space:
+            //   X = right/left, Y = forward/back, Z = up/down
+            // but "translation" here is world space, so we have to rotate the
+            // local offset into world space using the camera's current facing
+            // angle before adding it - otherwise "right" only means "world +X"
+            // for the one facing angle it was tuned at.
+
+            const float rot = a_this->autoVanityRot;
+            const float s = std::sin(rot);
+            const float c = std::cos(rot);
+
+            // Forward = (sin(rot), cos(rot)), Right = (cos(rot), -sin(rot))
+            // (see UpdatePlayerHeadtrack's forwardPos calculation).
+            const float worldOffsetX = c * UI::g_IdleCamOffsetX + s * UI::g_IdleCamOffsetY;
+            const float worldOffsetY = -s * UI::g_IdleCamOffsetX + c * UI::g_IdleCamOffsetY;
+
+            translation[0] += worldOffsetX;
+            translation[1] += worldOffsetY;
+            translation[2] += UI::g_IdleCamOffsetZ; // vertical offset is rotation-independent
 
             logger::debug("translation: {:.2f} {:.2f} {:.2f} after", translation[0], translation[1], translation[2]);
 
         }
+
     }
 
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -469,6 +504,7 @@ namespace Hooks {
                 case POIAction::InScene:        score = 300.0f;                                     break;
                 case POIAction::Idle:           score = 10.0f;                                      break;
                 default:                                                                            break;
+            
             }
 
             score += proximityFactor * 50.0f;
@@ -512,6 +548,7 @@ namespace Hooks {
         }
 
         auto* currentProcess = a_player->GetActorRuntimeData().currentProcess;
+
         if (!currentProcess) {
 
             return;
@@ -609,7 +646,6 @@ namespace Hooks {
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     void AutoVanityStateHook::Update(RE::AutoVanityState* a_this, RE::BSTSmartPointer<RE::TESCameraState>& a_nextState) {
-
         
         SmoothCamCompat::Acquire();
 
