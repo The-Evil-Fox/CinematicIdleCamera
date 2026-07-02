@@ -11,88 +11,87 @@ static void MessageHandler(SKSE::MessagingInterface::Message* msg) {
 
     switch (msg->type) {
 
-    case SKSE::MessagingInterface::kPostLoad: {
+        case SKSE::MessagingInterface::kPostLoad: {
 
-        Hooks::SmoothCamCompat::RegisterListener();
-        break;
-
-    }
-
-    case SKSE::MessagingInterface::kPostPostLoad: {
-
-        Hooks::SmoothCamCompat::RequestInterface();
-        break;
-
-    }
-
-    case SKSE::MessagingInterface::kSaveGame: {
-
-        break;
-
-    }
-
-    case SKSE::MessagingInterface::kPreLoadGame: {
-
-        break;
-
-    }
-
-    case SKSE::MessagingInterface::kPostLoadGame: {
-
-        break;
-
-    }
-
-    case SKSE::MessagingInterface::kNewGame: {
-
-        static bool registered = false;
-
-        if (!registered) {
-
-            DebugAPI_IMPL::DebugOverlayMenu::Register();
-            registered = true;
+            Hooks::SmoothCamCompat::RegisterListener();
+            break;
 
         }
 
-        break;
+        case SKSE::MessagingInterface::kPostPostLoad: {
 
-    }
-
-    case SKSE::MessagingInterface::kDataLoaded: {
-
-        IniParser::Load();
-
-        // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        // Used to manually set the idle timer for the vanity cam in the virtual copy of the skyrimprefs everytime the game is loaded.
-        // So it doesn't overwrite user's existing params in skyrimprefs since this copy is not saved once the game is shut down.
-        // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-        auto* iniSettings = RE::INISettingCollection::GetSingleton();
-
-        if (iniSettings) {
-
-            auto* vanityModeDelaySetting = iniSettings->GetSetting("fAutoVanityModeDelay:Camera");
-
-            if (vanityModeDelaySetting) {
-
-                vanityModeDelaySetting->data.f = UI::g_idleTimer;
-
-            }
-            else {
-
-                logger::error("Setting not found in INISettingCollection !");
-
-            }
+            Hooks::SmoothCamCompat::RequestInterface();
+            break;
 
         }
 
-        break;
+        case SKSE::MessagingInterface::kSaveGame: {
 
-    }
+            break;
 
-    default:
+        }
 
-        break;
+        case SKSE::MessagingInterface::kPreLoadGame: {
+
+            break;
+
+        }
+
+        case SKSE::MessagingInterface::kPostLoadGame: {
+
+            break;
+
+        }
+
+        case SKSE::MessagingInterface::kNewGame: {
+
+            static bool registered = false;
+
+            if (!registered) {
+
+                DebugAPI_IMPL::DebugOverlayMenu::Register();
+                registered = true;
+
+            }
+
+            break;
+
+        }
+
+        case SKSE::MessagingInterface::kDataLoaded: {
+
+            IniParser::Load();
+
+            // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+            // Used to manually set the idle timer for the vanity cam in the virtual copy of the skyrimprefs everytime the game is loaded.
+            // So it doesn't overwrite user's existing params in skyrimprefs since this copy is not saved once the game is shut down.
+            // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+            auto* iniSettings = RE::INISettingCollection::GetSingleton();
+
+            if (iniSettings) {
+
+                auto* vanityModeDelaySetting = iniSettings->GetSetting("fAutoVanityModeDelay:Camera");
+
+                if (vanityModeDelaySetting) {
+
+                    vanityModeDelaySetting->data.f = UI::g_idleTimer;
+
+                } else {
+
+                    logger::error("Setting not found in INISettingCollection !");
+
+                }
+
+            }
+
+            break;
+
+        }
+
+        default:
+
+            break;
 
     }
 

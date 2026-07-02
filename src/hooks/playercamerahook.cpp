@@ -331,18 +331,17 @@ namespace Hooks {
             logger::debug("translation: {:.2f} {:.2f} {:.2f} before", translation[0], translation[1], translation[2]);
 
             // The user-facing sliders are defined in *local* camera space:
-            //   X = right/left, Y = forward/back, Z = up/down
-            // but "translation" here is world space, so we have to rotate the
-            // local offset into world space using the camera's current facing
-            // angle before adding it - otherwise "right" only means "world +X"
-            // for the one facing angle it was tuned at.
+            // X = right/left, Y = forward/back, Z = up/down
+            // 
+            // But "translation" here is world space, so we have to rotate the local offset into world space using the camera's current facing
+            // angle before adding it. Otherwise "right" only means "world +X" for the one facing angle it was tuned at.
 
             const float rot = a_this->autoVanityRot;
             const float s = std::sin(rot);
             const float c = std::cos(rot);
 
-            // Forward = (sin(rot), cos(rot)), Right = (cos(rot), -sin(rot))
-            // (see UpdatePlayerHeadtrack's forwardPos calculation).
+            // Forward = (sin(rot), cos(rot)), Right = (cos(rot), sin(rot))
+
             const float worldOffsetX = c * UI::g_IdleCamOffsetX + s * UI::g_IdleCamOffsetY;
             const float worldOffsetY = -s * UI::g_IdleCamOffsetX + c * UI::g_IdleCamOffsetY;
 
@@ -360,14 +359,15 @@ namespace Hooks {
     //  Install function of the custom translation for the vanity camera
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-    void Hooks::AutoVanityState_GetTranslationHelper::Install()
-    {
+    void Hooks::AutoVanityState_GetTranslationHelper::Install() {
+        
         SKSE::AllocTrampoline(1 << 7);
         auto& trampoline = SKSE::GetTrampoline();
 
         // Patch call site inside GetTranslation
         REL::Relocation<std::uintptr_t> site1{ REL::Offset(0x8DDD39) };
-        // Patch call site inside Update  
+
+        // Patch call site inside Update
         REL::Relocation<std::uintptr_t> site2{ REL::Offset(0x8DDEC5) };
 
         func = trampoline.write_call<5>(site1.address(), thunk);
@@ -376,6 +376,7 @@ namespace Hooks {
         logger::debug("site1: {:x}", site1.address());
         logger::debug("site2: {:x}", site2.address());
         logger::debug("func.get(): {:x}", reinterpret_cast<std::uintptr_t>(func.get()));
+
     }
 
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -426,7 +427,10 @@ namespace Hooks {
 
     }
 
-    // ---------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  POI function:
+    //  Compares and select the boi POI to be focused by the vanity camera
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     RE::TESObjectREFR* AutoVanityStateHook::FindBestPOI(POIAction& a_outAction, float& a_outScore) {
 
@@ -444,12 +448,9 @@ namespace Hooks {
         POIAction          bestAction = POIAction::None;
         float              bestScore = 0.0f;
 
-        // This entire scan must never draw debug lines - it runs once per
-        // candidate actor in range, and we only want lines for the actor
-        // that's actually locked as the current POI. The flag is already
-        // false on entry (set false at the end of Update() / by default),
-        // but we force it here too so FindBestPOI is safe to call from
-        // anywhere without leaking debug draws from a stale flag state.
+        // This entire scan must never draw debug lines. It runs once per candidate actor in range, and we only want lines for the actor that's actually locked as the current POI. 
+        // The flag is already  on entry (set false at the end of Update() / by default), but we force it here too so FindBestPOI is safe to call from anywhere without
+        // leaking debug draws from a stale flag state.
 
         s_drawDebugForThisCall = false;
 
@@ -465,7 +466,9 @@ namespace Hooks {
             auto* actor = ref->As<RE::Actor>();
 
             if (!actor) {
+
                 return RE::BSContainer::ForEachResult::kContinue;
+
             }
 
             if (actor->IsDead() || !actor->Is3DLoaded() || actor->IsDisabled()) {
@@ -474,6 +477,7 @@ namespace Hooks {
 
             }
 
+            // Skips followers from being targeted
             if (s_followerFaction && actor->IsInFaction(s_followerFaction)) {
 
                 logger::debug("POI {} rejected: actor is a follower.", ref->GetName());
@@ -481,9 +485,9 @@ namespace Hooks {
 
             }
 
-            // --- Line-of-sight check: skip POIs that are fully occluded --------
-            // NOTE: s_drawDebugForThisCall stays false for the whole scan, so
-            // this never draws regardless of UI::g_debugRaycasts.
+            // Line-of-sight check: skip POIs that are fully occluded.
+            // NOTE: s_drawDebugForThisCall stays false for the whole scan, so this never draws regardless of UI::g_debugRaycasts.
+
             if (HasAnythingBetween(player->GetPosition(), ref->GetPosition())) {
 
                 logger::debug("POI {} rejected: the reference is occluded!", ref->GetName());
@@ -744,9 +748,9 @@ namespace Hooks {
 
         if (s_lockTimer <= 0.0f) {
 
-            POIAction           foundAction = POIAction::None;
-            float               foundScore = 0.0f;
-            RE::TESObjectREFR* candidate = FindBestPOI(foundAction, foundScore);
+            POIAction                       foundAction = POIAction::None;
+            float                           foundScore = 0.0f;
+            RE::TESObjectREFR*              candidate = FindBestPOI(foundAction, foundScore);
 
             if (candidate && candidate != s_currentPOI) {
 

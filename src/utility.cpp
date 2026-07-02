@@ -124,26 +124,33 @@ void IniParser::Save() {
     file << "; Camera Idle Timer\n";
     file << "fIdleTimer=" << UI::g_idleTimer << "\n";
     file << "\n";
+
     file << "; POI Detection Radius (Skyrim units, ~70 units per meter)\n";
     file << "poiDetectionRadius=" << UI::g_poiDetectionRadius << "\n";
     file << "\n";
+
     file << "; POI Lock Duration (seconds the camera must stay on a POI before it can switch)\n";
     file << "lockDuration=" << UI::g_lockDuration << "\n";
     file << "\n";
+
     file << "; Camera Blend Duration (seconds for a POI-switch / entry / exit blend)\n";
     file << "blendDuration=" << UI::g_blendDuration << "\n";
     file << "\n";
+
     file << "; Head-Track Fade Speed (units/sec)\n";
     file << "headTrackFadeSpeed=" << UI::g_headTrackFadeSpeed << "\n";
     file << "\n";
+
     file << "; Idle Camera Offsets (Skyrim units)\n";
     file << "idleCameraOffsetX=" << UI::g_IdleCamOffsetX << "\n";
     file << "idleCameraOffsetY=" << UI::g_IdleCamOffsetY << "\n";
     file << "idleCameraOffsetZ=" << UI::g_IdleCamOffsetZ << "\n";
     file << "\n";
+
     file << "; Debug Raycast Visualization (0 = off, 1 = on)\n";
     file << "debugRaycasts=" << (UI::g_debugRaycasts ? "1" : "0") << "\n";
     file << "\n";
+
     file << "; Log Level (0=Quiet/critical, 1=Warnings, 2=Info, 3=Debug)\n";
     file << "logginglevel=" << UI::g_loggingLevel << "\n";
 

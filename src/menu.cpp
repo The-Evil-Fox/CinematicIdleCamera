@@ -95,12 +95,12 @@ static void ApplyIdleTimerToIniSettings(std::string settingName, float value) {
 //  Font Awesome Icons
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-auto settingsIcon = FontAwesome::UnicodeToUtf8(0xf013);
-auto poiSystemIcon = FontAwesome::UnicodeToUtf8(0xf3c5);
-auto cameraIcon = FontAwesome::UnicodeToUtf8(0xf03d);
-auto playerIcon = FontAwesome::UnicodeToUtf8(0xf183);
-auto debugIcon = FontAwesome::UnicodeToUtf8(0xf7d9);
-auto resetIcon = FontAwesome::UnicodeToUtf8(0xf2ea);
+auto settingsIcon       =           FontAwesome::UnicodeToUtf8(0xf013);
+auto poiSystemIcon      =           FontAwesome::UnicodeToUtf8(0xf3c5);
+auto cameraIcon         =           FontAwesome::UnicodeToUtf8(0xf03d);
+auto playerIcon         =           FontAwesome::UnicodeToUtf8(0xf183);
+auto debugIcon          =           FontAwesome::UnicodeToUtf8(0xf7d9);
+auto resetIcon          =           FontAwesome::UnicodeToUtf8(0xf2ea);
 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  Shows a hovering tooltip describing the parameter. Call this right after the widget (slider/checkbox) it
