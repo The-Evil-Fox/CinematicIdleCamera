@@ -446,6 +446,94 @@ namespace Hooks {
         POIAction          bestAction = POIAction::None;
         float              bestScore = 0.0f;
 
+        // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        //  Flying-critter POI tunable (butterflies, moths, dragonflies, etc. are Activator refs, not Actors)
+        // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+        static constexpr float kFlyingCritterBaseScore = 50.0f;   // > Idle (10), well under InScene (300)
+
+        // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        //  Flying-critter detection (local to this scan)
+        // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        //
+        //  Flying bugs (butterflies, moths, dragonflies...) are TESObjectACTI refs, not Actors,
+        //  so they can't be filtered the way NPCs/creatures are. We identify them via:
+        //
+        //    1. EditorID convention: vanilla + most critter-replacer mods name these "Critter<Name>"
+        //       (e.g. "CritterMothBlue", "CritterDragonfly01").
+        //
+        //    2. Fallback: model path substring match against common flying-bug tokens, in case a
+        //       mod doesn't follow the EditorID convention.
+        // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+        auto containsCaseInsensitive = [](std::string_view a_haystack, std::string_view a_needle) {
+
+            auto it = std::search(
+
+                a_haystack.begin(), a_haystack.end(),
+                a_needle.begin(), a_needle.end(),
+                [](char a, char b) { return std::tolower(static_cast<unsigned char>(a)) == std::tolower(static_cast<unsigned char>(b)); }
+
+            );
+
+            return it != a_haystack.end();
+
+        };
+
+        auto isFlyingCritter = [&](RE::TESObjectREFR* a_ref) {
+
+            if (!a_ref) {
+
+                return false;
+
+            }
+
+            auto* base = a_ref->GetBaseObject();
+
+            if (!base) {
+
+                return false;
+
+            }
+
+            auto* acti = base->As<RE::TESObjectACTI>();
+
+            if (!acti) {
+
+                return false;
+
+            }
+
+            if (const char* edid = acti->GetFormEditorID(); edid && containsCaseInsensitive(edid, "Critter")) {
+
+                return true;
+
+            }
+
+            if (const char* model = acti->model.c_str(); model && model[0] != '\0') {
+
+                static constexpr std::array<std::string_view, 6> kBugTokens = {
+
+                    "butterfly", "moth", "dragonfly", "firefly", "bee", "luna"
+
+                };
+
+                for (auto token : kBugTokens) {
+
+                    if (containsCaseInsensitive(model, token)) {
+
+                        return true;
+
+                    }
+
+                }
+
+            }
+
+            return false;
+
+            };
+
         // This entire scan must never draw debug lines. It runs once per candidate actor in range, and we only want lines for the actor that's actually locked as the current POI. 
         // The flag is already  on entry (set false at the end of Update() / by default), but we force it here too so FindBestPOI is safe to call from anywhere without
         // leaking debug draws from a stale flag state.
@@ -460,10 +548,42 @@ namespace Hooks {
 
             }
 
-            // Skips everything that is not an actor (humans, creatures, etc).
+            // Skips everything that is not an actor (humans, creatures, etc), unless it's a flying critter Activator.
             auto* actor = ref->As<RE::Actor>();
 
             if (!actor) {
+
+                if (!isFlyingCritter(ref)) {
+
+                    return RE::BSContainer::ForEachResult::kContinue;
+
+                }
+
+                if (!ref->Is3DLoaded() || ref->IsDisabled()) {
+
+                    return RE::BSContainer::ForEachResult::kContinue;
+
+                }
+
+                if (HasAnythingBetween(player->GetPosition(), ref->GetPosition())) {
+
+                    logger::debug("POI {} rejected: the flying critter is occluded!", ref->GetName());
+                    return RE::BSContainer::ForEachResult::kContinue;
+
+                }
+
+                float dist = player->GetPosition().GetDistance(ref->GetPosition());
+                float proximityFactor = std::max(0.0f, (UI::g_poiDetectionRadius - dist) / UI::g_poiDetectionRadius);
+
+                float score = kFlyingCritterBaseScore + proximityFactor * 100.0f;
+
+                if (score > bestScore) {
+
+                    bestScore = score;
+                    bestPOI = ref;
+                    bestAction = POIAction::FlyingCritter;
+
+                }
 
                 return RE::BSContainer::ForEachResult::kContinue;
 
@@ -707,7 +827,19 @@ namespace Hooks {
         if (s_currentPOI) {
 
             auto* actor = s_currentPOI->As<RE::Actor>();
-            bool  gone = (!actor || actor->IsDead());
+            bool  gone;
+
+            if (actor) {
+
+                gone = actor->IsDead();
+
+            } else {
+
+                // Non-actor POI (flying critter): there's no "dead" state, so validate
+                // 3D/enabled status instead.
+                gone = (!s_currentPOI->Is3DLoaded() || s_currentPOI->IsDisabled());
+
+            }
 
             if (!gone) {
 
@@ -896,7 +1028,6 @@ namespace Hooks {
         s_blendT = 1.0f;
 
         s_headTrackWeight = 0.0f;
-
 
         // -----------------------------------------------------------------------------------
         //  Give back the controls of the camera to SmoothCam after exiting Vanity Mode
