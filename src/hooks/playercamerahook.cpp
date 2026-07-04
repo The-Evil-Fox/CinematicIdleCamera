@@ -157,9 +157,7 @@ namespace Hooks {
         if (collidable) {
 
             const auto layer = collidable->GetCollisionLayer();
-            if (layer != RE::COL_LAYER::kStatic &&
-                layer != RE::COL_LAYER::kTerrain &&
-                layer != RE::COL_LAYER::kGround) {
+            if (layer != RE::COL_LAYER::kStatic && layer != RE::COL_LAYER::kTerrain && layer != RE::COL_LAYER::kGround) {
 
                 logger::debug("TESRayHitStatic: ignored hit on layer {}", static_cast<int>(layer));
                 return false;
@@ -857,7 +855,6 @@ namespace Hooks {
 
         logger::debug("AutoVanity EndState hook fired");
         _EndState(a_this);
-
 
         // -----------------------------------------------------------------------------------
         //  Wipe all debug lines when vanity mode ends

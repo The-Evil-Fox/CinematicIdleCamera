@@ -2,6 +2,7 @@
 #include "logger.hpp"
 #include "menu.h"
 #include "hooks/playercamerahook.h"
+#include "hooks/menumonitor.h"
 #include "utility.h"
 #include "DrawDebug.hpp"
 
@@ -84,6 +85,8 @@ static void MessageHandler(SKSE::MessagingInterface::Message* msg) {
                 }
 
             }
+
+            Hooks::MenuMonitor::Register();
 
             break;
 
