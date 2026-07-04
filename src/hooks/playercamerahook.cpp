@@ -11,15 +11,15 @@ namespace Hooks {
     //  Default POI system state
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-    static RE::TESObjectREFR*   s_currentPOI = nullptr;
-    static float                s_currentScore = 0.0f;
-    static float                s_lockTimer = 0.0f;
+    static RE::TESObjectREFR*               s_currentPOI                    = nullptr;
+    static float                            s_currentScore                  = 0.0f;
+    static float                            s_lockTimer                     = 0.0f;
 
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     //  Debug-draw gating: Only draw a debug line when this is set to true
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-    static bool                 s_drawDebugForThisCall = false;
+    static bool                             s_drawDebugForThisCall          = false;
 
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     //  Cinematic transition state
@@ -27,20 +27,20 @@ namespace Hooks {
 
     // Starting rotation angle when a blend begins (captured at the moment a new POI is acquired or released).
 
-    static float                s_blendFromRot = 0.0f;
+    static float                            s_blendFromRot                  = 0.0f;
 
     // Destination rotation angle the camera is blending toward (updated every frame to track a moving POI,
     // and, during the exit-to-forward blend, to track the player's live forward-facing angle as well).
 
-    static float                s_blendTargetRot = 0.0f;
+    static float                            s_blendTargetRot                = 0.0f;
 
     // Normalized blend progress [0 = just started, 1 = settled]. Fed through Smoothstep for an eased curve.
 
-    static float                s_blendT = 1.0f;
+    static float                            s_blendT                        = 1.0f;
 
     // Fade weight [0-1] for how strongly the player's head turns toward the POI. Eased in/out via Smoothstep.
 
-    static float                s_headTrackWeight = 0.0f;
+    static float                            s_headTrackWeight               = 0.0f;
 
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     //  Helpers for the camera Rotation
@@ -101,7 +101,7 @@ namespace Hooks {
 
     static const RE::NiColorA kBlue{ 0.0f, 0.4f, 1.0f, 1.0f };
     static const RE::NiColorA kGreen{ 0.0f, 1.0f, 0.0f, 1.0f };
-    
+
     inline bool TESRayHitStatic(RE::bhkWorld* world, RE::NiPoint3 start, RE::NiPoint3 end, const RE::NiColorA& a_drawColor, bool a_allowDraw) {
 
         const bool canDraw = UI::g_debugRaycasts && s_drawDebugForThisCall && a_allowDraw;
@@ -358,7 +358,7 @@ namespace Hooks {
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     void Hooks::AutoVanityState_GetTranslationHelper::Install() {
-        
+
         SKSE::AllocTrampoline(1 << 7);
         auto& trampoline = SKSE::GetTrampoline();
 
@@ -501,12 +501,12 @@ namespace Hooks {
 
             switch (action) {
 
-                case POIAction::InCombat:       score = 600.0f + proximityFactor * 200.0f;          break;
-                case POIAction::Moving:         score = 400.0f + proximityFactor * 150.0f;          break;
-                case POIAction::InScene:        score = 300.0f;                                     break;
-                case POIAction::Idle:           score = 10.0f;                                      break;
-                default:                                                                            break;
-            
+            case POIAction::InCombat:       score = 600.0f + proximityFactor * 200.0f;          break;
+            case POIAction::Moving:         score = 400.0f + proximityFactor * 150.0f;          break;
+            case POIAction::InScene:        score = 300.0f;                                     break;
+            case POIAction::Idle:           score = 10.0f;                                      break;
+            default:                                                                            break;
+
             }
 
             score += proximityFactor * 50.0f;
@@ -521,7 +521,7 @@ namespace Hooks {
 
             return RE::BSContainer::ForEachResult::kContinue;
 
-        };
+            };
 
         RE::TES::GetSingleton()->ForEachReferenceInRange(player, UI::g_poiDetectionRadius, callback);
 
@@ -638,7 +638,7 @@ namespace Hooks {
             delete line;
 
         }
-            
+
         dbg->LinesToDraw.clear();
 
     }
@@ -648,7 +648,7 @@ namespace Hooks {
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     void AutoVanityStateHook::Update(RE::AutoVanityState* a_this, RE::BSTSmartPointer<RE::TESCameraState>& a_nextState) {
-        
+
         SmoothCamCompat::Acquire();
 
         _Update(a_this, a_nextState);
@@ -679,8 +679,22 @@ namespace Hooks {
         // ---------------------------------------------------------------------------------------------------------------------
         //  1. Tick the POI lock timer
         // ---------------------------------------------------------------------------------------------------------------------
+        //
+        //  Only count down once the camera has actually finished blending onto the current
+        //  POI (s_blendT >= 1.0f - the same "settled" condition that switches the debug ray
+        //  from blue to green). While the camera is still rotating to catch up to a freshly
+        //  acquired or moving POI, the lock shouldn't be burning down yet - otherwise a POI
+        //  could lose its lock before the camera ever finished turning to look at it.
+        //
+        //  Note: s_blendT here is last frame's value (section 4 below is what advances it
+        //  this frame), so "settled" is detected with a one-frame lag. That's harmless -
+        //  it just means the timer starts counting one frame after the camera visually
+        //  settles, not before.
+        // ---------------------------------------------------------------------------------------------------------------------
 
-        if (s_lockTimer > 0.0f) {
+        const bool cameraSettledOnPOI = (s_blendT >= 1.0f);
+
+        if (s_lockTimer > 0.0f && cameraSettledOnPOI) {
 
             s_lockTimer = std::max(0.0f, s_lockTimer - dt);
 
@@ -746,9 +760,9 @@ namespace Hooks {
 
         if (s_lockTimer <= 0.0f) {
 
-            POIAction                       foundAction = POIAction::None;
-            float                           foundScore = 0.0f;
-            RE::TESObjectREFR*              candidate = FindBestPOI(foundAction, foundScore);
+            POIAction                               foundAction             = POIAction::None;
+            float                                   foundScore              = 0.0f;
+            RE::TESObjectREFR*                      candidate               = FindBestPOI(foundAction, foundScore);
 
             if (candidate && candidate != s_currentPOI) {
 
@@ -766,6 +780,13 @@ namespace Hooks {
                     s_lockTimer = UI::g_lockDuration;
 
                 }
+
+            } else if (candidate && candidate == s_currentPOI) {
+
+                // Same actor is still the best candidate - re-arm the lock timer so we
+                // don't re-scan for a POI every single frame while nothing has changed.
+                s_currentScore = foundScore;
+                s_lockTimer = UI::g_lockDuration;
 
             } else if (!candidate) {
 
