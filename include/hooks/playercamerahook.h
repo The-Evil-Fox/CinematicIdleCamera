@@ -28,21 +28,21 @@ namespace Hooks {
 
     class SmoothCamCompat {
 
-        public:
-            
-            static void                                 RegisterListener() noexcept;
-            
-            static void                                 RequestInterface() noexcept;
+    public:
 
-            static void                                 Acquire() noexcept;
+        static void                                     RegisterListener() noexcept;
 
-            static void                                 Release() noexcept;
+        static void                                     RequestInterface() noexcept;
 
-        private:
+        static void                                     Acquire() noexcept;
 
-            static inline SmoothCamAPI::IVSmoothCam3*   s_api = nullptr;
+        static void                                     Release() noexcept;
 
-            static inline bool                          s_holding = false;
+    private:
+
+        static inline                                   SmoothCamAPI::IVSmoothCam3* s_api = nullptr;
+
+        static inline bool                              s_holding = false;
     };
 
     // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -51,23 +51,23 @@ namespace Hooks {
 
     class AutoVanityStateHook {
 
-        public:
+    public:
 
-            static void                                 Install();
+        static void                                     Install();
 
-            static RE::TESObjectREFR*                   FindBestPOI(POIAction& a_outAction, float& a_outScore);
+        static RE::TESObjectREFR*                       FindBestPOI(POIAction& a_outAction, float& a_outScore);
 
-            static POIAction                            GetActorAction(RE::Actor* a_actor);
+        static POIAction                                GetActorAction(RE::Actor* a_actor);
 
-        private:
+    private:
 
-            static void                                 Update(RE::AutoVanityState* a_this, RE::BSTSmartPointer<RE::TESCameraState>& a_nextState);
+        static void                                     Update(RE::AutoVanityState* a_this, RE::BSTSmartPointer<RE::TESCameraState>& a_nextState);
 
-            inline static                               REL::Relocation<decltype(Update)> _Update;
+        inline static                                   REL::Relocation<decltype(Update)> _Update;
 
-            static void                                 EndState(RE::AutoVanityState* a_this);
+        static void                                     EndState(RE::AutoVanityState* a_this);
 
-            static inline                               REL::Relocation<decltype(EndState)> _EndState;
+        static inline                                   REL::Relocation<decltype(EndState)> _EndState;
     };
 
     // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -76,11 +76,38 @@ namespace Hooks {
 
     struct AutoVanityState_GetTranslationHelper {
 
-        static void                                     thunk(RE::AutoVanityState* a_this,std::int64_t  param_2, RE::NiPoint3* param_3, std::int64_t  param_4, std::uint32_t param_5);
+        static void                                     thunk(RE::AutoVanityState* a_this, std::int64_t  param_2, RE::NiPoint3* param_3, std::int64_t  param_4, std::uint32_t param_5);
 
         static inline                                   REL::Relocation<decltype(thunk)*> func;
 
         static void                                     Install();
+
+    };
+
+    // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  KillMove (kVATS) camera-state hook
+    // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  This hook is used to prevent the vanity camera to trigger during a killmove.
+    //  Otherwise it breaks the camera and the UI and forces the player to kill Skyrim's process in the task manager
+    // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    class KillMoveCameraStateHook {
+
+    public:
+
+        static void                                     Install();
+
+    private:
+
+        static void                                     Update(RE::TESCameraState* a_this, RE::BSTSmartPointer<RE::TESCameraState>& a_nextState);
+
+        inline static                                   REL::Relocation<decltype(Update)> _Update;
+
+        static void                                     EndState(RE::TESCameraState* a_this);
+
+        inline static                                   REL::Relocation<decltype(EndState)> _EndState;
+
+        static inline                                   bool s_installed = false;
 
     };
 

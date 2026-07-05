@@ -12,89 +12,94 @@ static void MessageHandler(SKSE::MessagingInterface::Message* msg) {
 
     switch (msg->type) {
 
-        case SKSE::MessagingInterface::kPostLoad: {
+    case SKSE::MessagingInterface::kPostLoad: {
 
-            Hooks::SmoothCamCompat::RegisterListener();
-            break;
+        Hooks::SmoothCamCompat::RegisterListener();
+        break;
+
+    }
+
+    case SKSE::MessagingInterface::kPostPostLoad: {
+
+        Hooks::SmoothCamCompat::RequestInterface();
+        break;
+
+    }
+
+    case SKSE::MessagingInterface::kSaveGame: {
+
+        break;
+
+    }
+
+    case SKSE::MessagingInterface::kPreLoadGame: {
+
+        break;
+
+    }
+
+    case SKSE::MessagingInterface::kPostLoadGame: {
+
+        Hooks::KillMoveCameraStateHook::Install();
+
+        break;
+
+    }
+
+    case SKSE::MessagingInterface::kNewGame: {
+
+        static bool registered = false;
+
+        if (!registered) {
+
+            DebugAPI_IMPL::DebugOverlayMenu::Register();
+            registered = true;
 
         }
 
-        case SKSE::MessagingInterface::kPostPostLoad: {
+        Hooks::KillMoveCameraStateHook::Install();
 
-            Hooks::SmoothCamCompat::RequestInterface();
-            break;
+        break;
 
-        }
+    }
 
-        case SKSE::MessagingInterface::kSaveGame: {
+    case SKSE::MessagingInterface::kDataLoaded: {
 
-            break;
+        IniParser::Load();
 
-        }
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        // Used to manually set the idle timer for the vanity cam in the virtual copy of the skyrimprefs everytime the game is loaded.
+        // So it doesn't overwrite user's existing params in skyrimprefs since this copy is not saved once the game is shut down.
+        // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-        case SKSE::MessagingInterface::kPreLoadGame: {
+        auto* iniSettings = RE::INISettingCollection::GetSingleton();
 
-            break;
+        if (iniSettings) {
 
-        }
+            auto* vanityModeDelaySetting = iniSettings->GetSetting("fAutoVanityModeDelay:Camera");
 
-        case SKSE::MessagingInterface::kPostLoadGame: {
+            if (vanityModeDelaySetting) {
 
-            break;
+                vanityModeDelaySetting->data.f = UI::g_idleTimer;
 
-        }
+            } else {
 
-        case SKSE::MessagingInterface::kNewGame: {
-
-            static bool registered = false;
-
-            if (!registered) {
-
-                DebugAPI_IMPL::DebugOverlayMenu::Register();
-                registered = true;
+                logger::error("Setting not found in INISettingCollection !");
 
             }
 
-            break;
-
         }
 
-        case SKSE::MessagingInterface::kDataLoaded: {
+        Hooks::MenuMonitor::Register();
+        Hooks::KillMoveCameraStateHook::Install();
 
-            IniParser::Load();
+        break;
 
-            // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-            // Used to manually set the idle timer for the vanity cam in the virtual copy of the skyrimprefs everytime the game is loaded.
-            // So it doesn't overwrite user's existing params in skyrimprefs since this copy is not saved once the game is shut down.
-            // -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    }
 
-            auto* iniSettings = RE::INISettingCollection::GetSingleton();
+    default:
 
-            if (iniSettings) {
-
-                auto* vanityModeDelaySetting = iniSettings->GetSetting("fAutoVanityModeDelay:Camera");
-
-                if (vanityModeDelaySetting) {
-
-                    vanityModeDelaySetting->data.f = UI::g_idleTimer;
-
-                } else {
-
-                    logger::error("Setting not found in INISettingCollection !");
-
-                }
-
-            }
-
-            Hooks::MenuMonitor::Register();
-
-            break;
-
-        }
-
-        default:
-
-            break;
+        break;
 
     }
 

@@ -12,7 +12,9 @@ namespace Hooks {
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     static RE::TESObjectREFR*               s_currentPOI                    = nullptr;
+
     static float                            s_currentScore                  = 0.0f;
+
     static float                            s_lockTimer                     = 0.0f;
 
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -426,6 +428,91 @@ namespace Hooks {
     }
 
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  KillMove (kVATS) camera-state hook
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  Used mainly to prevents AutoVanity from firing during the kill move camera
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    void KillMoveCameraStateHook::Update(RE::TESCameraState* a_this, RE::BSTSmartPointer<RE::TESCameraState>& a_nextState) {
+
+        logger::debug("KillMoveCameraStateHook::Update fired");
+
+        auto* camera = RE::PlayerCamera::GetSingleton();
+
+        if (camera) {
+
+            camera->GetRuntimeData2().allowAutoVanityMode = false;
+            logger::debug("KillMoveCameraStateHook::Update Vanity mode set to false during the killmove");
+
+        }
+
+        _Update(a_this, a_nextState);
+
+    }
+
+    void KillMoveCameraStateHook::EndState(RE::TESCameraState* a_this) {
+
+        logger::debug("KillMoveCameraStateHook::EndState fired");
+
+        _EndState(a_this);
+
+        auto* camera = RE::PlayerCamera::GetSingleton();
+
+        if (camera) {
+
+            camera->GetRuntimeData2().allowAutoVanityMode = true;
+            logger::debug("KillMoveCameraStateHook::EndState Vanity mode set to true after the end of the killmove");
+
+        }
+
+    }
+
+    void KillMoveCameraStateHook::Install() {
+
+        if (s_installed) {
+
+            return;
+
+        }
+
+        auto* camera = RE::PlayerCamera::GetSingleton();
+
+        if (!camera) {
+
+            logger::debug("KillMoveCameraStateHook: PlayerCamera singleton not ready yet");
+            return;
+
+        }
+
+        auto& runtimeData = camera->GetRuntimeData();
+        RE::TESCameraState* state = runtimeData.cameraStates[RE::CameraState::kVATS].get();
+
+        if (!state) {
+
+            logger::debug("KillMoveCameraStateHook: kVATS camera state not constructed yet");
+            return;
+
+        }
+
+        // Read the vtable pointer straight out of the live object (first 8 bytes of any
+        // polymorphic C++ object on MSVC/x64). This avoids needing a compile-time
+        // RE::VTABLE_XXX constant for whatever concrete class implements kVATS in this fork.
+
+        const auto vtblAddr = *reinterpret_cast<std::uintptr_t*>(state);
+        REL::Relocation<std::uintptr_t> vtbl{ vtblAddr };
+
+        // NOTE: index guessed from AutoVanityState's own layout - confirm via the log
+        // below that this actually fires when a killmove starts. Adjust 2/3/4 if not.
+        _Update = vtbl.write_vfunc(REL::Module::IsVR() ? 4 : 3, Update);
+        _EndState = vtbl.write_vfunc(2, EndState);
+
+        s_installed = true;
+
+        logger::info("KillMoveCameraStateHook installed (vtbl @ {:x})", vtblAddr);
+
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     //  POI function:
     //  Compares and select the boi POI to be focused by the vanity camera
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -478,7 +565,7 @@ namespace Hooks {
 
             return it != a_haystack.end();
 
-        };
+            };
 
         auto isFlyingCritter = [&](RE::TESObjectREFR* a_ref) {
 
