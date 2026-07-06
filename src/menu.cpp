@@ -6,30 +6,84 @@
 namespace logger = SKSE::log;
 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-//  Default settings used when the ini doesn't exist when the game is started
+//  Default settings used when the ini doesn't exist when the game is started (ordered by menus)
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-static constexpr float          k_defaultIdleTimer = 5.0f;
-static constexpr float          k_defaultPoiDetectionRadius = 1050.0f;
-static constexpr float          k_defaultLockDuration = 3.0f;
-static constexpr float          k_defaultBlendDuration = 2.0f;
-static constexpr float          k_defaultVanityCamOffsetX = 100.0f;
-static constexpr float          k_defaultVanityCamOffsetY = 130.0f;
-static constexpr float          k_defaultVanityCamOffsetZ = 0.0f;
-static constexpr float          k_defaultHeadTrackFadeSpeed = 2.0f;
-static constexpr bool           k_defaultDebugRaycasts = false;
-static constexpr int            k_defaultLoggingLevel = 2; // 0 = critical, 1 = warn, 2 = info, 3 = debug
+// ---------------------------------------------------------------------------------------------------------------------
+//  Camera
+// ---------------------------------------------------------------------------------------------------------------------
 
-float                           UI::g_idleTimer = k_defaultIdleTimer;
-float                           UI::g_poiDetectionRadius = k_defaultPoiDetectionRadius;
-float                           UI::g_lockDuration = k_defaultLockDuration;
-float                           UI::g_blendDuration = k_defaultBlendDuration;
-float                           UI::g_IdleCamOffsetX = k_defaultVanityCamOffsetX;
-float                           UI::g_IdleCamOffsetY = k_defaultVanityCamOffsetY;
-float                           UI::g_IdleCamOffsetZ = k_defaultVanityCamOffsetZ;
-float                           UI::g_headTrackFadeSpeed = k_defaultHeadTrackFadeSpeed;
-bool                            UI::g_debugRaycasts = k_defaultDebugRaycasts;
-int                             UI::g_loggingLevel = k_defaultLoggingLevel;
+static constexpr float              k_defaultIdleTimer                      = 5.0f;
+static constexpr float              k_defaultBlendDuration                  = 5.0f;
+
+static constexpr float              k_defaultVanityCamOffsetX               = 75.0f;
+static constexpr float              k_defaultVanityCamOffsetY               = 130.0f;
+static constexpr float              k_defaultVanityCamOffsetZ               = 0.0f;
+
+static constexpr float              k_defaultDezoomTriggerRadius            = 350.0f;
+static constexpr float              k_defaultDezoomTriggerHeight            = 210.0f;
+static constexpr float              k_defaultDezoomAmount                   = 250.0f;
+static constexpr float              k_defaultDezoomBlendSpeed               = 0.7f;
+
+// ---------------------------------------------------------------------------------------------------------------------
+//  Head Tracking
+// ---------------------------------------------------------------------------------------------------------------------
+
+static constexpr float              k_defaultHeadTrackFadeSpeed             = 2.0f;
+
+// ---------------------------------------------------------------------------------------------------------------------
+//  POI System
+// ---------------------------------------------------------------------------------------------------------------------
+
+static constexpr float              k_defaultPoiDetectionRadius             = 1050.0f;
+static constexpr float              k_defaultLockDuration                   = 5.0f;
+
+// ---------------------------------------------------------------------------------------------------------------------
+//  Debug
+// ---------------------------------------------------------------------------------------------------------------------
+
+static constexpr bool               k_defaultDebugRaycasts                  = false;
+static constexpr int                k_defaultLoggingLevel                   = 2; // 0 = critical, 1 = warn, 2 = info, 3 = debug
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  Initalize the sliders in the ui with the default values (used only when the INI doesn't exist or a param in it was completely removed)
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------------------------------------------------
+//  Camera
+// ---------------------------------------------------------------------------------------------------------------------
+
+float                               UI::g_idleTimer                         = k_defaultIdleTimer;
+float                               UI::g_blendDuration                     = k_defaultBlendDuration;
+
+float                               UI::g_IdleCamOffsetX                    = k_defaultVanityCamOffsetX;
+float                               UI::g_IdleCamOffsetY                    = k_defaultVanityCamOffsetY;
+float                               UI::g_IdleCamOffsetZ                    = k_defaultVanityCamOffsetZ;
+
+float                               UI::g_dezoomTriggerRadius               = k_defaultDezoomTriggerRadius;
+float                               UI::g_dezoomTriggerHeight               = k_defaultDezoomTriggerHeight;
+float                               UI::g_dezoomAmount                      = k_defaultDezoomAmount;
+float                               UI::g_dezoomBlendSpeed                  = k_defaultDezoomBlendSpeed;
+
+// ---------------------------------------------------------------------------------------------------------------------
+//  Head Tracking
+// ---------------------------------------------------------------------------------------------------------------------
+
+float                               UI::g_headTrackFadeSpeed                = k_defaultHeadTrackFadeSpeed;
+
+// ---------------------------------------------------------------------------------------------------------------------
+//  POI System
+// ---------------------------------------------------------------------------------------------------------------------
+
+float                               UI::g_poiDetectionRadius                = k_defaultPoiDetectionRadius;
+float                               UI::g_lockDuration                      = k_defaultLockDuration;
+
+// ---------------------------------------------------------------------------------------------------------------------
+//  Debug
+// ---------------------------------------------------------------------------------------------------------------------
+
+bool                                UI::g_debugRaycasts                     = k_defaultDebugRaycasts;
+int                                 UI::g_loggingLevel                      = k_defaultLoggingLevel;
 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  Logging level names, indexed 0-3 to match the simplified scheme:
@@ -53,13 +107,13 @@ static spdlog::level::level_enum LoggingLevelToSpdlog(int loggingLevel) {
 
     switch (loggingLevel) {
 
-        case 0:  return spdlog::level::critical;
+    case 0:  return spdlog::level::critical;
 
-        case 1:  return spdlog::level::warn;
+    case 1:  return spdlog::level::warn;
 
-        case 3:  return spdlog::level::debug;
+    case 3:  return spdlog::level::debug;
 
-        default: return spdlog::level::info;
+    default: return spdlog::level::info;
 
     }
 
@@ -95,12 +149,12 @@ static void ApplyIdleTimerToIniSettings(std::string settingName, float value) {
 //  Font Awesome Icons
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-auto settingsIcon       =           FontAwesome::UnicodeToUtf8(0xf013);
-auto poiSystemIcon      =           FontAwesome::UnicodeToUtf8(0xf3c5);
-auto cameraIcon         =           FontAwesome::UnicodeToUtf8(0xf03d);
-auto playerIcon         =           FontAwesome::UnicodeToUtf8(0xf183);
-auto debugIcon          =           FontAwesome::UnicodeToUtf8(0xf7d9);
-auto resetIcon          =           FontAwesome::UnicodeToUtf8(0xf2ea);
+auto settingsIcon               = FontAwesome::UnicodeToUtf8(0xf013);
+auto poiSystemIcon              = FontAwesome::UnicodeToUtf8(0xf3c5);
+auto cameraIcon                 = FontAwesome::UnicodeToUtf8(0xf03d);
+auto playerIcon                 = FontAwesome::UnicodeToUtf8(0xf183);
+auto debugIcon                  = FontAwesome::UnicodeToUtf8(0xf7d9);
+auto resetIcon                  = FontAwesome::UnicodeToUtf8(0xf2ea);
 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  Shows a hovering tooltip describing the parameter. Call this right after the widget (slider/checkbox) it
@@ -290,7 +344,7 @@ void UI::CameraSettings() {
     // ---------------------------------------------------------------------------------------------------------------------
 
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
-    
+
     ImGuiMCP::SetNextItemWidth(200.0f);
 
     if (ImGuiMCP::SliderFloat("##blendDuration", &g_blendDuration, 0.1f, 5.0f, "%.2f sec")) {
@@ -348,7 +402,7 @@ void UI::CameraSettings() {
     ImGuiMCP::Separator();
 
     // ---------------------------------------------------------------------------------------------------------------------
-    //  Idle camera offset Y
+    //  Idle camera offset Z
     // ---------------------------------------------------------------------------------------------------------------------
 
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
@@ -369,6 +423,97 @@ void UI::CameraSettings() {
     ImGuiMCP::Separator();
 
     // ---------------------------------------------------------------------------------------------------------------------
+    //  Dezoom trigger radius
+    // ---------------------------------------------------------------------------------------------------------------------
+    //
+    //  A POI above the player can fall outside the vanity camera's fixed pitch, since this system only ever
+    //  rotates yaw to face a POI. Pulling the camera back (see Dezoom Amount below) widens the effective
+    //  vertical field of view onto it. This slider controls how close the POI has to be, horizontally, for
+    //  that to kick in.
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    ImGuiMCP::SetNextItemWidth(200.0f);
+    float dezoomRadiusMeters = g_dezoomTriggerRadius / 70.0f;
+
+    if (ImGuiMCP::SliderFloat("##dezoomTriggerRadius", &dezoomRadiusMeters, 0.0f, 20.0f, "%.1f m")) {
+
+        g_dezoomTriggerRadius = dezoomRadiusMeters * 70.0f;
+        IniParser::Save();
+
+    }
+
+    HelpTooltip("Horizontal distance from the player within which an overhead POI can trigger the dezoom.");
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Text("Dezoom Trigger Radius");
+
+    ImGuiMCP::Separator();
+
+    // ---------------------------------------------------------------------------------------------------------------------
+    //  Dezoom trigger height
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    ImGuiMCP::SetNextItemWidth(200.0f);
+    float dezoomHeightMeters = g_dezoomTriggerHeight / 70.0f;
+
+    if (ImGuiMCP::SliderFloat("##dezoomTriggerHeight", &dezoomHeightMeters, 0.0f, 20.0f, "%.1f m")) {
+
+        g_dezoomTriggerHeight = dezoomHeightMeters * 70.0f;
+        IniParser::Save();
+
+    }
+
+    HelpTooltip("How far above the player a POI must be, while inside the trigger radius, before the dezoom kicks in.");
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Text("Dezoom Trigger Height");
+
+    ImGuiMCP::Separator();
+
+    // ---------------------------------------------------------------------------------------------------------------------
+    //  Dezoom amount
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    ImGuiMCP::SetNextItemWidth(200.0f);
+
+    if (ImGuiMCP::SliderFloat("##dezoomAmount", &g_dezoomAmount, 0.0f, 500.0f, "%.0f")) {
+
+        g_dezoomAmount = std::round(g_dezoomAmount);
+        IniParser::Save();
+
+    }
+
+    HelpTooltip("How far the camera pulls back once the dezoom is fully active (added on top of the Idle camera offset Y).");
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Text("Dezoom Amount");
+
+    ImGuiMCP::Separator();
+
+    // ---------------------------------------------------------------------------------------------------------------------
+    //  Dezoom blend speed
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    ImGuiMCP::SetNextItemWidth(200.0f);
+
+    if (ImGuiMCP::SliderFloat("##dezoomBlendSpeed", &g_dezoomBlendSpeed, 0.1f, 10.0f, "%.1f units/s")) {
+
+        IniParser::Save();
+
+    }
+
+    HelpTooltip("How quickly the dezoom fades in and out as a POI enters or leaves the trigger zone.");
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Text("Dezoom Blend Speed");
+
+    ImGuiMCP::Separator();
+
+    // ---------------------------------------------------------------------------------------------------------------------
     //  Reset the camera related settings back to default
     // ---------------------------------------------------------------------------------------------------------------------
 
@@ -381,6 +526,10 @@ void UI::CameraSettings() {
         g_IdleCamOffsetX = k_defaultVanityCamOffsetX;
         g_IdleCamOffsetY = k_defaultVanityCamOffsetY;
         g_IdleCamOffsetZ = k_defaultVanityCamOffsetZ;
+        g_dezoomTriggerRadius = k_defaultDezoomTriggerRadius;
+        g_dezoomTriggerHeight = k_defaultDezoomTriggerHeight;
+        g_dezoomAmount = k_defaultDezoomAmount;
+        g_dezoomBlendSpeed = k_defaultDezoomBlendSpeed;
 
         ApplyIdleTimerToIniSettings("fAutoVanityModeDelay:Camera", g_idleTimer);
         IniParser::Save();

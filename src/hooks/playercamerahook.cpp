@@ -45,6 +45,18 @@ namespace Hooks {
     static float                            s_headTrackWeight               = 0.0f;
 
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  Dynamic dezoom state
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  This system only ever rotates yaw (autoVanityRot) to face a POI. There's no pitch control. A POI
+    //  that's close to the player and well above them can end up outside the vanity camera's fixed pitch as
+    //  a result. s_dezoomWeight [0-1] is how "zoomed out" we currently are; it's eased toward 1 while the
+    //  current POI is inside the trigger radius/height (UI::g_dezoomTriggerRadius / g_dezoomTriggerHeight),
+    //  and back toward 0 otherwise. See the translation hook below for how the weight is actually applied.
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    static float                            s_dezoomWeight                  = 0.0f;
+
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     //  Helpers for the camera Rotation
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -342,14 +354,24 @@ namespace Hooks {
 
             // Forward = (sin(rot), cos(rot)), Right = (cos(rot), sin(rot))
 
-            const float worldOffsetX = c * UI::g_IdleCamOffsetX + s * UI::g_IdleCamOffsetY;
-            const float worldOffsetY = -s * UI::g_IdleCamOffsetX + c * UI::g_IdleCamOffsetY;
+            // ---------------------------------------------------------------------------------------------------------------
+            //  Dynamic dezoom: added on top of the user's local Y (depth) offset. s_dezoomWeight is updated once per
+            //  frame in AutoVanityStateHook::Update(), which runs before this thunk fires this frame (the engine's
+            //  own Update() and therefore this translation call happens partway through our Update() hook), so
+            //  this reads last frame's weight.
+            // ---------------------------------------------------------------------------------------------------------------
+
+            const float dezoomOffset = s_dezoomWeight * UI::g_dezoomAmount;
+            const float localOffsetY = UI::g_IdleCamOffsetY - dezoomOffset;
+
+            const float worldOffsetX = c * UI::g_IdleCamOffsetX + s * localOffsetY;
+            const float worldOffsetY = -s * UI::g_IdleCamOffsetX + c * localOffsetY;
 
             translation[0] += worldOffsetX;
             translation[1] += worldOffsetY;
             translation[2] += UI::g_IdleCamOffsetZ; // vertical offset is rotation-independent
 
-            logger::debug("translation: {:.2f} {:.2f} {:.2f} after", translation[0], translation[1], translation[2]);
+            logger::debug("translation: {:.2f} {:.2f} {:.2f} after (dezoomWeight {:.2f})", translation[0], translation[1], translation[2], s_dezoomWeight);
 
         }
 
@@ -537,7 +559,7 @@ namespace Hooks {
         //  Flying-critter POI tunable (butterflies, moths, dragonflies, etc. are Activator refs, not Actors)
         // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-        static constexpr float kFlyingCritterBaseScore = 50.0f;   // > Idle (10), well under InScene (300)
+        static constexpr float kFlyingCritterBaseScore = 400.0f;   // > Idle (10), well under InScene (300)
 
         // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         //  Flying-critter detection (local to this scan)
@@ -662,7 +684,7 @@ namespace Hooks {
                 float dist = player->GetPosition().GetDistance(ref->GetPosition());
                 float proximityFactor = std::max(0.0f, (UI::g_poiDetectionRadius - dist) / UI::g_poiDetectionRadius);
 
-                float score = kFlyingCritterBaseScore + proximityFactor * 100.0f;
+                float score = kFlyingCritterBaseScore + proximityFactor * 150.0f;
 
                 if (score > bestScore) {
 
@@ -1032,6 +1054,34 @@ namespace Hooks {
             auto  dir = s_currentPOI->GetPosition() - player->GetPosition();
             float liveAngle = std::atan2(dir.x, dir.y);
 
+            // -----------------------------------------------------------------------------------------------------------------
+            //  4b. Dynamic dezoom
+            // -----------------------------------------------------------------------------------------------------------------
+            //
+            //  If the POI is both close to the player (horizontally) and well above them, ease s_dezoomWeight toward 1
+            //  so the translation hook pulls the camera back and widens the effective vertical field of view onto it.
+            //  Otherwise ease it back toward 0. Using horizDist/heightDiff off the same `dir` vector we already have
+            //  for the rotation above, rather than re-querying positions.
+            // -----------------------------------------------------------------------------------------------------------------
+
+            const float horizDist = std::sqrt(dir.x * dir.x + dir.y * dir.y);
+            const float heightDiff = dir.z;
+
+            const bool  wantsDezoom = (horizDist < UI::g_dezoomTriggerRadius) && (heightDiff > UI::g_dezoomTriggerHeight);
+            const float targetDezoom = wantsDezoom ? 1.0f : 0.0f;
+
+            if (s_dezoomWeight < targetDezoom) {
+
+                s_dezoomWeight = std::min(targetDezoom, s_dezoomWeight + dt * UI::g_dezoomBlendSpeed);
+
+            } else if (s_dezoomWeight > targetDezoom) {
+
+                s_dezoomWeight = std::max(targetDezoom, s_dezoomWeight - dt * UI::g_dezoomBlendSpeed);
+
+            }
+
+            logger::debug("Dezoom check: horizDist {:.1f}, heightDiff {:.1f}, wantsDezoom {}, weight {:.2f}", horizDist, heightDiff, wantsDezoom, s_dezoomWeight);
+
             s_blendTargetRot += WrapAngle(liveAngle - s_blendTargetRot);
 
             if (s_blendT < 1.0f) {
@@ -1054,6 +1104,14 @@ namespace Hooks {
             UpdatePlayerHeadtrack(player, s_currentPOI, s_headTrackWeight);
 
         } else {
+
+            // No current POI - ease the dezoom back out too, same rate as everywhere else.
+
+            if (s_dezoomWeight > 0.0f) {
+
+                s_dezoomWeight = std::max(0.0f, s_dezoomWeight - dt * UI::g_dezoomBlendSpeed);
+
+            }
 
             if (s_blendT < 1.0f) {
 
@@ -1115,6 +1173,7 @@ namespace Hooks {
         s_blendT = 1.0f;
 
         s_headTrackWeight = 0.0f;
+        s_dezoomWeight = 0.0f;
 
         // -----------------------------------------------------------------------------------
         //  Give back the controls of the camera to SmoothCam after exiting Vanity Mode
