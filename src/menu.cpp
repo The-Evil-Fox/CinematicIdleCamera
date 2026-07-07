@@ -37,10 +37,14 @@ static constexpr float              k_defaultHeadTrackFadeSpeed = 2.0f;
 
 // Main settings
 
+static constexpr bool               k_defaultPoiSystemEnabled                                   = true;
+static constexpr bool               k_defaultActorPoiEnabled                                    = true;
+static constexpr bool               k_defaultFlyingCritterPoiEnabled                            = true;
+static constexpr bool               k_defaultFishPoiEnabled                                     = true;
 static constexpr float              k_defaultPoiDetectionRadius                                 = 1050.0f;
 static constexpr float              k_defaultLockDuration                                       = 5.0f;
 
-// Actors
+// Actors score system
 
 static constexpr float              k_defaultActorCombatScore                                   = 600.0f;
 static constexpr bool               k_defaultActorCombatProximityEnabled                        = true;
@@ -58,13 +62,13 @@ static constexpr float              k_defaultActorIdleScore                     
 static constexpr bool               k_defaultActorIdleProximityEnabled                          = true;
 static constexpr float              k_defaultActorIdleProximityFactor                           = 50.0f;
 
-// Flying critters
+// Flying critters score system
 
 static constexpr float              k_defaultFlyingCritterScore                                 = 400.0f;
 static constexpr bool               k_defaultFlyingCritterProximityEnabled                      = true;
 static constexpr float              k_defaultFlyingCritterProximityFactor                       = 150.0f;
 
-// Fish critters
+// Fish critters score system
 
 static constexpr float              k_defaultFishScore                                          = 300.0f;
 static constexpr bool               k_defaultFishProximityEnabled                               = true;
@@ -109,6 +113,10 @@ float                               UI::g_headTrackFadeSpeed                    
 
 // Main settings
 
+bool                                UI::g_poiSystemEnabled                                      = k_defaultPoiSystemEnabled;
+bool                                UI::g_actorPoiEnabled                                       = k_defaultActorPoiEnabled;
+bool                                UI::g_flyingCritterPoiEnabled                               = k_defaultFlyingCritterPoiEnabled;
+bool                                UI::g_fishPoiEnabled                                        = k_defaultFishPoiEnabled;
 float                               UI::g_poiDetectionRadius                                    = k_defaultPoiDetectionRadius;
 float                               UI::g_lockDuration                                          = k_defaultLockDuration;
 
@@ -754,6 +762,101 @@ void UI::POISystemMainSettings() {
     ImGuiMCP::Separator();
 
     // ---------------------------------------------------------------------------------------------------------------------
+    //  Master Enable/Disable Toggle
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.95f, 0.95f, 1.0f, 1.0f });
+
+    // Master toggle with custom styling - make it prominent
+    if (ImGuiMCP::Checkbox("##poiSystemMasterToggle", &g_poiSystemEnabled)) {
+
+        IniParser::Save();
+        logger::info("POI System master toggle set to: {}", g_poiSystemEnabled);
+
+    }
+    ImGuiMCP::PopStyleColor();
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Text("POI System Enabled");
+
+    HelpTooltip(
+        "Master toggle for the entire POI (Point of Interest) system.\n"
+        "When disabled, the camera will not track any POIs automatically."
+    );
+
+    ImGuiMCP::Separator();
+
+    // If master toggle is disabled, hide everything else below
+    if (!g_poiSystemEnabled) {
+
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.6f, 1.0f });
+        ImGuiMCP::Text("POI System is currently disabled. Toggle it on to configure settings.");
+        ImGuiMCP::PopStyleColor();
+        return;
+
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+    //  POI Type Toggles (actors, flying critters, fish)
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.9f, 0.9f, 1.0f, 1.0f });
+    ImGuiMCP::Text("Enabled POI Types:");
+    ImGuiMCP::PopStyleColor();
+
+    // Actor POI toggle
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
+    ImGuiMCP::Indent(20.0f);
+    if (ImGuiMCP::Checkbox("##actorPoiToggle", &g_actorPoiEnabled)) {
+
+        IniParser::Save();
+        logger::debug("Actor POI toggle set to: {}", g_actorPoiEnabled);
+
+    }
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Text("Actors (NPCs, creatures)");
+    HelpTooltip(
+        "When enabled, the system will detect and track actors (NPCs, creatures)\n"
+        "as points of interest based on their current action state (combat, moving, etc)."
+    );
+
+    // Flying Critter POI toggle
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
+    if (ImGuiMCP::Checkbox("##flyingCritterPoiToggle", &g_flyingCritterPoiEnabled)) {
+
+        IniParser::Save();
+        logger::debug("Flying Critter POI toggle set to: {}", g_flyingCritterPoiEnabled);
+
+    }
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Text("Flying Critters (butterflies, moths, dragonflies, etc)");
+    HelpTooltip(
+        "When enabled, the system will detect and track flying critters\n"
+        "(butterflies, moths, dragonflies, fireflies, bees, etc)."
+    );
+
+    // Fish Critter POI toggle
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
+    if (ImGuiMCP::Checkbox("##fishPoiToggle", &g_fishPoiEnabled)) {
+
+        IniParser::Save();
+        logger::debug("Fish Critter POI toggle set to: {}", g_fishPoiEnabled);
+
+    }
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Text("Fish Critters (perches, salmon, pond fish, etc)");
+    HelpTooltip(
+        "When enabled, the system will detect and track fish critters\n"
+        "(perches, salmon, pond fish, and other aquatic critters)."
+    );
+
+    ImGuiMCP::Unindent(20.0f);
+    ImGuiMCP::Separator();
+
+    // ---------------------------------------------------------------------------------------------------------------------
     //  Maximum detection radius
     // ---------------------------------------------------------------------------------------------------------------------
 
@@ -803,6 +906,10 @@ void UI::POISystemMainSettings() {
 
     if (ImGuiMCP::Button(std::format("{} Reset To Default##resetPoiGeneral", resetIcon).c_str())) {
 
+        g_poiSystemEnabled = k_defaultPoiSystemEnabled;
+        g_actorPoiEnabled = k_defaultActorPoiEnabled;
+        g_flyingCritterPoiEnabled = k_defaultFlyingCritterPoiEnabled;
+        g_fishPoiEnabled = k_defaultFishPoiEnabled;
         g_poiDetectionRadius = k_defaultPoiDetectionRadius;
         g_lockDuration = k_defaultLockDuration;
 

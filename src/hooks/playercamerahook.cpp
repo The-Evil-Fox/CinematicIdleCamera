@@ -607,6 +607,75 @@ namespace Hooks {
     }
 
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  Check if the current POI is still valid based on enabled POI types
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    static bool IsCurrentPOITypeStillEnabled(RE::TESObjectREFR* a_poi) {
+
+        if (!a_poi) {
+
+            return false;
+
+        }
+
+        auto* actor = a_poi->As<RE::Actor>();
+
+        if (actor) {
+
+            // It's an actor - check if actor POIs are enabled
+            return UI::g_actorPoiEnabled;
+
+        }
+
+        // Not an actor - check if it's a critter
+        auto* base = a_poi->GetBaseObject();
+
+        if (base) {
+
+            auto* acti = base->As<RE::TESObjectACTI>();
+
+            if (acti) {
+
+                const char* model = acti->model.c_str();
+
+                if (model && model[0] != '\0') {
+
+                    std::string modelStr = model;
+                    std::transform(modelStr.begin(), modelStr.end(), modelStr.begin(), ::tolower);
+
+                    // Check for pond fish keywords
+                    if (modelStr.find("fish") != std::string::npos ||
+                        modelStr.find("pondfish") != std::string::npos ||
+                        modelStr.find("salmon") != std::string::npos ||
+                        modelStr.find("perch") != std::string::npos) {
+
+                        return UI::g_fishPoiEnabled;
+
+                    }
+
+                    // Check for flying critters keywords
+                    if (modelStr.find("butterfly") != std::string::npos ||
+                        modelStr.find("moth") != std::string::npos ||
+                        modelStr.find("dragonfly") != std::string::npos ||
+                        modelStr.find("firefly") != std::string::npos ||
+                        modelStr.find("bee") != std::string::npos ||
+                        modelStr.find("luna") != std::string::npos) {
+
+                        return UI::g_flyingCritterPoiEnabled;
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        // If we can't determine the type, assume it's valid
+        return true;
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     //  POI function:
     //  Compares and select the boi POI to be focused by the vanity camera
     // 
@@ -674,6 +743,12 @@ namespace Hooks {
                 //    2. Fallback: model path substring match against common critter tokens, in case a
                 //       mod doesn't follow the EditorID convention.
                 // -----------------------------------------------------------------------------------------------------------
+
+                if (!UI::g_flyingCritterPoiEnabled && !UI::g_fishPoiEnabled) {
+
+                    return RE::BSContainer::ForEachResult::kContinue;
+
+                }
 
                 auto isCritter = [&](RE::TESObjectREFR* a_ref) {
 
@@ -810,6 +885,13 @@ namespace Hooks {
                                 modelStr.find("salmon") != std::string::npos ||
                                 modelStr.find("perch") != std::string::npos) {
 
+                                if (!UI::g_fishPoiEnabled) {
+
+                                    logger::debug("POI {} rejected: fish POIs disabled", ref->GetName());
+                                    return RE::BSContainer::ForEachResult::kContinue;
+
+                                }
+
                                 // Skip persistent references that are NOT fish (racks, etc.)
                                 // But allow persistent fish (CC pond fish are persistent)
                                 if (ref->IsPersistent()) {
@@ -848,6 +930,13 @@ namespace Hooks {
                                 modelStr.find("firefly") != std::string::npos ||
                                 modelStr.find("bee") != std::string::npos ||
                                 modelStr.find("luna") != std::string::npos) {
+
+                                if (!UI::g_flyingCritterPoiEnabled) {
+
+                                    logger::debug("POI {} rejected: flying critter POIs disabled", ref->GetName());
+                                    return RE::BSContainer::ForEachResult::kContinue;
+
+                                }
 
                                 // It's a flying critter
                                logger::debug("POI {} accepted as flying critter", ref->GetName());
@@ -891,6 +980,12 @@ namespace Hooks {
                 // -----------------------------------------------------------------------------------------------------------
                 //  CASE 2: ACTOR POI PROCESSING
                 // -----------------------------------------------------------------------------------------------------------
+
+                if (!UI::g_actorPoiEnabled) {
+
+                    return RE::BSContainer::ForEachResult::kContinue;
+
+                }
 
                 if (actor->IsDead() || !actor->Is3DLoaded() || actor->IsDisabled()) {
 
@@ -1181,6 +1276,25 @@ namespace Hooks {
 
         }
 
+        if (!UI::g_poiSystemEnabled) {
+
+            // Reset any lingering POI state
+            if (s_currentPOI) {
+
+                s_currentPOI = nullptr;
+                s_currentScore = 0.0f;
+                s_lockTimer = 0.0f;
+                s_headTrackWeight = 0.0f;
+                s_dezoomWeight = 0.0f;
+                UpdatePlayerHeadtrack(player, nullptr, 0.0f);
+
+            }
+
+            a_this->autoVanityRot = player->GetAngleZ();
+
+            return;
+        }
+
         float baseRot = player->GetAngleZ();
 
         if (UI::g_debugRaycasts) {
@@ -1229,7 +1343,12 @@ namespace Hooks {
             auto* actor = s_currentPOI->As<RE::Actor>();
             bool  gone;
 
-            if (actor) {
+            if (!IsCurrentPOITypeStillEnabled(s_currentPOI)) {
+
+                logger::debug("Current POI {} type was disabled - dropping lock", s_currentPOI->GetName());
+                gone = true;
+
+            } else if (actor) {
 
                 gone = actor->IsDead();
 

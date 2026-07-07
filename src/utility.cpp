@@ -93,6 +93,26 @@ void IniParser::Load() {
             UI::g_headTrackFadeSpeed = std::stof(value);
             logger::debug("Loaded headTrackFadeSpeed: {}", UI::g_headTrackFadeSpeed);
 
+        } else if (key == "poiSystemEnabled") {
+
+            UI::g_poiSystemEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded poiSystemEnabled: {}", UI::g_poiSystemEnabled);
+
+        } else if (key == "actorPoiEnabled") {
+
+            UI::g_actorPoiEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded actorPoiEnabled: {}", UI::g_actorPoiEnabled);
+
+        } else if (key == "flyingCritterPoiEnabled") {
+
+            UI::g_flyingCritterPoiEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded flyingCritterPoiEnabled: {}", UI::g_flyingCritterPoiEnabled);
+
+        } else if (key == "fishPoiEnabled") {
+
+            UI::g_fishPoiEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded fishPoiEnabled: {}", UI::g_fishPoiEnabled);
+
         } else if (key == "poiDetectionRadius") {
 
             UI::g_poiDetectionRadius = std::stof(value);
@@ -260,6 +280,14 @@ void IniParser::Save() {
     file << "headTrackFadeSpeed=" << UI::g_headTrackFadeSpeed << "\n";
     file << "\n";
     file << ";=====================POI SYSTEM SETTINGS========================\n";
+    file << "\n";
+    file << "; POI System master toggle (0 = off, 1 = on)\n";
+    file << "poiSystemEnabled=" << (UI::g_poiSystemEnabled ? "1" : "0") << "\n";
+    file << "\n";
+    file << "; POI type toggles (0 = off, 1 = on)\n";
+    file << "actorPoiEnabled=" << (UI::g_actorPoiEnabled ? "1" : "0") << "\n";
+    file << "flyingCritterPoiEnabled=" << (UI::g_flyingCritterPoiEnabled ? "1" : "0") << "\n";
+    file << "fishPoiEnabled=" << (UI::g_fishPoiEnabled ? "1" : "0") << "\n";
     file << "\n";
     file << "; POI Detection Radius (Skyrim units, ~70 units per meter)\n";
     file << "poiDetectionRadius=" << UI::g_poiDetectionRadius << "\n";
