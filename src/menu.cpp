@@ -13,30 +13,50 @@ namespace logger = SKSE::log;
 //  Camera
 // ---------------------------------------------------------------------------------------------------------------------
 
-static constexpr float              k_defaultIdleTimer                      = 5.0f;
-static constexpr float              k_defaultBlendDuration                  = 5.0f;
+static constexpr float              k_defaultIdleTimer                                          = 5.0f;
+static constexpr float              k_defaultBlendDuration                                      = 5.0f;
 
-static constexpr float              k_defaultVanityCamOffsetX               = 75.0f;
-static constexpr float              k_defaultVanityCamOffsetY               = 130.0f;
-static constexpr float              k_defaultVanityCamOffsetZ               = 0.0f;
+static constexpr float              k_defaultVanityCamOffsetX                                   = 75.0f;
+static constexpr float              k_defaultVanityCamOffsetY                                   = 130.0f;
+static constexpr float              k_defaultVanityCamOffsetZ                                   = 0.0f;
 
-static constexpr float              k_defaultDezoomTriggerRadius            = 350.0f;
-static constexpr float              k_defaultDezoomTriggerHeight            = 210.0f;
-static constexpr float              k_defaultDezoomAmount                   = 250.0f;
-static constexpr float              k_defaultDezoomBlendSpeed               = 0.7f;
+static constexpr float              k_defaultDezoomTriggerRadius                                = 350.0f;
+static constexpr float              k_defaultDezoomTriggerHeight                                = 210.0f;
+static constexpr float              k_defaultDezoomAmount                                       = 250.0f;
+static constexpr float              k_defaultDezoomBlendSpeed                                   = 0.7f;
 
 // ---------------------------------------------------------------------------------------------------------------------
 //  Head Tracking
 // ---------------------------------------------------------------------------------------------------------------------
 
-static constexpr float              k_defaultHeadTrackFadeSpeed             = 2.0f;
+static constexpr float              k_defaultHeadTrackFadeSpeed = 2.0f;
 
 // ---------------------------------------------------------------------------------------------------------------------
 //  POI System
 // ---------------------------------------------------------------------------------------------------------------------
 
-static constexpr float              k_defaultPoiDetectionRadius             = 1050.0f;
-static constexpr float              k_defaultLockDuration                   = 5.0f;
+static constexpr float              k_defaultPoiDetectionRadius                                 = 1050.0f;
+static constexpr float              k_defaultLockDuration                                       = 5.0f;
+
+static constexpr float              k_defaultActorCombatScore                                   = 600.0f;
+static constexpr bool               k_defaultActorCombatProximityEnabled                        = true;
+static constexpr float              k_defaultActorCombatProximityFactor                         = 200.0f;
+
+static constexpr float              k_defaultActorMovingScore                                   = 400.0f;
+static constexpr bool               k_defaultActorMovingProximityEnabled                        = true;
+static constexpr float              k_defaultActorMovingProximityFactor                         = 150.0f;
+
+static constexpr float              k_defaultActorInSceneScore                                  = 300.0f;
+static constexpr bool               k_defaultActorInSceneProximityEnabled                       = true;
+static constexpr float              k_defaultActorInSceneProximityFactor                        = 50.0f;
+
+static constexpr float              k_defaultActorIdleScore                                     = 10.0f;
+static constexpr bool               k_defaultActorIdleProximityEnabled                          = true;
+static constexpr float              k_defaultActorIdleProximityFactor                           = 50.0f;
+
+static constexpr float              k_defaultActorFlyingCritterScore                            = 400.0f;
+static constexpr bool               k_defaultActorFlyingCritterProximityEnabled                 = true;
+static constexpr float              k_defaultActorFlyingCritterProximityFactor                  = 150.0f;
 
 // ---------------------------------------------------------------------------------------------------------------------
 //  Debug
@@ -53,37 +73,57 @@ static constexpr int                k_defaultLoggingLevel                   = 2;
 //  Camera
 // ---------------------------------------------------------------------------------------------------------------------
 
-float                               UI::g_idleTimer                         = k_defaultIdleTimer;
-float                               UI::g_blendDuration                     = k_defaultBlendDuration;
+float                               UI::g_idleTimer                                             = k_defaultIdleTimer;
+float                               UI::g_blendDuration                                         = k_defaultBlendDuration;
 
-float                               UI::g_IdleCamOffsetX                    = k_defaultVanityCamOffsetX;
-float                               UI::g_IdleCamOffsetY                    = k_defaultVanityCamOffsetY;
-float                               UI::g_IdleCamOffsetZ                    = k_defaultVanityCamOffsetZ;
+float                               UI::g_IdleCamOffsetX                                        = k_defaultVanityCamOffsetX;
+float                               UI::g_IdleCamOffsetY                                        = k_defaultVanityCamOffsetY;
+float                               UI::g_IdleCamOffsetZ                                        = k_defaultVanityCamOffsetZ;
 
-float                               UI::g_dezoomTriggerRadius               = k_defaultDezoomTriggerRadius;
-float                               UI::g_dezoomTriggerHeight               = k_defaultDezoomTriggerHeight;
-float                               UI::g_dezoomAmount                      = k_defaultDezoomAmount;
-float                               UI::g_dezoomBlendSpeed                  = k_defaultDezoomBlendSpeed;
+float                               UI::g_dezoomTriggerRadius                                   = k_defaultDezoomTriggerRadius;
+float                               UI::g_dezoomTriggerHeight                                   = k_defaultDezoomTriggerHeight;
+float                               UI::g_dezoomAmount                                          = k_defaultDezoomAmount;
+float                               UI::g_dezoomBlendSpeed                                      = k_defaultDezoomBlendSpeed;
 
 // ---------------------------------------------------------------------------------------------------------------------
 //  Head Tracking
 // ---------------------------------------------------------------------------------------------------------------------
 
-float                               UI::g_headTrackFadeSpeed                = k_defaultHeadTrackFadeSpeed;
+float                               UI::g_headTrackFadeSpeed                                    = k_defaultHeadTrackFadeSpeed;
 
 // ---------------------------------------------------------------------------------------------------------------------
 //  POI System
 // ---------------------------------------------------------------------------------------------------------------------
 
-float                               UI::g_poiDetectionRadius                = k_defaultPoiDetectionRadius;
-float                               UI::g_lockDuration                      = k_defaultLockDuration;
+float                               UI::g_poiDetectionRadius                                    = k_defaultPoiDetectionRadius;
+float                               UI::g_lockDuration                                          = k_defaultLockDuration;
+
+float                               UI::g_actorCombatScore                                      = k_defaultActorCombatScore;
+bool                                UI::g_actorCombatProximityEnabled                           = k_defaultActorCombatProximityEnabled;
+float                               UI::g_actorCombatProximityFactor                            = k_defaultActorCombatProximityFactor;
+
+float                               UI::g_actorMovingScore                                      = k_defaultActorMovingScore;
+bool                                UI::g_actorMovingProximityEnabled                           = k_defaultActorMovingProximityEnabled;
+float                               UI::g_actorMovingProximityFactor                            = k_defaultActorMovingProximityFactor;
+
+float                               UI::g_actorInSceneScore                                     = k_defaultActorInSceneScore;
+bool                                UI::g_actorInSceneProximityEnabled                          = k_defaultActorInSceneProximityEnabled;
+float                               UI::g_actorInSceneProximityFactor                           = k_defaultActorInSceneProximityFactor;
+
+float                               UI::g_actorIdleScore                                        = k_defaultActorIdleScore;
+bool                                UI::g_actorIdleProximityEnabled                             = k_defaultActorIdleProximityEnabled;
+float                               UI::g_actorIdleProximityFactor                              = k_defaultActorIdleProximityFactor;
+
+float                               UI::g_flyingCritterScore                                    = k_defaultActorFlyingCritterScore;
+bool                                UI::g_flyingCritterProximityEnabled                         = k_defaultActorFlyingCritterProximityEnabled;
+float                               UI::g_flyingCritterProximityFactor                          = k_defaultActorFlyingCritterProximityFactor;
 
 // ---------------------------------------------------------------------------------------------------------------------
 //  Debug
 // ---------------------------------------------------------------------------------------------------------------------
 
-bool                                UI::g_debugRaycasts                     = k_defaultDebugRaycasts;
-int                                 UI::g_loggingLevel                      = k_defaultLoggingLevel;
+bool                                UI::g_debugRaycasts                                         = k_defaultDebugRaycasts;
+int                                 UI::g_loggingLevel                                          = k_defaultLoggingLevel;
 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  Logging level names, indexed 0-3 to match the simplified scheme:
@@ -219,6 +259,82 @@ static void HelpTooltip(const char* text) {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  Draws one actor-action score block:
+//
+//    <Action Name, accent colored>
+//    [ base score slider ]  Base Score
+//    [x] Proximity Bonus   [ bonus slider ]      <- checkbox and its slider share one line, and
+//                                                    the slider only appears once the box is checked
+//
+//  Used by POISystemSettings() below so each action (combat/moving/in-scene/idle/critter) reads
+//  as its own compact, clearly separated block instead of a long unbroken stack of widgets.
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+static void ScoreWithProximityControl(const char* a_id, const char* a_label, const char* a_scoreTooltip, const char* a_proximityTooltip, float& a_score, bool& a_proximityEnabled, float& a_proximityFactor, float a_scoreMin, float a_scoreMax, float a_proximityMin, float a_proximityMax) {
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 16.0f));
+
+    // ---------------------------------------------------------------------------------------------------------------------
+    //  Action name header
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.95f, 0.95f, 1.0f, 1.0f });
+    ImGuiMCP::Text("%s", a_label);
+    ImGuiMCP::PopStyleColor();
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 3.0f));
+
+    // ---------------------------------------------------------------------------------------------------------------------
+    //  Base score
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    ImGuiMCP::SetNextItemWidth(160.0f);
+
+    if (ImGuiMCP::SliderFloat((std::string("##") + a_id + "Score").c_str(), &a_score, a_scoreMin, a_scoreMax, "%.0f")) {
+
+        IniParser::Save();
+
+    }
+
+    HelpTooltip(a_scoreTooltip);
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Text("Base Score");
+
+    // ---------------------------------------------------------------------------------------------------------------------
+    //  Proximity bonus - checkbox and its slider live on the same line, slider only shown when enabled.
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    if (ImGuiMCP::Checkbox((std::string("##") + a_id + "ProxEnabled").c_str(), &a_proximityEnabled)) {
+
+        IniParser::Save();
+
+    }
+
+    HelpTooltip("Enables a proximity-based bonus for this score: the closer the POI is to the player, the higher the bonus (fades to 0 at the detection radius).");
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Text("Proximity Bonus");
+
+    if (a_proximityEnabled) {
+
+        ImGuiMCP::SameLine();
+        ImGuiMCP::SetNextItemWidth(140.0f);
+
+        if (ImGuiMCP::SliderFloat((std::string("##") + a_id + "ProxFactor").c_str(), &a_proximityFactor, a_proximityMin, a_proximityMax, "+%.0f")) {
+
+            IniParser::Save();
+
+        }
+
+        HelpTooltip(a_proximityTooltip);
+
+    }
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+    ImGuiMCP::Separator();
+
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  Register all the different setting sections in the SKSE menu
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -231,10 +347,17 @@ void UI::Register() {
     }
 
     SKSEMenuFramework::SetSection("Cinematic Idle Camera");
+
     SKSEMenuFramework::AddSectionItem(std::string("Camera"), CameraSettings);
+
     SKSEMenuFramework::AddSectionItem(std::string("Head Tracking"), HeadTrackingSettings);
-    SKSEMenuFramework::AddSectionItem(std::string("POI System"), POISystemSettings);
+
+    SKSEMenuFramework::AddSectionItem(std::string("POI System/Main Settings"), POISystemMainSettings);
+    SKSEMenuFramework::AddSectionItem(std::string("POI System/Actor Scores"), POISystemActorScores);
+    SKSEMenuFramework::AddSectionItem(std::string("POI System/Critter Scores"), POISystemCritterScores);
+
     SKSEMenuFramework::AddSectionItem(std::string("Debug"), DebugSettings);
+
     SKSEMenuFramework::AddHudElement(DrawCinematicBars);
 
 }
@@ -593,15 +716,15 @@ void UI::HeadTrackingSettings() {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-//  POI System Settings
+//  POI System - Main Settings
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-void UI::POISystemSettings() {
+void UI::POISystemMainSettings() {
 
     FontAwesome::PushSolid();
 
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%s POI System", poiSystemIcon.c_str());
+    ImGuiMCP::Text("%s POI System - Main Settings", poiSystemIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
     ImGuiMCP::Separator();
@@ -649,12 +772,12 @@ void UI::POISystemSettings() {
     ImGuiMCP::Separator();
 
     // ---------------------------------------------------------------------------------------------------------------------
-    //  Reset the POI system related settings back to default
+    //  Reset the POI system related settings back to default (only general settings)
     // ---------------------------------------------------------------------------------------------------------------------
 
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
 
-    if (ImGuiMCP::Button(std::format("{} Reset To Default##resetPoi", resetIcon).c_str())) {
+    if (ImGuiMCP::Button(std::format("{} Reset To Default##resetPoiGeneral", resetIcon).c_str())) {
 
         g_poiDetectionRadius = k_defaultPoiDetectionRadius;
         g_lockDuration = k_defaultLockDuration;
@@ -663,7 +786,145 @@ void UI::POISystemSettings() {
 
     }
 
-    HelpTooltip("Restores all POI system settings on this page to their default values.");
+    HelpTooltip("Restores all general POI system settings on this page to their default values.");
+
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  POI System - Actor Scores
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void UI::POISystemActorScores() {
+
+    FontAwesome::PushSolid();
+
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
+    ImGuiMCP::Text("%s POI System - Actor Scores", poiSystemIcon.c_str());
+    ImGuiMCP::PopStyleColor();
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Separator();
+
+    // =====================================================================================================================
+    //  Actor Score System
+    // =====================================================================================================================
+
+    ScoreWithProximityControl(
+
+        "actorCombat", "In Combat",
+        "Base score awarded to an actor who is currently in combat.",
+        "How much score is added the closer the actor is to the player (max bonus at point-blank range, 0 at the detection radius).",
+        g_actorCombatScore, g_actorCombatProximityEnabled, g_actorCombatProximityFactor,
+        0.0f, 2000.0f, 0.0f, 1000.0f
+
+    );
+
+    ScoreWithProximityControl(
+
+        "actorMoving", "Moving",
+        "Base score awarded to an actor who is currently moving.",
+        "How much score is added the closer the actor is to the player (max bonus at point-blank range, 0 at the detection radius).",
+        g_actorMovingScore, g_actorMovingProximityEnabled, g_actorMovingProximityFactor,
+        0.0f, 2000.0f, 0.0f, 1000.0f
+
+    );
+
+    ScoreWithProximityControl(
+
+        "actorInScene", "In Scene",
+        "Base score awarded to an actor who is actively engaged in a scripted sequence (dialogue, cinematic, or quest scene)",
+        "How much score is added the closer the actor is to the player (max bonus at point-blank range, 0 at the detection radius).",
+        g_actorInSceneScore, g_actorInSceneProximityEnabled, g_actorInSceneProximityFactor,
+        0.0f, 2000.0f, 0.0f, 1000.0f
+
+    );
+
+    ScoreWithProximityControl(
+
+        "actorIdle", "Idle",
+        "Base score awarded to an actor who is in a idle animation (not moving, not in combat and not in a scene).",
+        "How much score is added the closer the actor is to the player (max bonus at point-blank range, 0 at the detection radius).",
+        g_actorIdleScore, g_actorIdleProximityEnabled, g_actorIdleProximityFactor,
+        0.0f, 2000.0f, 0.0f, 1000.0f
+
+    );
+
+    // ---------------------------------------------------------------------------------------------------------------------
+    //  Reset the actor score settings back to default
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    if (ImGuiMCP::Button(std::format("{} Reset To Default##resetPoiActor", resetIcon).c_str())) {
+
+        g_actorCombatScore = k_defaultActorCombatScore;
+        g_actorCombatProximityEnabled = k_defaultActorCombatProximityEnabled;
+        g_actorCombatProximityFactor = k_defaultActorCombatProximityFactor;
+
+        g_actorMovingScore = k_defaultActorMovingScore;
+        g_actorMovingProximityEnabled = k_defaultActorMovingProximityEnabled;
+        g_actorMovingProximityFactor = k_defaultActorMovingProximityFactor;
+
+        g_actorInSceneScore = k_defaultActorInSceneScore;
+        g_actorInSceneProximityEnabled = k_defaultActorInSceneProximityEnabled;
+        g_actorInSceneProximityFactor = k_defaultActorInSceneProximityFactor;
+
+        g_actorIdleScore = k_defaultActorIdleScore;
+        g_actorIdleProximityEnabled = k_defaultActorIdleProximityEnabled;
+        g_actorIdleProximityFactor = k_defaultActorIdleProximityFactor;
+
+        IniParser::Save();
+
+    }
+
+    HelpTooltip("Restores all actor score settings on this page to their default values.");
+
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  POI System - Critter Scores
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void UI::POISystemCritterScores() {
+
+    FontAwesome::PushSolid();
+
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
+    ImGuiMCP::Text("%s POI System - Critter Scores", poiSystemIcon.c_str());
+    ImGuiMCP::PopStyleColor();
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Separator();
+
+    // =====================================================================================================================
+    //  Critter Score System
+    // =====================================================================================================================
+
+    ScoreWithProximityControl(
+
+        "flyingCritter", "Flying Critter",
+        "Base score awarded to flying critters (butterflies, moths, dragonflies, etc), since these aren't Actors and don't have an action state.",
+        "How much score is added the closer the critter is to the player (max bonus at point-blank range, 0 at the detection radius).",
+        g_flyingCritterScore, g_flyingCritterProximityEnabled, g_flyingCritterProximityFactor,
+        0.0f, 2000.0f, 0.0f, 1000.0f
+
+    );
+
+    // ---------------------------------------------------------------------------------------------------------------------
+    //  Reset the critter score settings back to default
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    if (ImGuiMCP::Button(std::format("{} Reset To Default##resetPoiCritter", resetIcon).c_str())) {
+
+        g_flyingCritterScore = k_defaultActorFlyingCritterScore;
+        g_flyingCritterProximityEnabled = k_defaultActorFlyingCritterProximityEnabled;
+        g_flyingCritterProximityFactor = k_defaultActorFlyingCritterProximityFactor;
+
+        IniParser::Save();
+
+    }
+
+    HelpTooltip("Restores all critter score settings on this page to their default values.");
 
 }
 

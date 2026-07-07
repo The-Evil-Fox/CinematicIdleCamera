@@ -556,17 +556,12 @@ namespace Hooks {
         float              bestScore = 0.0f;
 
         // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        //  Flying-critter POI tunable (butterflies, moths, dragonflies, etc. are Activator refs, not Actors)
-        // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-        static constexpr float kFlyingCritterBaseScore = 400.0f;   // > Idle (10), well under InScene (300)
-
-        // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-        //  Flying-critter detection (local to this scan)
+        //  Flying-critter POI detection (local to this scan)
         // ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         //
         //  Flying bugs (butterflies, moths, dragonflies...) are TESObjectACTI refs, not Actors,
-        //  so they can't be filtered the way NPCs/creatures are. We identify them via:
+        //  so they can't be filtered the way NPCs/creatures are, and don't get a base score from
+        //  the switch below (see UI::g_actorFlyingCritterScore instead). We identify them via:
         //
         //    1. EditorID convention: vanilla + most critter-replacer mods name these "Critter<Name>"
         //       (e.g. "CritterMothBlue", "CritterDragonfly01").
@@ -684,7 +679,13 @@ namespace Hooks {
                 float dist = player->GetPosition().GetDistance(ref->GetPosition());
                 float proximityFactor = std::max(0.0f, (UI::g_poiDetectionRadius - dist) / UI::g_poiDetectionRadius);
 
-                float score = kFlyingCritterBaseScore + proximityFactor * 150.0f;
+                float score = UI::g_flyingCritterScore;
+
+                if (UI::g_flyingCritterProximityEnabled) {
+
+                    score += proximityFactor * UI::g_flyingCritterProximityFactor;
+
+                }
 
                 if (score > bestScore) {
 
@@ -730,15 +731,59 @@ namespace Hooks {
 
             switch (action) {
 
-            case POIAction::InCombat:       score = 600.0f + proximityFactor * 200.0f;          break;
-            case POIAction::Moving:         score = 400.0f + proximityFactor * 150.0f;          break;
-            case POIAction::InScene:        score = 300.0f;                                     break;
-            case POIAction::Idle:           score = 10.0f;                                      break;
-            default:                                                                            break;
+            case POIAction::InCombat:
+
+                score = UI::g_actorCombatScore;
+
+                if (UI::g_actorCombatProximityEnabled) {
+
+                    score += proximityFactor * UI::g_actorCombatProximityFactor;
+
+                }
+
+                break;
+
+            case POIAction::Moving:
+
+                score = UI::g_actorMovingScore;
+
+                if (UI::g_actorMovingProximityEnabled) {
+
+                    score += proximityFactor * UI::g_actorMovingProximityFactor;
+
+                }
+
+                break;
+
+            case POIAction::InScene:
+
+                score = UI::g_actorInSceneScore;
+
+                if (UI::g_actorInSceneProximityEnabled) {
+
+                    score += proximityFactor * UI::g_actorInSceneProximityFactor;
+
+                }
+
+                break;
+
+            case POIAction::Idle:
+
+                score = UI::g_actorIdleScore;
+
+                if (UI::g_actorIdleProximityEnabled) {
+
+                    score += proximityFactor * UI::g_actorIdleProximityFactor;
+
+                }
+
+                break;
+
+            default:
+
+                break;
 
             }
-
-            score += proximityFactor * 50.0f;
 
             if (score > bestScore) {
 
