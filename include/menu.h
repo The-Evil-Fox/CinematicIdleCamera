@@ -56,11 +56,17 @@ namespace UI {
     extern bool  g_actorIdleProximityEnabled;
     extern float g_actorIdleProximityFactor;
 
-    // Critters
+    // Flying critters
 
     extern float g_flyingCritterScore;
     extern bool  g_flyingCritterProximityEnabled;
     extern float g_flyingCritterProximityFactor;
+
+    // Fish critters
+
+    extern float g_pondFishScore;
+    extern bool  g_pondFishProximityEnabled;
+    extern float g_pondFishProximityFactor;
 
     // ---------------------------------------------------------------------------------------------------------------------
     //  Debug

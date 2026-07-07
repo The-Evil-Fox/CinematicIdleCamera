@@ -48,6 +48,51 @@ void IniParser::Load() {
             UI::g_idleTimer = std::stof(value);
             logger::debug("Loaded fIdleTimer: {}", UI::g_idleTimer);
 
+        } else if (key == "blendDuration") {
+
+            UI::g_blendDuration = std::stof(value);
+            logger::debug("Loaded blendDuration: {}", UI::g_blendDuration);
+
+        } else if (key == "idleCameraOffsetX") {
+
+            UI::g_IdleCamOffsetX = std::stof(value);
+            logger::debug("Loaded idleCameraOffsetX: {}", UI::g_IdleCamOffsetX);
+
+        } else if (key == "idleCameraOffsetY") {
+
+            UI::g_IdleCamOffsetY = std::stof(value);
+            logger::debug("Loaded idleCameraOffsetY: {}", UI::g_IdleCamOffsetY);
+
+        } else if (key == "idleCameraOffsetZ") {
+
+            UI::g_IdleCamOffsetZ = std::stof(value);
+            logger::debug("Loaded idleCameraOffsetZ: {}", UI::g_IdleCamOffsetZ);
+
+        } else if (key == "dezoomTriggerRadius") {
+
+            UI::g_dezoomTriggerRadius = std::stof(value);
+            logger::debug("Loaded dezoomTriggerRadius: {}", UI::g_dezoomTriggerRadius);
+
+        } else if (key == "dezoomTriggerHeight") {
+
+            UI::g_dezoomTriggerHeight = std::stof(value);
+            logger::debug("Loaded dezoomTriggerHeight: {}", UI::g_dezoomTriggerHeight);
+
+        } else if (key == "dezoomAmount") {
+
+            UI::g_dezoomAmount = std::stof(value);
+            logger::debug("Loaded dezoomAmount: {}", UI::g_dezoomAmount);
+
+        } else if (key == "dezoomBlendSpeed") {
+
+            UI::g_dezoomBlendSpeed = std::stof(value);
+            logger::debug("Loaded dezoomBlendSpeed: {}", UI::g_dezoomBlendSpeed);
+
+        } else if (key == "headTrackFadeSpeed") {
+
+            UI::g_headTrackFadeSpeed = std::stof(value);
+            logger::debug("Loaded headTrackFadeSpeed: {}", UI::g_headTrackFadeSpeed);
+
         } else if (key == "poiDetectionRadius") {
 
             UI::g_poiDetectionRadius = std::stof(value);
@@ -118,65 +163,35 @@ void IniParser::Load() {
             UI::g_actorIdleProximityFactor = std::stof(value);
             logger::debug("Loaded actorIdleProximityFactor: {}", UI::g_actorIdleProximityFactor);
 
-        } else if (key == "actorFlyingCritterScore") {
+        } else if (key == "flyingCritterScore") {
 
             UI::g_flyingCritterScore = std::stof(value);
             logger::debug("Loaded actorFlyingCritterScore: {}", UI::g_flyingCritterScore);
 
-        } else if (key == "actorFlyingCritterProximityEnabled") {
+        } else if (key == "flyingCritterProximityEnabled") {
 
             UI::g_flyingCritterProximityEnabled = (value == "1" || value == "true");
             logger::debug("Loaded actorFlyingCritterProximityEnabled: {}", UI::g_flyingCritterProximityEnabled);
 
-        } else if (key == "actorFlyingCritterProximityFactor") {
+        } else if (key == "flyingCritterProximityFactor") {
 
             UI::g_flyingCritterProximityFactor = std::stof(value);
             logger::debug("Loaded actorFlyingCritterProximityFactor: {}", UI::g_flyingCritterProximityFactor);
 
-        } else if (key == "blendDuration") {
+        } else if (key == "pondFishScore") {
 
-            UI::g_blendDuration = std::stof(value);
-            logger::debug("Loaded blendDuration: {}", UI::g_blendDuration);
+            UI::g_pondFishScore = std::stof(value);
+            logger::debug("Loaded pondFishScore: {}", UI::g_pondFishScore);
 
-        } else if (key == "idleCameraOffsetX") {
+        } else if (key == "pondFishProximityEnabled") {
 
-            UI::g_IdleCamOffsetX = std::stof(value);
-            logger::debug("Loaded idleCameraOffsetX: {}", UI::g_IdleCamOffsetX);
+            UI::g_pondFishProximityEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded pondFishProximityEnabled: {}", UI::g_pondFishProximityEnabled);
 
-        } else if (key == "idleCameraOffsetY") {
+        } else if (key == "pondFishProximityFactor") {
 
-            UI::g_IdleCamOffsetY = std::stof(value);
-            logger::debug("Loaded idleCameraOffsetY: {}", UI::g_IdleCamOffsetY);
-
-        } else if (key == "idleCameraOffsetZ") {
-
-            UI::g_IdleCamOffsetZ = std::stof(value);
-            logger::debug("Loaded idleCameraOffsetZ: {}", UI::g_IdleCamOffsetZ);
-
-        } else if (key == "headTrackFadeSpeed") {
-
-            UI::g_headTrackFadeSpeed = std::stof(value);
-            logger::debug("Loaded headTrackFadeSpeed: {}", UI::g_headTrackFadeSpeed);
-
-        } else if (key == "dezoomTriggerRadius") {
-
-            UI::g_dezoomTriggerRadius = std::stof(value);
-            logger::debug("Loaded dezoomTriggerRadius: {}", UI::g_dezoomTriggerRadius);
-
-        } else if (key == "dezoomTriggerHeight") {
-
-            UI::g_dezoomTriggerHeight = std::stof(value);
-            logger::debug("Loaded dezoomTriggerHeight: {}", UI::g_dezoomTriggerHeight);
-
-        } else if (key == "dezoomAmount") {
-
-            UI::g_dezoomAmount = std::stof(value);
-            logger::debug("Loaded dezoomAmount: {}", UI::g_dezoomAmount);
-
-        } else if (key == "dezoomBlendSpeed") {
-
-            UI::g_dezoomBlendSpeed = std::stof(value);
-            logger::debug("Loaded dezoomBlendSpeed: {}", UI::g_dezoomBlendSpeed);
+            UI::g_pondFishProximityFactor = std::stof(value);
+            logger::debug("Loaded pondFishProximityFactor: {}", UI::g_pondFishProximityFactor);
 
         } else if (key == "debugRaycasts") {
 
@@ -272,9 +287,15 @@ void IniParser::Save() {
     file << "\n";
     file << "; Flying critters (butterflies, moths, dragonflies, etc) use their own score, since they\n";
     file << "; aren't Actors and don't have an action state.\n";
-    file << "actorFlyingCritterScore=" << UI::g_flyingCritterScore << "\n";
-    file << "actorFlyingCritterProximityEnabled=" << (UI::g_flyingCritterProximityEnabled ? "1" : "0") << "\n";
-    file << "actorFlyingCritterProximityFactor=" << UI::g_flyingCritterProximityFactor << "\n";
+    file << "flyingCritterScore=" << UI::g_flyingCritterScore << "\n";
+    file << "flyingCritterProximityEnabled=" << (UI::g_flyingCritterProximityEnabled ? "1" : "0") << "\n";
+    file << "flyingCritterProximityFactor=" << UI::g_flyingCritterProximityFactor << "\n";
+    file << "\n";
+    file << "; Pond fish (perches, salmon, etc) use their own score, since they\n";
+    file << "; aren't Actors and don't have an action state.\n";
+    file << "pondFishScore=" << UI::g_pondFishScore << "\n";
+    file << "pondFishProximityEnabled=" << (UI::g_pondFishProximityEnabled ? "1" : "0") << "\n";
+    file << "pondFishProximityFactor=" << UI::g_pondFishProximityFactor << "\n";
     file << "\n";
     file << ";=====================DEBUG SETTINGS=============================\n";
     file << "\n";

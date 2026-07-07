@@ -18,7 +18,8 @@ namespace Hooks {
         Idle,
         InCombat,
         InScene,
-        Moving
+        Moving,
+        PondFish
 
     };
 

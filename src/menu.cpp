@@ -35,8 +35,12 @@ static constexpr float              k_defaultHeadTrackFadeSpeed = 2.0f;
 //  POI System
 // ---------------------------------------------------------------------------------------------------------------------
 
+// Main settings
+
 static constexpr float              k_defaultPoiDetectionRadius                                 = 1050.0f;
 static constexpr float              k_defaultLockDuration                                       = 5.0f;
+
+// Actors
 
 static constexpr float              k_defaultActorCombatScore                                   = 600.0f;
 static constexpr bool               k_defaultActorCombatProximityEnabled                        = true;
@@ -54,16 +58,24 @@ static constexpr float              k_defaultActorIdleScore                     
 static constexpr bool               k_defaultActorIdleProximityEnabled                          = true;
 static constexpr float              k_defaultActorIdleProximityFactor                           = 50.0f;
 
-static constexpr float              k_defaultActorFlyingCritterScore                            = 400.0f;
-static constexpr bool               k_defaultActorFlyingCritterProximityEnabled                 = true;
-static constexpr float              k_defaultActorFlyingCritterProximityFactor                  = 150.0f;
+// Flying critters
+
+static constexpr float              k_defaultFlyingCritterScore                                 = 400.0f;
+static constexpr bool               k_defaultFlyingCritterProximityEnabled                      = true;
+static constexpr float              k_defaultFlyingCritterProximityFactor                       = 150.0f;
+
+// Fish critters
+
+static constexpr float              k_defaultFishScore                                          = 300.0f;
+static constexpr bool               k_defaultFishProximityEnabled                               = true;
+static constexpr float              k_defaultFishProximityFactor                                = 150.0f;
 
 // ---------------------------------------------------------------------------------------------------------------------
 //  Debug
 // ---------------------------------------------------------------------------------------------------------------------
 
-static constexpr bool               k_defaultDebugRaycasts                  = false;
-static constexpr int                k_defaultLoggingLevel                   = 2; // 0 = critical, 1 = warn, 2 = info, 3 = debug
+static constexpr bool               k_defaultDebugRaycasts                                      = false;
+static constexpr int                k_defaultLoggingLevel                                       = 2; // 0 = critical, 1 = warn, 2 = info, 3 = debug
 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  Initalize the sliders in the ui with the default values (used only when the INI doesn't exist or a param in it was completely removed)
@@ -95,8 +107,12 @@ float                               UI::g_headTrackFadeSpeed                    
 //  POI System
 // ---------------------------------------------------------------------------------------------------------------------
 
+// Main settings
+
 float                               UI::g_poiDetectionRadius                                    = k_defaultPoiDetectionRadius;
 float                               UI::g_lockDuration                                          = k_defaultLockDuration;
+
+// Actors
 
 float                               UI::g_actorCombatScore                                      = k_defaultActorCombatScore;
 bool                                UI::g_actorCombatProximityEnabled                           = k_defaultActorCombatProximityEnabled;
@@ -114,9 +130,17 @@ float                               UI::g_actorIdleScore                        
 bool                                UI::g_actorIdleProximityEnabled                             = k_defaultActorIdleProximityEnabled;
 float                               UI::g_actorIdleProximityFactor                              = k_defaultActorIdleProximityFactor;
 
-float                               UI::g_flyingCritterScore                                    = k_defaultActorFlyingCritterScore;
-bool                                UI::g_flyingCritterProximityEnabled                         = k_defaultActorFlyingCritterProximityEnabled;
-float                               UI::g_flyingCritterProximityFactor                          = k_defaultActorFlyingCritterProximityFactor;
+// Flying critters
+
+float                               UI::g_flyingCritterScore                                    = k_defaultFlyingCritterScore;
+bool                                UI::g_flyingCritterProximityEnabled                         = k_defaultFlyingCritterProximityEnabled;
+float                               UI::g_flyingCritterProximityFactor                          = k_defaultFlyingCritterProximityFactor;
+
+// Fish critters
+
+float                               UI::g_pondFishScore                                         = k_defaultFishScore;
+bool                                UI::g_pondFishProximityEnabled                              = k_defaultFishProximityEnabled;
+float                               UI::g_pondFishProximityFactor                               = k_defaultFishProximityFactor;
 
 // ---------------------------------------------------------------------------------------------------------------------
 //  Debug
@@ -901,9 +925,19 @@ void UI::POISystemCritterScores() {
     ScoreWithProximityControl(
 
         "flyingCritter", "Flying Critter",
-        "Base score awarded to flying critters (butterflies, moths, dragonflies, etc), since these aren't Actors and don't have an action state.",
+        "Base score awarded to a flying critter (butterflies, moths, dragonflies, etc).",
         "How much score is added the closer the critter is to the player (max bonus at point-blank range, 0 at the detection radius).",
         g_flyingCritterScore, g_flyingCritterProximityEnabled, g_flyingCritterProximityFactor,
+        0.0f, 2000.0f, 0.0f, 1000.0f
+
+    );
+
+    ScoreWithProximityControl(
+
+        "pondFish", "Pond Fish",
+        "Base score awarded to a fish critter (perches, salmon, etc).",
+        "How much score is added the closer the critter is to the player (max bonus at point-blank range, 0 at the detection radius).",
+        g_pondFishScore, g_pondFishProximityEnabled, g_pondFishProximityFactor,
         0.0f, 2000.0f, 0.0f, 1000.0f
 
     );
@@ -916,9 +950,13 @@ void UI::POISystemCritterScores() {
 
     if (ImGuiMCP::Button(std::format("{} Reset To Default##resetPoiCritter", resetIcon).c_str())) {
 
-        g_flyingCritterScore = k_defaultActorFlyingCritterScore;
-        g_flyingCritterProximityEnabled = k_defaultActorFlyingCritterProximityEnabled;
-        g_flyingCritterProximityFactor = k_defaultActorFlyingCritterProximityFactor;
+        g_flyingCritterScore = k_defaultFlyingCritterScore;
+        g_flyingCritterProximityEnabled = k_defaultFlyingCritterProximityEnabled;
+        g_flyingCritterProximityFactor = k_defaultFlyingCritterProximityFactor;
+
+        g_pondFishScore = k_defaultFishScore;
+        g_pondFishProximityEnabled = k_defaultFishProximityEnabled;
+        g_pondFishProximityFactor = k_defaultFishProximityFactor;
 
         IniParser::Save();
 
