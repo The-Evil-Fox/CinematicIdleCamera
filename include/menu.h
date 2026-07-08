@@ -14,6 +14,7 @@ namespace UI {
     // ---------------------------------------------------------------------------------------------------------------------
 
     extern float g_idleTimer;
+    extern float g_blackBarsSpeed;
     extern float g_blendDuration;
     extern float g_IdleCamOffsetX;
     extern float g_IdleCamOffsetY;

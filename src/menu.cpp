@@ -2,6 +2,9 @@
 #include <format>
 #include "hooks/PlayerCameraHook.h"
 #include "utility.h"
+#include <Windows.h>
+#include <mmsystem.h>
+#pragma comment(lib, "winmm.lib")
 
 namespace logger = SKSE::log;
 
@@ -14,6 +17,7 @@ namespace logger = SKSE::log;
 // ---------------------------------------------------------------------------------------------------------------------
 
 static constexpr float              k_defaultIdleTimer                                          = 5.0f;
+static constexpr float              k_defaultBlackBarsSpeed                                     = 1.0f;
 static constexpr float              k_defaultBlendDuration                                      = 5.0f;
 
 static constexpr float              k_defaultVanityCamOffsetX                                   = 75.0f;
@@ -90,6 +94,7 @@ static constexpr int                k_defaultLoggingLevel                       
 // ---------------------------------------------------------------------------------------------------------------------
 
 float                               UI::g_idleTimer                                             = k_defaultIdleTimer;
+float                               UI::g_blackBarsSpeed                                        = k_defaultBlackBarsSpeed;
 float                               UI::g_blendDuration                                         = k_defaultBlendDuration;
 
 float                               UI::g_IdleCamOffsetX                                        = k_defaultVanityCamOffsetX;
@@ -395,6 +400,18 @@ void UI::Register() {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  Sound effect player
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+static void playSoundEffect(const std::string& a_filePath) {
+
+    std::string fullPath = "Data\\" + a_filePath;
+    std::replace(fullPath.begin(), fullPath.end(), '/', '\\');
+    PlaySoundA(fullPath.c_str(), NULL, SND_ASYNC | SND_FILENAME);
+
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  Black bars used to make the vanity mode more cinematic
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -405,27 +422,49 @@ void UI::DrawCinematicBars() {
     if (!playerCamera || !playerCamera->currentState) {
 
         return;
-
+    
     }
 
     const bool inVanity = playerCamera->currentState->id == RE::CameraState::kAutoVanity;
 
+    static bool s_wasInVanity = false;           // Track previous vanity state
+    static bool s_soundPlayedForAppear = false;  // Prevent duplicate enter sounds
+    static bool s_soundPlayedForDisappear = false; // Prevent duplicate exit sounds
     static float s_progress = 0.0f;
 
     auto* io = ImGuiMCP::GetIO();
     const float dt = io->DeltaTime;
-    const float slideSpeed = 2.0f;
 
     if (inVanity) {
 
-        s_progress = std::min(1.0f, s_progress + slideSpeed * dt);
+        s_progress = std::min(1.0f, s_progress + g_blackBarsSpeed * dt);
 
     } else {
 
-        s_progress = std::max(0.0f, s_progress - slideSpeed * dt);
+        s_progress = std::max(0.0f, s_progress - g_blackBarsSpeed * dt);
 
     }
 
+    // Check if we're starting to enter vanity mode (just transitioned in)
+    if (inVanity != s_wasInVanity) {
+
+        if (inVanity) {
+
+            logger::debug("Cinematic black bars drawing -> Playing entering vanity mode sound effect");
+            playSoundEffect("SKSE\\Plugins\\cinematicidlecamera\\FX\\entervanitymode.wav");
+
+        } else {
+
+            logger::debug("Cinematic black bars removing -> Playing exiting vanity mode sound effect");
+            playSoundEffect("SKSE\\Plugins\\cinematicidlecamera\\FX\\exitvanitymode.wav");
+       
+        }
+    
+    }
+
+    s_wasInVanity = inVanity;
+
+    // Early return if bars are fully hidden
     if (s_progress <= 0.0f) {
 
         return;
@@ -441,11 +480,7 @@ void UI::DrawCinematicBars() {
     // Smoothstep easing
     const float t = s_progress * s_progress * (3.0f - 2.0f * s_progress);
 
-    // At t=0: bars are fully off-screen. At t=1: bars are fully on-screen.
-    // Top bar slides down: at t=0 bottom edge is at 0 (hidden above), at t=1 bottom edge is at barHeight
     const float topBarBottom = barHeight * t;
-
-    // Bottom bar slides up: at t=0 top edge is at screenH (hidden below), at t=1 top edge is at screenH - barHeight
     const float botBarTop = screenH - barHeight * t;
 
     const ImGuiMCP::ImU32 barColor = ImGuiMCP::ColorConvertFloat4ToU32(ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 1.0f });
@@ -455,7 +490,6 @@ void UI::DrawCinematicBars() {
 
     // Bottom bar
     ImGuiMCP::ImDrawListManager::AddRectFilled(drawList, ImGuiMCP::ImVec2{ 0.0f, botBarTop }, ImGuiMCP::ImVec2{ screenW, botBarTop + barHeight }, barColor, 0.0f, 0);
-
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -491,6 +525,26 @@ void UI::CameraSettings() {
     HelpTooltip("How many seconds of player inactivity before the camera switches into idle mode.");
     ImGuiMCP::SameLine();
     ImGuiMCP::Text("Idle timer");
+
+    ImGuiMCP::Separator();
+
+    // ---------------------------------------------------------------------------------------------------------------------
+    //  Black bars speed (cinematic bars)
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    ImGuiMCP::SetNextItemWidth(200.0f);
+
+    if (ImGuiMCP::SliderFloat("##blackBarsSlideSpeed", &g_blackBarsSpeed, 0.1f, 5.0f, "%.1f")) {
+
+        IniParser::Save();
+
+    }
+
+    HelpTooltip("How fast the cinematic bars slide in and out when entering/exiting vanity mode.");
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Text("Black bars slide speed");
 
     ImGuiMCP::Separator();
 
@@ -677,6 +731,7 @@ void UI::CameraSettings() {
     if (ImGuiMCP::Button(std::format("{} Reset To Default##resetCamera", resetIcon).c_str())) {
 
         g_idleTimer = k_defaultIdleTimer;
+        g_blackBarsSpeed = k_defaultBlackBarsSpeed;
         g_blendDuration = k_defaultBlendDuration;
         g_IdleCamOffsetX = k_defaultVanityCamOffsetX;
         g_IdleCamOffsetY = k_defaultVanityCamOffsetY;

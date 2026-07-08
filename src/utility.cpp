@@ -48,6 +48,11 @@ void IniParser::Load() {
             UI::g_idleTimer = std::stof(value);
             logger::debug("Loaded fIdleTimer: {}", UI::g_idleTimer);
 
+        } else if (key == "blackBarsSlideSpeed") {
+
+            UI::g_blackBarsSpeed = std::stof(value);
+            logger::debug("Loaded black bars slide speed: {}", UI::g_blackBarsSpeed);
+
         } else if (key == "blendDuration") {
 
             UI::g_blendDuration = std::stof(value);
@@ -253,25 +258,32 @@ void IniParser::Save() {
 
     file << ";=====================CAMERA SETTINGS============================\n";
     file << "\n";
-    file << "; Camera Idle Timer (seconds without any player input before Cinematic Idle Mode activates)\n";
+    file << "; Camera Idle Timer (seconds without any player input before vanity mode activates)\n";
     file << "fIdleTimer=" << UI::g_idleTimer << "\n";
+    file << "\n";
+    file << "; Speed at which cinematic bars slide in/out\n";
+    file << "blackBarsSlideSpeed=" << UI::g_blackBarsSpeed << "\n";
     file << "\n";
     file << "; Camera Blend Duration (seconds for a POI-switch / entry / exit blend)\n";
     file << "blendDuration=" << UI::g_blendDuration << "\n";
     file << "\n";
-    file << "; Idle Camera Offsets (Skyrim units)\n";
+    file << "; Idle Camera Offsets (Skyrim units, ~70 units per meter)\n";
     file << "idleCameraOffsetX=" << UI::g_IdleCamOffsetX << "\n";
     file << "idleCameraOffsetY=" << UI::g_IdleCamOffsetY << "\n";
     file << "idleCameraOffsetZ=" << UI::g_IdleCamOffsetZ << "\n";
     file << "\n";
-    file << "; Dynamic Dezoom: pulls the camera back when a POI is both close to the player and well\n";
-    file << "; above them, since this system only rotates yaw and can't tilt to keep it in frame.\n";
-    file << "; Trigger radius/height are in Skyrim units (~70 units per meter). Amount is added to\n";
-    file << "; idleCameraOffsetY at full weight (signed - flip if it zooms the wrong way). Blend speed\n";
-    file << "; is in units/sec, matching headTrackFadeSpeed.\n";
+    file << "; Dynamic Dezoom: pulls the camera back when a POI is both close to the player and well above them, since this system only rotates yaw and can't tilt to keep it in frame.\n";
+    file << "\n";
+    file << "; How far above the player a POI must be, while inside the trigger radius, before the dezoom kicks in.\n";
     file << "dezoomTriggerRadius=" << UI::g_dezoomTriggerRadius << "\n";
+    file << "\n";
+    file << "; Horizontal distance from the player within which an overhead POI can trigger the dezoom.\n";
     file << "dezoomTriggerHeight=" << UI::g_dezoomTriggerHeight << "\n";
+    file << "\n";
+    file << "; How far the camera pulls back once the dezoom is fully active (added on top of the Idle camera offset Y).\n";
     file << "dezoomAmount=" << UI::g_dezoomAmount << "\n";
+    file << "\n";
+    file << "; How quickly the dezoom fades in and out as a POI enters or leaves the trigger zone.\n";
     file << "dezoomBlendSpeed=" << UI::g_dezoomBlendSpeed << "\n";
     file << "\n";
     file << ";=====================HEAD TRACKING SETTINGS=====================\n";
@@ -296,7 +308,8 @@ void IniParser::Save() {
     file << "lockDuration=" << UI::g_lockDuration << "\n";
     file << "\n";
     file << "; Base score awarded to an actor per action state, plus an optional proximity bonus\n";
-    file << "; (added on top, scaled 0-1 by how close the POI is relative to poiDetectionRadius)\n";
+    file << "; (added on top of the initial score, and then scaled by how close the POI is relative to the player)\n";
+    file << "\n";
     file << "actorCombatScore=" << UI::g_actorCombatScore << "\n";
     file << "actorCombatProximityEnabled=" << (UI::g_actorCombatProximityEnabled ? "1" : "0") << "\n";
     file << "actorCombatProximityFactor=" << UI::g_actorCombatProximityFactor << "\n";
@@ -314,13 +327,13 @@ void IniParser::Save() {
     file << "actorIdleProximityFactor=" << UI::g_actorIdleProximityFactor << "\n";
     file << "\n";
     file << "; Flying critters (butterflies, moths, dragonflies, etc) use their own score, since they\n";
-    file << "; aren't Actors and don't have an action state.\n";
+    file << "; aren't actors and don't have an action state.\n";
     file << "flyingCritterScore=" << UI::g_flyingCritterScore << "\n";
     file << "flyingCritterProximityEnabled=" << (UI::g_flyingCritterProximityEnabled ? "1" : "0") << "\n";
     file << "flyingCritterProximityFactor=" << UI::g_flyingCritterProximityFactor << "\n";
     file << "\n";
-    file << "; Pond fish (perches, salmon, etc) use their own score, since they\n";
-    file << "; aren't Actors and don't have an action state.\n";
+    file << "; fishs (perches, salmon, etc) use their own score, since they\n";
+    file << "; aren't actors either and don't have an action state.\n";
     file << "pondFishScore=" << UI::g_pondFishScore << "\n";
     file << "pondFishProximityEnabled=" << (UI::g_pondFishProximityEnabled ? "1" : "0") << "\n";
     file << "pondFishProximityFactor=" << UI::g_pondFishProximityFactor << "\n";
