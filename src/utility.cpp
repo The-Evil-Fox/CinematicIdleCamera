@@ -48,6 +48,21 @@ void IniParser::Load() {
             UI::g_idleTimer = std::stof(value);
             logger::debug("Loaded fIdleTimer: {}", UI::g_idleTimer);
 
+        } else if (key == "blackBarsEnabled") {
+
+            UI::g_blackBarsEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded blackBarsEnabled: {}", UI::g_blackBarsEnabled);
+
+        } else if (key == "blackBarsSlideSpeed") {
+
+            UI::g_blackBarsSpeed = std::stof(value);
+            logger::debug("Loaded black bars slide speed: {}", UI::g_blackBarsSpeed);
+
+        } else if (key == "blackBarsSoundEnabled") {
+
+            UI::g_blackBarsSoundEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded blackBarsSoundEnabled: {}", UI::g_blackBarsSoundEnabled);
+
         } else if (key == "blackBarsSlideSpeed") {
 
             UI::g_blackBarsSpeed = std::stof(value);
@@ -261,16 +276,22 @@ void IniParser::Save() {
     file << "; Camera Idle Timer (seconds without any player input before vanity mode activates)\n";
     file << "fIdleTimer=" << UI::g_idleTimer << "\n";
     file << "\n";
+    file << "; Cinematic Black Bars Enabled (0 = off, 1 = on)\n";
+    file << "blackBarsEnabled=" << (UI::g_blackBarsEnabled ? "1" : "0") << "\n";
+    file << "\n";
     file << "; Speed at which cinematic bars slide in/out\n";
     file << "blackBarsSlideSpeed=" << UI::g_blackBarsSpeed << "\n";
     file << "\n";
-    file << "; Camera Blend Duration (seconds for a POI-switch / entry / exit blend)\n";
-    file << "blendDuration=" << UI::g_blendDuration << "\n";
+    file << "; Black Bars Sound Effects Enabled (0 = off, 1 = on)\n";
+    file << "blackBarsSoundEnabled=" << (UI::g_blackBarsSoundEnabled ? "1" : "0") << "\n";
     file << "\n";
     file << "; Idle Camera Offsets (Skyrim units, ~70 units per meter)\n";
     file << "idleCameraOffsetX=" << UI::g_IdleCamOffsetX << "\n";
     file << "idleCameraOffsetY=" << UI::g_IdleCamOffsetY << "\n";
     file << "idleCameraOffsetZ=" << UI::g_IdleCamOffsetZ << "\n";
+    file << "\n";
+    file << "; Camera Blend Duration (seconds for a POI-switch / entry / exit blend)\n";
+    file << "blendDuration=" << UI::g_blendDuration << "\n";
     file << "\n";
     file << "; Dynamic Dezoom: pulls the camera back when a POI is both close to the player and well above them, since this system only rotates yaw and can't tilt to keep it in frame.\n";
     file << "\n";

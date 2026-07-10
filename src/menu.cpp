@@ -16,13 +16,21 @@ namespace logger = SKSE::log;
 //  Camera
 // ---------------------------------------------------------------------------------------------------------------------
 
+// Main Settings
+
 static constexpr float              k_defaultIdleTimer                                          = 5.0f;
+static constexpr bool               k_defaultBlackBarsEnabled                                   = true;
 static constexpr float              k_defaultBlackBarsSpeed                                     = 1.0f;
-static constexpr float              k_defaultBlendDuration                                      = 5.0f;
+static constexpr bool               k_defaultBlackBarsSoundEnabled                              = true;
+
+// Position
 
 static constexpr float              k_defaultVanityCamOffsetX                                   = 75.0f;
 static constexpr float              k_defaultVanityCamOffsetY                                   = 130.0f;
 static constexpr float              k_defaultVanityCamOffsetZ                                   = 0.0f;
+static constexpr float              k_defaultBlendDuration                                      = 5.0f;
+
+// Zoom/Dezoom
 
 static constexpr float              k_defaultDezoomTriggerRadius                                = 350.0f;
 static constexpr float              k_defaultDezoomTriggerHeight                                = 210.0f;
@@ -93,13 +101,21 @@ static constexpr int                k_defaultLoggingLevel                       
 //  Camera
 // ---------------------------------------------------------------------------------------------------------------------
 
+// Main settings
+
 float                               UI::g_idleTimer                                             = k_defaultIdleTimer;
+bool                                UI::g_blackBarsEnabled                                      = k_defaultBlackBarsEnabled;
 float                               UI::g_blackBarsSpeed                                        = k_defaultBlackBarsSpeed;
-float                               UI::g_blendDuration                                         = k_defaultBlendDuration;
+bool                                UI::g_blackBarsSoundEnabled                                 = k_defaultBlackBarsSoundEnabled;
+
+// Camera position
 
 float                               UI::g_IdleCamOffsetX                                        = k_defaultVanityCamOffsetX;
 float                               UI::g_IdleCamOffsetY                                        = k_defaultVanityCamOffsetY;
 float                               UI::g_IdleCamOffsetZ                                        = k_defaultVanityCamOffsetZ;
+float                               UI::g_blendDuration                                         = k_defaultBlendDuration;
+
+// Zoom/Dezoom
 
 float                               UI::g_dezoomTriggerRadius                                   = k_defaultDezoomTriggerRadius;
 float                               UI::g_dezoomTriggerHeight                                   = k_defaultDezoomTriggerHeight;
@@ -385,7 +401,9 @@ void UI::Register() {
 
     SKSEMenuFramework::SetSection("Cinematic Idle Camera");
 
-    SKSEMenuFramework::AddSectionItem(std::string("Camera"), CameraSettings);
+    SKSEMenuFramework::AddSectionItem(std::string("Camera/Main Settings"), CameraMainSettings);
+    SKSEMenuFramework::AddSectionItem(std::string("Camera/Position"), CameraPositionSettings);
+    SKSEMenuFramework::AddSectionItem(std::string("Camera/Zoom & Dezoom"), CameraZoomSettings);
 
     SKSEMenuFramework::AddSectionItem(std::string("Head Tracking"), HeadTrackingSettings);
 
@@ -419,10 +437,10 @@ void UI::DrawCinematicBars() {
 
     auto* playerCamera = RE::PlayerCamera::GetSingleton();
 
-    if (!playerCamera || !playerCamera->currentState) {
+    if (!playerCamera || !playerCamera->currentState || !g_blackBarsEnabled) {
 
         return;
-    
+
     }
 
     const bool inVanity = playerCamera->currentState->id == RE::CameraState::kAutoVanity;
@@ -445,21 +463,27 @@ void UI::DrawCinematicBars() {
 
     }
 
-    // Check if we're starting to enter vanity mode (just transitioned in)
-    if (inVanity != s_wasInVanity) {
+    // Only plays the sound effect when it's enabled to true
+    if (g_blackBarsSoundEnabled) {
 
-        if (inVanity) {
+        if (inVanity != s_wasInVanity) {
 
-            logger::debug("Cinematic black bars drawing -> Playing entering vanity mode sound effect");
-            playSoundEffect("SKSE\\Plugins\\cinematicidlecamera\\FX\\entervanitymode.wav");
+            if (inVanity) {
 
-        } else {
+                logger::debug("Cinematic black bars drawing -> Playing entering vanity mode sound effect");
 
-            logger::debug("Cinematic black bars removing -> Playing exiting vanity mode sound effect");
-            playSoundEffect("SKSE\\Plugins\\cinematicidlecamera\\FX\\exitvanitymode.wav");
-       
+                playSoundEffect("SKSE\\Plugins\\cinematicidlecamera\\FX\\entervanitymode.wav");
+
+            } else {
+
+                logger::debug("Cinematic black bars removing -> Playing exiting vanity mode sound effect");
+
+                playSoundEffect("SKSE\\Plugins\\cinematicidlecamera\\FX\\exitvanitymode.wav");
+
+            }
+
         }
-    
+
     }
 
     s_wasInVanity = inVanity;
@@ -493,15 +517,15 @@ void UI::DrawCinematicBars() {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-//  Camera Settings
+//  Camera Settings - Main Settings
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-void UI::CameraSettings() {
+void UI::CameraMainSettings() {
 
     FontAwesome::PushSolid();
 
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%s Camera Settings", cameraIcon.c_str());
+    ImGuiMCP::Text("%s Camera Settings - Main Settings", cameraIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
     ImGuiMCP::Separator();
@@ -529,43 +553,100 @@ void UI::CameraSettings() {
     ImGuiMCP::Separator();
 
     // ---------------------------------------------------------------------------------------------------------------------
-    //  Black bars speed (cinematic bars)
+    //  Black bars enabled toggle
     // ---------------------------------------------------------------------------------------------------------------------
 
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
 
-    ImGuiMCP::SetNextItemWidth(200.0f);
-
-    if (ImGuiMCP::SliderFloat("##blackBarsSlideSpeed", &g_blackBarsSpeed, 0.1f, 5.0f, "%.1f")) {
+    if (ImGuiMCP::Checkbox("##blackBarsEnabled", &g_blackBarsEnabled)) {
 
         IniParser::Save();
 
     }
 
-    HelpTooltip("How fast the cinematic bars slide in and out when entering/exiting vanity mode.");
+    HelpTooltip("Enable or disable the cinematic black bars that appear when entering vanity mode.");
     ImGuiMCP::SameLine();
-    ImGuiMCP::Text("Black bars slide speed");
+    ImGuiMCP::Text("Cinematic Black Bars Enabled");
+
+    // Only show the following black bars settings if enabled
+    if (g_blackBarsEnabled) {
+
+        ImGuiMCP::Separator();
+
+        // ---------------------------------------------------------------------------------------------------------------------
+        //  Black bars slide speed
+        // ---------------------------------------------------------------------------------------------------------------------
+
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+        ImGuiMCP::SetNextItemWidth(200.0f);
+
+        if (ImGuiMCP::SliderFloat("##blackBarsSlideSpeed", &g_blackBarsSpeed, 0.1f, 5.0f, "%.1f")) {
+
+            IniParser::Save();
+
+        }
+
+        HelpTooltip("How fast the cinematic bars slide in and out when entering/exiting vanity mode.");
+        ImGuiMCP::SameLine();
+        ImGuiMCP::Text("Black bars slide speed");
+
+        ImGuiMCP::Separator();
+
+        // ---------------------------------------------------------------------------------------------------------------------
+        //  Black bars sound effect toggle
+        // ---------------------------------------------------------------------------------------------------------------------
+
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+        if (ImGuiMCP::Checkbox("##blackBarsSoundEnabled", &g_blackBarsSoundEnabled)) {
+
+            IniParser::Save();
+
+        }
+
+        HelpTooltip("Enable or disable the sound effects that play when the cinematic black bars appear or disappear.");
+        ImGuiMCP::SameLine();
+        ImGuiMCP::Text("Black Bars Sound Effects");
+
+    }
 
     ImGuiMCP::Separator();
 
     // ---------------------------------------------------------------------------------------------------------------------
-    //  Camera blend duration
+    //  Reset the camera main settings back to default
     // ---------------------------------------------------------------------------------------------------------------------
 
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
 
-    ImGuiMCP::SetNextItemWidth(200.0f);
+    if (ImGuiMCP::Button(std::format("{} Reset To Default##resetCameraMain", resetIcon).c_str())) {
 
-    if (ImGuiMCP::SliderFloat("##blendDuration", &g_blendDuration, 0.1f, 5.0f, "%.2f sec")) {
+        g_idleTimer = k_defaultIdleTimer;
+        g_blackBarsEnabled = k_defaultBlackBarsEnabled;
+        g_blackBarsSpeed = k_defaultBlackBarsSpeed;
+        g_blackBarsSoundEnabled = k_defaultBlackBarsSoundEnabled;
 
+        ApplyIdleTimerToIniSettings("fAutoVanityModeDelay:Camera", g_idleTimer);
         IniParser::Save();
 
     }
 
-    HelpTooltip("How long the camera takes to rotate to focus on a POI.");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text("Blend duration");
+    HelpTooltip("Restores all camera main settings on this page to their default values.");
 
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  Camera Settings - Position
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void UI::CameraPositionSettings() {
+
+    FontAwesome::PushSolid();
+
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
+    ImGuiMCP::Text("%s Camera Settings - Position", cameraIcon.c_str());
+    ImGuiMCP::PopStyleColor();
+    ImGuiMCP::SameLine();
     ImGuiMCP::Separator();
 
     // ---------------------------------------------------------------------------------------------------------------------
@@ -629,6 +710,61 @@ void UI::CameraSettings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::Text("Idle camera offset Z");
 
+    ImGuiMCP::Separator();
+
+    // ---------------------------------------------------------------------------------------------------------------------
+    //  Blend duration
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    ImGuiMCP::SetNextItemWidth(200.0f);
+
+    if (ImGuiMCP::SliderFloat("##blendDuration", &g_blendDuration, 0.1f, 5.0f, "%.2f sec")) {
+
+        IniParser::Save();
+
+    }
+
+    HelpTooltip("How long the camera takes to rotate to focus on a POI.");
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Text("Blend duration");
+
+    ImGuiMCP::Separator();
+
+    // ---------------------------------------------------------------------------------------------------------------------
+    //  Reset the camera position settings back to default
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    if (ImGuiMCP::Button(std::format("{} Reset To Default##resetCameraPosition", resetIcon).c_str())) {
+
+        g_IdleCamOffsetX = k_defaultVanityCamOffsetX;
+        g_IdleCamOffsetY = k_defaultVanityCamOffsetY;
+        g_IdleCamOffsetZ = k_defaultVanityCamOffsetZ;
+        g_blendDuration = k_defaultBlendDuration;
+
+        IniParser::Save();
+
+    }
+
+    HelpTooltip("Restores all camera position settings on this page to their default values.");
+
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  Camera Settings - Zoom/Dezoom
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void UI::CameraZoomSettings() {
+
+    FontAwesome::PushSolid();
+
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
+    ImGuiMCP::Text("%s Camera Settings - Zoom/Dezoom", cameraIcon.c_str());
+    ImGuiMCP::PopStyleColor();
+    ImGuiMCP::SameLine();
     ImGuiMCP::Separator();
 
     // ---------------------------------------------------------------------------------------------------------------------
@@ -723,30 +859,23 @@ void UI::CameraSettings() {
     ImGuiMCP::Separator();
 
     // ---------------------------------------------------------------------------------------------------------------------
-    //  Reset the camera related settings back to default
+    //  Reset the zoom/dezoom settings back to default
     // ---------------------------------------------------------------------------------------------------------------------
 
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
 
-    if (ImGuiMCP::Button(std::format("{} Reset To Default##resetCamera", resetIcon).c_str())) {
+    if (ImGuiMCP::Button(std::format("{} Reset To Default##resetCameraZoom", resetIcon).c_str())) {
 
-        g_idleTimer = k_defaultIdleTimer;
-        g_blackBarsSpeed = k_defaultBlackBarsSpeed;
-        g_blendDuration = k_defaultBlendDuration;
-        g_IdleCamOffsetX = k_defaultVanityCamOffsetX;
-        g_IdleCamOffsetY = k_defaultVanityCamOffsetY;
-        g_IdleCamOffsetZ = k_defaultVanityCamOffsetZ;
         g_dezoomTriggerRadius = k_defaultDezoomTriggerRadius;
         g_dezoomTriggerHeight = k_defaultDezoomTriggerHeight;
         g_dezoomAmount = k_defaultDezoomAmount;
         g_dezoomBlendSpeed = k_defaultDezoomBlendSpeed;
 
-        ApplyIdleTimerToIniSettings("fAutoVanityModeDelay:Camera", g_idleTimer);
         IniParser::Save();
 
     }
 
-    HelpTooltip("Restores all camera settings on this page to their default values.");
+    HelpTooltip("Restores all zoom/dezoom settings on this page to their default values.");
 
 }
 

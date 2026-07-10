@@ -13,12 +13,22 @@ namespace UI {
     //  Camera
     // ---------------------------------------------------------------------------------------------------------------------
 
+    // Main settings
+
     extern float g_idleTimer;
+    extern bool g_blackBarsEnabled;
     extern float g_blackBarsSpeed;
-    extern float g_blendDuration;
+    extern bool g_blackBarsSoundEnabled;
+
+    // Camera position
+
     extern float g_IdleCamOffsetX;
     extern float g_IdleCamOffsetY;
     extern float g_IdleCamOffsetZ;
+    extern float g_blendDuration;
+
+    // Zoom/Dezoom
+    
     extern float g_dezoomTriggerRadius;
     extern float g_dezoomTriggerHeight;
     extern float g_dezoomAmount;
@@ -87,7 +97,10 @@ namespace UI {
 
     void Register();
 
-    void CameraSettings();
+    static void CameraMainSettings();
+    static void CameraPositionSettings();
+    static void CameraZoomSettings();
+
     void HeadTrackingSettings();
 
     static void POISystemMainSettings();
