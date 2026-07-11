@@ -474,6 +474,43 @@ namespace Hooks {
     }
 
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    //  Prevents mannequins from being targetable by the POI System
+    //  (This is needed because Bethesda decided that mannequins are fucking actors when they made the game...)
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    static bool IsMannequin(RE::Actor* a_actor) {
+
+        if (!a_actor) return false;
+
+        auto* race = a_actor->GetRace();
+
+        if (race) {
+
+            const char* raceEditorID = race->GetFormEditorID();
+
+            if (raceEditorID) {
+
+                // Check for mannequin race EditorIDs
+                std::string raceEdid(raceEditorID);
+                std::transform(raceEdid.begin(), raceEdid.end(), raceEdid.begin(), ::tolower);
+
+                if (raceEdid.find("mannequin") != std::string::npos || raceEdid.find("manakin") != std::string::npos || raceEdid.find("mannequinrace") != std::string::npos) {
+
+                    return true;
+
+                } else {
+
+                    return false;
+
+                }
+
+            }
+
+        }
+
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     //  Get the currently selected actor's action
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -481,6 +518,13 @@ namespace Hooks {
 
         if (!a_actor) {
 
+            return POIAction::None;
+
+        }
+
+        if (IsMannequin(a_actor)) {
+
+            logger::debug("Actor {} detected as mannequin - skipping", a_actor->GetName());
             return POIAction::None;
 
         }
@@ -1010,9 +1054,9 @@ namespace Hooks {
                 }
 
                 // Skips followers from being targeted
-                if (s_followerFaction && actor->IsInFaction(s_followerFaction)) {
+                if (UI::g_preventFollowers && s_followerFaction && actor->IsInFaction(s_followerFaction)) {
 
-                    logger::debug("{} rejected: actor is a follower.", ref->GetName());
+                    logger::debug("{} rejected: actor is a follower and those are currently disabled in the POI System settings.", ref->GetName());
                     return RE::BSContainer::ForEachResult::kContinue;
 
                 }

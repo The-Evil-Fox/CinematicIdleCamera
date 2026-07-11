@@ -48,6 +48,7 @@ namespace UI {
 
     extern bool         g_poiSystemEnabled;
     extern bool         g_actorPoiEnabled;
+    extern bool         g_preventFollowers;
     extern bool         g_flyingCritterPoiEnabled;
     extern bool         g_fishPoiEnabled;
     extern float        g_poiDetectionRadius;

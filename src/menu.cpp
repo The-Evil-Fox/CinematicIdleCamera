@@ -51,6 +51,7 @@ static constexpr float              k_defaultHeadTrackFadeSpeed = 2.0f;
 
 static constexpr bool               k_defaultPoiSystemEnabled                                   = true;
 static constexpr bool               k_defaultActorPoiEnabled                                    = true;
+static constexpr bool               k_defaultPreventFollowers                                   = true;
 static constexpr bool               k_defaultFlyingCritterPoiEnabled                            = true;
 static constexpr bool               k_defaultFishPoiEnabled                                     = true;
 static constexpr float              k_defaultPoiDetectionRadius                                 = 1050.0f;
@@ -140,6 +141,7 @@ float                               UI::g_headTrackFadeSpeed                    
 
 bool                                UI::g_poiSystemEnabled                                      = k_defaultPoiSystemEnabled;
 bool                                UI::g_actorPoiEnabled                                       = k_defaultActorPoiEnabled;
+bool                                UI::g_preventFollowers                                      = k_defaultPreventFollowers;
 bool                                UI::g_flyingCritterPoiEnabled                               = k_defaultFlyingCritterPoiEnabled;
 bool                                UI::g_fishPoiEnabled                                        = k_defaultFishPoiEnabled;
 float                               UI::g_poiDetectionRadius                                    = k_defaultPoiDetectionRadius;
@@ -1015,6 +1017,25 @@ void UI::POISystemMainSettings() {
         "as points of interest based on their current action state (combat, moving, etc)."
     );
 
+    if (g_actorPoiEnabled) {
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
+        ImGuiMCP::Indent(40.0f);
+
+        if (ImGuiMCP::Checkbox("##preventFollowers", &g_preventFollowers)) {
+            IniParser::Save();
+            logger::debug("Prevent Followers toggle set to: {}", g_preventFollowers);
+        }
+
+        ImGuiMCP::SameLine();
+        ImGuiMCP::Text("Prevent Followers");
+        HelpTooltip(
+            "When enabled, followers (NPCs that are in the follower faction)\n"
+            "will NOT be targeted by the POI system.\n"
+        );
+
+        ImGuiMCP::Unindent(40.0f);
+    }
+
     // Flying Critter POI toggle
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
     if (ImGuiMCP::Checkbox("##flyingCritterPoiToggle", &g_flyingCritterPoiEnabled)) {
@@ -1100,6 +1121,7 @@ void UI::POISystemMainSettings() {
 
         g_poiSystemEnabled = k_defaultPoiSystemEnabled;
         g_actorPoiEnabled = k_defaultActorPoiEnabled;
+        g_preventFollowers = k_defaultPreventFollowers;
         g_flyingCritterPoiEnabled = k_defaultFlyingCritterPoiEnabled;
         g_fishPoiEnabled = k_defaultFishPoiEnabled;
         g_poiDetectionRadius = k_defaultPoiDetectionRadius;

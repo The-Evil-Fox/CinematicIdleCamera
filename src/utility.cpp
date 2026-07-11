@@ -118,11 +118,17 @@ void IniParser::Load() {
             UI::g_poiSystemEnabled = (value == "1" || value == "true");
             logger::debug("Loaded poiSystemEnabled: {}", UI::g_poiSystemEnabled);
 
-        } else if (key == "actorPoiEnabled") {
+        }
+        else if (key == "actorPoiEnabled") {
 
             UI::g_actorPoiEnabled = (value == "1" || value == "true");
             logger::debug("Loaded actorPoiEnabled: {}", UI::g_actorPoiEnabled);
 
+        } else if (key == "preventFollowers") {
+
+            UI::g_preventFollowers = (value == "1" || value == "true");
+            logger::debug("Loaded preventFollowers: {}", UI::g_preventFollowers);
+        
         } else if (key == "flyingCritterPoiEnabled") {
 
             UI::g_flyingCritterPoiEnabled = (value == "1" || value == "true");
@@ -336,6 +342,9 @@ void IniParser::Save() {
     file << "actorPoiEnabled=" << (UI::g_actorPoiEnabled ? "1" : "0") << "\n";
     file << "flyingCritterPoiEnabled=" << (UI::g_flyingCritterPoiEnabled ? "1" : "0") << "\n";
     file << "fishPoiEnabled=" << (UI::g_fishPoiEnabled ? "1" : "0") << "\n";
+    file << "\n";
+    file << "; Prevent Followers from being targeted (0 = off, 1 = on)\n";
+    file << "preventFollowers=" << (UI::g_preventFollowers ? "1" : "0") << "\n";
     file << "\n";
     file << "; POI Detection Radius (Skyrim units, ~70 units per meter)\n";
     file << "poiDetectionRadius=" << UI::g_poiDetectionRadius << "\n";
