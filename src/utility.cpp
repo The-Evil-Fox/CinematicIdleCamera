@@ -1,5 +1,6 @@
 #include "utility.h"
 #include "menu.h"
+#include <iomanip>
 
 namespace logger = SKSE::log;
 
@@ -24,7 +25,10 @@ void IniParser::Load() {
 
     }
 
+    UI::g_actorExclusionList.clear();
+
     std::string line;
+
     while (std::getline(file, line)) {
 
         if (line.empty() || line.starts_with(";")) {
@@ -128,7 +132,7 @@ void IniParser::Load() {
 
             UI::g_preventFollowers = (value == "1" || value == "true");
             logger::debug("Loaded preventFollowers: {}", UI::g_preventFollowers);
-        
+
         } else if (key == "flyingCritterPoiEnabled") {
 
             UI::g_flyingCritterPoiEnabled = (value == "1" || value == "true");
@@ -148,6 +152,37 @@ void IniParser::Load() {
 
             UI::g_lockDuration = std::stof(value);
             logger::debug("Loaded lockDuration: {}", UI::g_lockDuration);
+
+        } else if (key == "exclusionList") {
+
+            std::vector<std::string> parts;
+            std::stringstream ss(value);
+            std::string part;
+
+            while (std::getline(ss, part, '|')) {
+
+                parts.push_back(part);
+
+            }
+
+            if (parts.size() >= 2) {
+
+                UI::ActorExclusionEntry entry;
+
+                try {
+
+                    entry.formID = std::stoul(parts[0], nullptr, 16);
+                    entry.name = parts[1];
+                    UI::g_actorExclusionList.push_back(entry);
+                    logger::debug("Loaded exclusion entry: {} (0x{:08X})", entry.name, entry.formID);
+
+                } catch (const std::exception& e) {
+
+                    logger::warn("Failed to parse exclusion entry: {} - {}", value, e.what());
+
+                }
+
+            }
 
         } else if (key == "dragonScore") {
 
@@ -351,6 +386,25 @@ void IniParser::Save() {
     file << "\n";
     file << "; POI Lock Duration (seconds the camera must stay on a POI before it can switch)\n";
     file << "lockDuration=" << UI::g_lockDuration << "\n";
+    file << "\n";
+    file << "; Exclusion list (by Base Form ID)\n";
+    file << "; Format: BaseFormID|Name\n";
+    file << "; Add actors here to prevent them from being detected as POIs\n";
+
+    if (UI::g_actorExclusionList.empty()) {
+
+        file << "; No actors in exclusion list\n";
+
+    } else {
+
+        for (auto& entry : UI::g_actorExclusionList) {
+
+            file << "exclusionList=" << std::hex << std::uppercase << std::setw(8) << std::setfill('0') << entry.formID << "|"
+                << entry.name << "\n";
+
+        }
+
+    }
     file << "\n";
     file << "; Base score awarded to an actor per action state, plus an optional proximity bonus\n";
     file << "; (added on top of the initial score, and then scaled by how close the POI is relative to the player)\n";

@@ -181,6 +181,16 @@ float                               UI::g_pondFishScore                         
 bool                                UI::g_pondFishProximityEnabled                              = k_defaultFishProximityEnabled;
 float                               UI::g_pondFishProximityFactor                               = k_defaultFishProximityFactor;
 
+// Exclusion list
+
+std::vector<UI::ActorExclusionEntry> UI::g_actorExclusionList;
+
+namespace Hooks {
+
+    extern RE::TESObjectREFR* g_currentPOI;
+
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 //  Debug
 // ---------------------------------------------------------------------------------------------------------------------
@@ -398,6 +408,101 @@ static void ScoreWithProximityControl(const char* a_id, const char* a_label, con
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  Exclusion list specific functions
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void UI::AddActorToExclusionList(RE::Actor* a_actor) {
+
+    if (!a_actor) {
+
+        logger::warn("AddActorToExclusionList: a_actor is null!");
+        return;
+
+    }
+
+    const char* actorName = a_actor->GetName();
+    auto* actorBase = a_actor->GetActorBase();
+
+    if (!actorBase) {
+
+        logger::warn("AddActorToExclusionList: actorBase is null!");
+        return;
+
+    }
+
+    // ALWAYS use the ActorBase Form ID
+    RE::FormID finalFormID = actorBase->GetFormID();
+    logger::info("=== Adding actor to exclusion list ===");
+    logger::info("Actor name: {}", actorName ? actorName : "Unnamed");
+    logger::info("Base Form ID: 0x{:08X}", finalFormID);
+
+    // Check if already in list
+    for (auto& entry : g_actorExclusionList) {
+
+        if (entry.formID == finalFormID) {
+
+            logger::info("Actor already in exclusion list: {}", actorName ? actorName : "Unnamed");
+            return;
+
+        }
+
+    }
+
+    std::string nameStr = actorName ? actorName : "Unnamed";
+    g_actorExclusionList.push_back({ finalFormID, nameStr });
+
+    logger::info("Added {} (Form ID: 0x{:08X}) to exclusion list", nameStr, finalFormID);
+    IniParser::Save();
+
+    // If this actor is currently the focused POI, clear it
+    if (Hooks::g_currentPOI == a_actor) {
+
+        Hooks::g_currentPOI = nullptr;
+        logger::debug("Cleared current targeted POI because it was added to exclusion list");
+
+    }
+
+}
+
+void UI::RemoveFromActorExclusionList(size_t index) {
+
+    if (index < g_actorExclusionList.size()) {
+
+        logger::info("Removed {} from exclusion list", g_actorExclusionList[index].name);
+        g_actorExclusionList.erase(g_actorExclusionList.begin() + index);
+        IniParser::Save();
+    
+    }
+
+}
+
+bool UI::IsActorExcluded(RE::Actor* a_actor) {
+
+    if (!a_actor) return false;
+
+    auto* actorBase = a_actor->GetActorBase();
+    if (!actorBase) return false;
+
+    // ALWAYS use the ActorBase Form ID - this matches what the console shows as "Base Form"
+    RE::FormID formID = actorBase->GetFormID();
+
+    for (auto& entry : g_actorExclusionList) {
+
+        if (entry.formID == formID) {
+
+            logger::debug("IsActorExcluded: MATCH found for formID 0x{:08X}", formID);
+            return true;
+
+        }
+
+    }
+
+    logger::debug("IsActorExcluded: NO match for formID 0x{:08X}", formID);
+    return false;
+
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  Register all the different setting sections in the SKSE menu
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -418,6 +523,7 @@ void UI::Register() {
     SKSEMenuFramework::AddSectionItem(std::string("Head Tracking"), HeadTrackingSettings);
 
     SKSEMenuFramework::AddSectionItem(std::string("POI System/Main Settings"), POISystemMainSettings);
+    SKSEMenuFramework::AddSectionItem(std::string("POI System/Exclusion List"), POISystemExclusionListSettings);
     SKSEMenuFramework::AddSectionItem(std::string("POI System/Actor Scores"), POISystemActorScores);
     SKSEMenuFramework::AddSectionItem(std::string("POI System/Critter Scores"), POISystemCritterScores);
 
@@ -1132,6 +1238,147 @@ void UI::POISystemMainSettings() {
     }
 
     HelpTooltip("Restores all general POI system settings on this page to their default values.");
+
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  POI System - Exclusion List
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+void UI::POISystemExclusionListSettings() {
+
+    FontAwesome::PushSolid();
+
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
+    ImGuiMCP::Text("%s POI System - Exclusion List", FontAwesome::UnicodeToUtf8(0xf023).c_str());
+    ImGuiMCP::PopStyleColor();
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Separator();
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    // Instructions
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.7f, 0.7f, 0.8f, 1.0f });
+    ImGuiMCP::TextWrapped("To exclude an actor, open the console, click on the actor, then use the 'Add Selected' button below.");
+    ImGuiMCP::PopStyleColor();
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+
+    // Add selected actor button
+    auto* player = RE::PlayerCharacter::GetSingleton();
+
+    if (player) {
+
+        auto selectedRef = RE::Console::GetSelectedRef();
+
+        if (selectedRef) {
+
+            auto* selectedActor = selectedRef->As<RE::Actor>();
+
+            if (selectedActor && !selectedActor->IsPlayerRef()) {
+
+                bool isExcluded = IsActorExcluded(selectedActor);
+
+                if (isExcluded) {
+
+                    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.6f, 1.0f });
+                    const char* actorName = selectedActor->GetName();
+                    std::string buttonText = std::string("Already Excluded: ") + (actorName ? actorName : "Unnamed");
+                    ImGuiMCP::Button(buttonText.c_str());
+                    ImGuiMCP::PopStyleColor();
+
+                } else {
+
+                    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, ImGuiMCP::ImVec4{ 0.2f, 0.6f, 0.2f, 1.0f });
+                    const char* actorName = selectedActor->GetName();
+                    std::string buttonText = std::string("Add Selected Actor: ") + (actorName ? actorName : "Unnamed");
+
+                    if (ImGuiMCP::Button(buttonText.c_str())) {
+
+                        AddActorToExclusionList(selectedActor);
+
+                    }
+
+                    ImGuiMCP::PopStyleColor();
+
+                }
+
+                HelpTooltip("Adds the currently console-selected actor to the exclusion list.");
+
+            } else {
+
+                ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.6f, 1.0f });
+                ImGuiMCP::Text("No valid actor selected in console.");
+                ImGuiMCP::PopStyleColor();
+
+            }
+
+        } else {
+
+            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.6f, 1.0f });
+            ImGuiMCP::Text("Open the console and select an actor first.");
+            ImGuiMCP::PopStyleColor();
+
+        }
+
+    }
+
+    ImGuiMCP::Separator();
+
+    // Display exclusion list
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    if (g_actorExclusionList.empty()) {
+
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.6f, 1.0f });
+        ImGuiMCP::Text("No actors in exclusion list.");
+        ImGuiMCP::PopStyleColor();
+        return;
+
+    }
+
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.9f, 0.9f, 1.0f, 1.0f });
+    ImGuiMCP::Text("Excluded Actors:");
+    ImGuiMCP::PopStyleColor();
+
+    for (size_t i = 0; i < g_actorExclusionList.size(); ++i) {
+
+        auto& entry = g_actorExclusionList[i];
+
+        ImGuiMCP::PushID(static_cast<int>(i));
+        ImGuiMCP::Indent(20.0f);
+
+        ImGuiMCP::Text("%s (%08X)", entry.name.c_str(), entry.formID);
+
+        ImGuiMCP::SameLine();
+
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, ImGuiMCP::ImVec4{ 0.8f, 0.2f, 0.2f, 1.0f });
+
+        if (ImGuiMCP::Button("Remove")) {
+
+            RemoveFromActorExclusionList(i);
+
+        }
+
+        ImGuiMCP::PopStyleColor();
+
+        ImGuiMCP::Unindent(20.0f);
+        ImGuiMCP::PopID();
+
+    }
+
+    // Reset button
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+    std::string resetText = std::string(resetIcon) + " Clear All Exclusions";
+
+    if (ImGuiMCP::Button(resetText.c_str())) {
+
+        g_actorExclusionList.clear();
+        IniParser::Save();
+
+    }
+
+    HelpTooltip("Removes all actors from the exclusion list.");
 
 }
 

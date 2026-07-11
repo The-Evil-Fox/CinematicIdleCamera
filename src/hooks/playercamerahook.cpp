@@ -11,7 +11,7 @@ namespace Hooks {
     //  Default POI system state
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-    static RE::TESObjectREFR*               s_currentPOI                    = nullptr;
+    RE::TESObjectREFR*                      g_currentPOI                    = nullptr;
 
     static float                            s_currentScore                  = 0.0f;
 
@@ -181,7 +181,9 @@ namespace Hooks {
         }
 
         // Diagnostic only.
-        if (auto* niObj = RE::TES::GetSingleton()->Pick(pickData); niObj && !niObj->name.empty()) {
+        auto* niObj = RE::TES::GetSingleton()->Pick(pickData);
+
+        if (niObj && !niObj->name.empty()) {
 
             logger::debug("TES::Pick hit node: {}", niObj->name.c_str());
 
@@ -244,17 +246,17 @@ namespace Hooks {
         const RE::NiColorA settledColor = kGreen;
 
         // Determine if the target is a critter (flying critter or pond fish)
-        // s_currentPOI is the currently focused POI from the global state
+        // g_currentPOI is the currently focused POI from the global state
         bool isCritter = false;
 
-        if (s_currentPOI) {
+        if (g_currentPOI) {
 
-            auto* actor = s_currentPOI->As<RE::Actor>();
+            auto* actor = g_currentPOI->As<RE::Actor>();
 
             if (!actor) {
 
                 // Not an actor, check if it's a critter Activator
-                auto* base = s_currentPOI->GetBaseObject();
+                auto* base = g_currentPOI->GetBaseObject();
 
                 if (base) {
 
@@ -1053,6 +1055,13 @@ namespace Hooks {
 
                 }
 
+                if (UI::IsActorExcluded(actor)) {
+
+                    logger::debug("POI {} rejected: actor is in exclusion list.", ref->GetName());
+                    return RE::BSContainer::ForEachResult::kContinue;
+
+                }
+
                 // Skips followers from being targeted
                 if (UI::g_preventFollowers && s_followerFaction && actor->IsInFaction(s_followerFaction)) {
 
@@ -1361,9 +1370,9 @@ namespace Hooks {
         if (!UI::g_poiSystemEnabled) {
 
             // Reset any lingering POI state
-            if (s_currentPOI) {
+            if (g_currentPOI) {
 
-                s_currentPOI = nullptr;
+                g_currentPOI = nullptr;
                 s_currentScore = 0.0f;
                 s_lockTimer = 0.0f;
                 s_headTrackWeight = 0.0f;
@@ -1420,14 +1429,14 @@ namespace Hooks {
         //  2. Validate current POI
         // ---------------------------------------------------------------------------------------------------------------------
 
-        if (s_currentPOI) {
+        if (g_currentPOI) {
 
-            auto* actor = s_currentPOI->As<RE::Actor>();
+            auto* actor = g_currentPOI->As<RE::Actor>();
             bool  gone;
 
-            if (!IsCurrentPOITypeStillEnabled(s_currentPOI)) {
+            if (!IsCurrentPOITypeStillEnabled(g_currentPOI)) {
 
-                logger::debug("Current POI {} type was disabled - dropping lock", s_currentPOI->GetName());
+                logger::debug("Current POI {} type was disabled - dropping lock", g_currentPOI->GetName());
                 gone = true;
 
             } else if (actor) {
@@ -1438,13 +1447,13 @@ namespace Hooks {
 
                 // Non-actor POI (flying critter): there's no "dead" state, so validate
                 // 3D/enabled status instead.
-                gone = (!s_currentPOI->Is3DLoaded() || s_currentPOI->IsDisabled());
+                gone = (!g_currentPOI->Is3DLoaded() || g_currentPOI->IsDisabled());
 
             }
 
             if (!gone) {
 
-                float dist = player->GetPosition().GetDistance(s_currentPOI->GetPosition());
+                float dist = player->GetPosition().GetDistance(g_currentPOI->GetPosition());
                 gone = (dist > UI::g_poiDetectionRadius);
 
             }
@@ -1457,12 +1466,12 @@ namespace Hooks {
             // ---------------------------------------------------------------------------------------------------------------------
 
             s_drawDebugForThisCall = true;
-            bool occluded = HasAnythingBetween(player->GetPosition(), s_currentPOI->GetPosition());
+            bool occluded = HasAnythingBetween(player->GetPosition(), g_currentPOI->GetPosition());
             s_drawDebugForThisCall = false;
 
             if (!gone && occluded) {
 
-                logger::debug("Current POI {} became occluded - dropping lock", s_currentPOI->GetName());
+                logger::debug("Current POI {} became occluded - dropping lock", g_currentPOI->GetName());
                 gone = true;
 
             }
@@ -1473,7 +1482,7 @@ namespace Hooks {
 
                 BeginBlend(a_this->autoVanityRot, baseRot);
 
-                s_currentPOI = nullptr;
+                g_currentPOI = nullptr;
                 s_currentScore = 0.0f;
                 s_lockTimer = 0.0f;
 
@@ -1497,9 +1506,9 @@ namespace Hooks {
             float                                   foundScore              = 0.0f;
             RE::TESObjectREFR*                      candidate               = FindBestPOI(foundAction, foundScore);
 
-            if (candidate && candidate != s_currentPOI) {
+            if (candidate && candidate != g_currentPOI) {
 
-                if (!s_currentPOI || foundScore > s_currentScore) {
+                if (!g_currentPOI || foundScore > s_currentScore) {
 
                     logger::debug("Switching POI to: {} (score {:.1f})", candidate->GetName(), foundScore);
 
@@ -1508,13 +1517,13 @@ namespace Hooks {
 
                     BeginBlend(a_this->autoVanityRot, incomingRot);
 
-                    s_currentPOI = candidate;
+                    g_currentPOI = candidate;
                     s_currentScore = foundScore;
                     s_lockTimer = UI::g_lockDuration;
 
                 }
 
-            } else if (candidate && candidate == s_currentPOI) {
+            } else if (candidate && candidate == g_currentPOI) {
 
                 // Same actor is still the best candidate - re-arm the lock timer so we
                 // don't re-scan for a POI every single frame while nothing has changed.
@@ -1523,14 +1532,14 @@ namespace Hooks {
 
             } else if (!candidate) {
 
-                if (s_currentPOI) {
+                if (g_currentPOI) {
 
                     logger::debug("No visible POI in range - beginning exit blend");
                     BeginBlend(a_this->autoVanityRot, baseRot);
 
                 }
 
-                s_currentPOI = nullptr;
+                g_currentPOI = nullptr;
                 s_currentScore = 0.0f;
 
             }
@@ -1541,9 +1550,9 @@ namespace Hooks {
         //  4. Drive the camera rotation
         // ---------------------------------------------------------------------------------------------------------------------
 
-        if (s_currentPOI) {
+        if (g_currentPOI) {
 
-            auto  dir = s_currentPOI->GetPosition() - player->GetPosition();
+            auto  dir = g_currentPOI->GetPosition() - player->GetPosition();
             float liveAngle = std::atan2(dir.x, dir.y);
 
             // -----------------------------------------------------------------------------------------------------------------
@@ -1593,7 +1602,7 @@ namespace Hooks {
             a_this->autoVanityRot = blendedAngle + alpha * trackDelta;
 
             s_headTrackWeight = std::min(1.0f, s_headTrackWeight + dt * UI::g_headTrackFadeSpeed);
-            UpdatePlayerHeadtrack(player, s_currentPOI, s_headTrackWeight);
+            UpdatePlayerHeadtrack(player, g_currentPOI, s_headTrackWeight);
 
         } else {
 
@@ -1656,7 +1665,7 @@ namespace Hooks {
         //  Reset all POI/blend state so the next vanity session starts clean.
         // -----------------------------------------------------------------------------------
 
-        s_currentPOI = nullptr;
+        g_currentPOI = nullptr;
         s_currentScore = 0.0f;
         s_lockTimer = 0.0f;
 

@@ -88,6 +88,14 @@ namespace UI {
     extern bool         g_pondFishProximityEnabled;
     extern float        g_pondFishProximityFactor;
 
+    // Exclusion list
+    struct ActorExclusionEntry {
+        RE::FormID formID;
+        std::string name;
+    };
+
+    extern std::vector<ActorExclusionEntry> g_actorExclusionList;
+
     // ---------------------------------------------------------------------------------------------------------------------
     //  Debug
     // ---------------------------------------------------------------------------------------------------------------------
@@ -102,6 +110,12 @@ namespace UI {
 
     void Register();
 
+    void                DrawCinematicBars();
+
+    void                AddActorToExclusionList(RE::Actor* a_actor);
+    void                RemoveFromActorExclusionList(size_t index);
+    bool                IsActorExcluded(RE::Actor* a_actor);
+
     static void         CameraMainSettings();
     static void         CameraPositionSettings();
     static void         CameraZoomSettings();
@@ -110,11 +124,11 @@ namespace UI {
 
     static void         POISystemMainSettings();
     static void         POISystemActorScores();
+    void                POISystemExclusionListSettings();
     static void         POISystemCritterScores();
 
     void                DebugSettings();
-    void                ResetSettings();
 
-    void                DrawCinematicBars();
+    void                ResetSettings();
 
 }
