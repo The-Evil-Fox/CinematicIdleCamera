@@ -485,6 +485,23 @@ namespace Hooks {
 
         }
 
+        // Check if the actor is a dragon
+        auto* race = a_actor->GetRace();
+
+        if (race) {
+
+            // Get the race name and check if it's a dragon
+            const char* raceName = race->GetName();
+
+            if (raceName && (strstr(raceName, "Dragon") != nullptr || strstr(raceName, "DragonRace") != nullptr)) {
+
+                // Also checks that it's not a dragon priest or other related non-dragon
+                return POIAction::Dragon;
+
+            }
+
+        }
+
         if (a_actor->GetCurrentScene() != nullptr) {
 
             return POIAction::InScene;
@@ -719,7 +736,7 @@ namespace Hooks {
 
             if (base && base->GetFormType() == RE::FormType::Flora) {
 
-                logger::debug("POI {} rejected: FLORA type", ref->GetName());
+                logger::debug("{} rejected: POIs with the FLORA type are not supported", ref->GetName());
                 return RE::BSContainer::ForEachResult::kContinue;
 
             }
@@ -819,7 +836,7 @@ namespace Hooks {
 
                 if (HasAnythingBetween(player->GetPosition(), ref->GetPosition())) {
 
-                    logger::debug("POI {} rejected: the critter is occluded!", ref->GetName());
+                    logger::debug("{} rejected: the critter is occluded!", ref->GetName());
                     return RE::BSContainer::ForEachResult::kContinue;
 
                 }
@@ -851,7 +868,7 @@ namespace Hooks {
                             // Check for CC content with "fishing" in the EditorID
                             if (edidStr.find("cc") != std::string::npos && edidStr.find("fishing") != std::string::npos) {
 
-                                logger::debug("POI {} rejected: CC fishing gear", ref->GetName());
+                                logger::debug("{} rejected: seems to be a CC fishing gear", ref->GetName());
                                 return RE::BSContainer::ForEachResult::kContinue;
 
                             }
@@ -861,7 +878,7 @@ namespace Hooks {
                         // Skip initially disabled references
                         if (ref->IsInitiallyDisabled()) {
 
-                            logger::debug("POI {} rejected: initially disabled reference", ref->GetName());
+                            logger::debug("{} rejected: initially disabled reference", ref->GetName());
                             return RE::BSContainer::ForEachResult::kContinue;
 
                         }
@@ -874,7 +891,7 @@ namespace Hooks {
                             // Check for fishing gear models
                             if (modelStr.find("fishinggear") != std::string::npos || modelStr.find("fishingrod") != std::string::npos) {
 
-                                logger::debug("POI {} rejected: fishing gear model", ref->GetName());
+                                logger::debug("{} rejected: seems to be a fishing gear model", ref->GetName());
                                 return RE::BSContainer::ForEachResult::kContinue;
 
                             }
@@ -887,7 +904,7 @@ namespace Hooks {
 
                                 if (!UI::g_fishPoiEnabled) {
 
-                                    logger::debug("POI {} rejected: fish POIs disabled", ref->GetName());
+                                    logger::debug("{} rejected: fish POIs disabled", ref->GetName());
                                     return RE::BSContainer::ForEachResult::kContinue;
 
                                 }
@@ -899,12 +916,11 @@ namespace Hooks {
                                     // Check if it's actually a critter fish by looking at EditorID and allows it to be a targetable POI if that's the case
                                     if (edid && (containsCaseInsensitive(edid, "Fish") || containsCaseInsensitive(edid, "Critter"))) {
 
-                                        logger::debug("POI {} accepted as persistent fish", ref->GetName());
+                                        logger::debug("{} seems to be a persistent fish critter. Proceeding...", ref->GetName());
 
-                                    }
-                                    else {
+                                    } else {
 
-                                        logger::debug("POI {} rejected: persistent non-fish object", ref->GetName());
+                                        logger::debug("{} rejected: persistent non-fish object", ref->GetName());
                                         return RE::BSContainer::ForEachResult::kContinue;
 
                                     }
@@ -912,7 +928,7 @@ namespace Hooks {
                                 }
 
                                 // It's a pond fish
-                                logger::debug("POI {} accepted as pond fish", ref->GetName());
+                                logger::debug("{} accepted as fish critter", ref->GetName());
                                 score = UI::g_pondFishScore;
 
                                 if (UI::g_pondFishProximityEnabled) {
@@ -933,13 +949,13 @@ namespace Hooks {
 
                                 if (!UI::g_flyingCritterPoiEnabled) {
 
-                                    logger::debug("POI {} rejected: flying critter POIs disabled", ref->GetName());
+                                    logger::debug("{} rejected: flying critter POIs disabled", ref->GetName());
                                     return RE::BSContainer::ForEachResult::kContinue;
 
                                 }
 
                                 // It's a flying critter
-                               logger::debug("POI {} accepted as flying critter", ref->GetName());
+                               logger::debug("{} accepted as flying critter", ref->GetName());
                                score = UI::g_flyingCritterScore;
 
                                if (UI::g_flyingCritterProximityEnabled) {
@@ -996,7 +1012,7 @@ namespace Hooks {
                 // Skips followers from being targeted
                 if (s_followerFaction && actor->IsInFaction(s_followerFaction)) {
 
-                    logger::debug("POI {} rejected: actor is a follower.", ref->GetName());
+                    logger::debug("{} rejected: actor is a follower.", ref->GetName());
                     return RE::BSContainer::ForEachResult::kContinue;
 
                 }
@@ -1006,7 +1022,7 @@ namespace Hooks {
 
                 if (HasAnythingBetween(player->GetPosition(), ref->GetPosition())) {
 
-                    logger::debug("POI {} rejected: the reference is occluded!", ref->GetName());
+                    logger::debug("{} rejected: the reference is occluded!", ref->GetName());
                     return RE::BSContainer::ForEachResult::kContinue;
 
                 }
@@ -1019,6 +1035,20 @@ namespace Hooks {
 
                 switch (action) {
 
+                case POIAction::Dragon:
+
+                    score = UI::g_dragonScore;
+
+                    if (UI::g_dragonProximityEnabled) {
+
+                        score += proximityFactor * UI::g_dragonProximityFactor;
+
+                    }
+
+                    logger::debug("{} accepted as Dragon with score: {:.1f}", ref->GetName(), score);
+
+                    break;
+
                 case POIAction::InCombat:
 
                     score = UI::g_actorCombatScore;
@@ -1028,6 +1058,8 @@ namespace Hooks {
                         score += proximityFactor * UI::g_actorCombatProximityFactor;
 
                     }
+
+                    logger::debug("{} accepted as InCombat with score: {:.1f}", ref->GetName(), score);
 
                     break;
 
@@ -1041,6 +1073,8 @@ namespace Hooks {
 
                     }
 
+                    logger::debug("{} accepted as Moving with score: {:.1f}", ref->GetName(), score);
+
                     break;
 
                 case POIAction::InScene:
@@ -1053,6 +1087,8 @@ namespace Hooks {
 
                     }
 
+                    logger::debug("{} accepted as InScene with score: {:.1f}", ref->GetName(), score);
+
                     break;
 
                 case POIAction::Idle:
@@ -1064,6 +1100,8 @@ namespace Hooks {
                         score += proximityFactor * UI::g_actorIdleProximityFactor;
 
                     }
+
+                    logger::debug("{} accepted as Idle with score: {:.1f}", ref->GetName(), score);
 
                     break;
 

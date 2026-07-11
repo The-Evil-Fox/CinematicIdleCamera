@@ -58,6 +58,10 @@ static constexpr float              k_defaultLockDuration                       
 
 // Actors score system
 
+static constexpr float              k_defaultDragonScore                                        = 2000.0f;
+static constexpr bool               k_defaultDragonProximityEnabled                             = true;
+static constexpr float              k_defaultDragonProximityFactor                              = 1000.0f;
+
 static constexpr float              k_defaultActorCombatScore                                   = 600.0f;
 static constexpr bool               k_defaultActorCombatProximityEnabled                        = true;
 static constexpr float              k_defaultActorCombatProximityFactor                         = 200.0f;
@@ -143,6 +147,10 @@ float                               UI::g_lockDuration                          
 
 // Actors
 
+float                               UI::g_dragonScore                                           = k_defaultDragonScore;
+bool                                UI::g_dragonProximityEnabled                                = k_defaultDragonProximityEnabled;
+float                               UI::g_dragonProximityFactor                                 = k_defaultDragonProximityFactor;
+
 float                               UI::g_actorCombatScore                                      = k_defaultActorCombatScore;
 bool                                UI::g_actorCombatProximityEnabled                           = k_defaultActorCombatProximityEnabled;
 float                               UI::g_actorCombatProximityFactor                            = k_defaultActorCombatProximityFactor;
@@ -200,13 +208,13 @@ static spdlog::level::level_enum LoggingLevelToSpdlog(int loggingLevel) {
 
     switch (loggingLevel) {
 
-    case 0:  return spdlog::level::critical;
+        case 0:  return spdlog::level::critical;
 
-    case 1:  return spdlog::level::warn;
+        case 1:  return spdlog::level::warn;
 
-    case 3:  return spdlog::level::debug;
+        case 3:  return spdlog::level::debug;
 
-    default: return spdlog::level::info;
+        default: return spdlog::level::info;
 
     }
 
@@ -445,9 +453,9 @@ void UI::DrawCinematicBars() {
 
     const bool inVanity = playerCamera->currentState->id == RE::CameraState::kAutoVanity;
 
-    static bool s_wasInVanity = false;           // Track previous vanity state
-    static bool s_soundPlayedForAppear = false;  // Prevent duplicate enter sounds
-    static bool s_soundPlayedForDisappear = false; // Prevent duplicate exit sounds
+    static bool s_wasInVanity = false;              // Track previous vanity state
+    static bool s_soundPlayedForAppear = false;     // Prevent duplicate enter sounds
+    static bool s_soundPlayedForDisappear = false;  // Prevent duplicate exit sounds
     static float s_progress = 0.0f;
 
     auto* io = ImGuiMCP::GetIO();
@@ -463,7 +471,7 @@ void UI::DrawCinematicBars() {
 
     }
 
-    // Only plays the sound effect when it's enabled to true
+    // Only plays the sound effects when sound effects are enabled
     if (g_blackBarsSoundEnabled) {
 
         if (inVanity != s_wasInVanity) {
@@ -1122,6 +1130,14 @@ void UI::POISystemActorScores() {
     // =====================================================================================================================
     //  Actor Score System
     // =====================================================================================================================
+
+    ScoreWithProximityControl(
+        "dragon", "Dragon",
+        "Base score awarded to a dragon.",
+        "How much score is added the closer the dragon is to the player (max bonus at point-blank range, 0 at the detection radius).",
+        g_dragonScore, g_dragonProximityEnabled, g_dragonProximityFactor,
+        0.0f, 2000.0f, 0.0f, 1000.0f
+    );
 
     ScoreWithProximityControl(
 

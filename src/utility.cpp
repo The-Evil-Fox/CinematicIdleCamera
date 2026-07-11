@@ -143,6 +143,21 @@ void IniParser::Load() {
             UI::g_lockDuration = std::stof(value);
             logger::debug("Loaded lockDuration: {}", UI::g_lockDuration);
 
+        } else if (key == "dragonScore") {
+
+            UI::g_dragonScore = std::stof(value);
+            logger::debug("Loaded dragonScore: {}", UI::g_dragonScore);
+
+        } else if (key == "dragonProximityEnabled") {
+
+            UI::g_dragonProximityEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded dragonProximityEnabled: {}", UI::g_dragonProximityEnabled);
+
+        } else if (key == "dragonProximityFactor") {
+
+            UI::g_dragonProximityFactor = std::stof(value);
+            logger::debug("Loaded dragonProximityFactor: {}", UI::g_dragonProximityFactor);
+
         } else if (key == "actorCombatScore") {
 
             UI::g_actorCombatScore = std::stof(value);
@@ -330,6 +345,11 @@ void IniParser::Save() {
     file << "\n";
     file << "; Base score awarded to an actor per action state, plus an optional proximity bonus\n";
     file << "; (added on top of the initial score, and then scaled by how close the POI is relative to the player)\n";
+    file << "\n";
+    file << "; Dragon specific scores (highest priority)\n";
+    file << "dragonScore=" << UI::g_dragonScore << "\n";
+    file << "dragonProximityEnabled=" << (UI::g_dragonProximityEnabled ? "1" : "0") << "\n";
+    file << "dragonProximityFactor=" << UI::g_dragonProximityFactor << "\n";
     file << "\n";
     file << "actorCombatScore=" << UI::g_actorCombatScore << "\n";
     file << "actorCombatProximityEnabled=" << (UI::g_actorCombatProximityEnabled ? "1" : "0") << "\n";

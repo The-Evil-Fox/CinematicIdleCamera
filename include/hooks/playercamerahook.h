@@ -14,6 +14,7 @@ namespace Hooks {
     enum class POIAction {
 
         None,
+        Dragon,
         FlyingCritter,
         Idle,
         InCombat,
