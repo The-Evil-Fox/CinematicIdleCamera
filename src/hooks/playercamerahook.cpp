@@ -1196,6 +1196,20 @@ namespace Hooks {
     //  Head-tracking: weight-driven so we can fade in/out instead of toggling
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+    static RE::NiPoint3 GetActorForwardVector(RE::Actor* a_actor) {
+
+        auto* root = a_actor->Get3D();
+
+        if (!root) {
+
+            return RE::NiPoint3{ 0.0f, 1.0f, 0.0f };
+
+        }
+
+        return root->world.rotate.GetVectorY();
+
+    }
+
     static void UpdatePlayerHeadtrack(RE::PlayerCharacter* a_player, RE::TESObjectREFR* a_target, float a_weight) {
 
         if (!a_player) {
@@ -1220,13 +1234,12 @@ namespace Hooks {
             a_player->AsActorState()->actorState2.headTracking = true;
 
             RE::NiPoint3 playerPos = a_player->GetPosition();
-            float        playerYaw = a_player->GetAngleZ();
+            RE::NiPoint3 fwd = GetActorForwardVector(a_player);
 
-            // Fixed forward position with correct coordinate system
             RE::NiPoint3 forwardPos = {
 
-                playerPos.x + std::cos(playerYaw) * 500.0f,
-                playerPos.y + std::sin(playerYaw) * 500.0f,
+                playerPos.x + fwd.x * 500.0f,
+                playerPos.y + fwd.y * 500.0f,
                 playerPos.z + 120.0f
 
             };
@@ -1298,13 +1311,12 @@ namespace Hooks {
         } else {
 
             RE::NiPoint3 playerPos = a_player->GetPosition();
-            float        playerYaw = a_player->GetAngleZ();
+            RE::NiPoint3 fwd = GetActorForwardVector(a_player);
 
-            // Fixed forward position with correct coordinate system
             RE::NiPoint3 forwardPos = {
 
-                playerPos.x + std::cos(playerYaw) * 500.0f,
-                playerPos.y + std::sin(playerYaw) * 500.0f,
+                playerPos.x + fwd.x * 500.0f,
+                playerPos.y + fwd.y * 500.0f,
                 playerPos.z + 120.0f
 
             };
