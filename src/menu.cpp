@@ -23,7 +23,7 @@ static constexpr bool               k_defaultBlackBarsEnabled                   
 static constexpr float              k_defaultBlackBarsSpeed                                     = 1.0f;
 static constexpr bool               k_defaultBlackBarsSoundEnabled                              = true;
 
-// Position
+// Position/Transition
 
 static constexpr float              k_defaultVanityCamOffsetX                                   = 75.0f;
 static constexpr float              k_defaultVanityCamOffsetY                                   = 130.0f;
@@ -41,7 +41,7 @@ static constexpr float              k_defaultDezoomBlendSpeed                   
 //  Head Tracking
 // ---------------------------------------------------------------------------------------------------------------------
 
-static constexpr float              k_defaultHeadTrackFadeSpeed = 2.0f;
+static constexpr float              k_defaultHeadTrackFadeSpeed = 0.3f;
 
 // ---------------------------------------------------------------------------------------------------------------------
 //  POI System
@@ -1215,8 +1215,8 @@ void UI::HeadTrackingSettings() {
 
     ImGuiMCP::SetNextItemWidth(200.0f);
 
-    if (ImGuiMCP::SliderFloat("##headTrackFadeSpeed", &g_headTrackFadeSpeed, 0.1f, 10.0f, "%.1f units/s")) {
-
+    if (ImGuiMCP::SliderFloat("##headTrackFadeSpeed", &g_headTrackFadeSpeed, 0.1f, 1.0f, "%.2f units/s")) {
+        
         IniParser::Save();
 
     }
@@ -1480,6 +1480,7 @@ void UI::POISystemExclusionListSettings() {
                         std::string buttonText = std::string("Already Excluded: ") + (actorName ? actorName : "Unnamed");
                         ImGuiMCP::Button(buttonText.c_str());
                         ImGuiMCP::PopStyleColor();
+                        HelpTooltip("The selected actor is already excluded.");
 
                     } else {
 
@@ -1494,10 +1495,9 @@ void UI::POISystemExclusionListSettings() {
                         }
 
                         ImGuiMCP::PopStyleColor();
+                        HelpTooltip("Adds the currently console-selected actor to the exclusion list.");
 
                     }
-
-                    HelpTooltip("Adds the currently console-selected actor to the exclusion list.");
 
                 } else {
 
