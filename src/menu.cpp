@@ -1255,14 +1255,7 @@ void UI::POISystemExclusionListSettings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::Separator();
 
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
-
-    // Instructions
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.7f, 0.7f, 0.8f, 1.0f });
-    ImGuiMCP::TextWrapped("To exclude an actor, open the console, click on the actor, then use the 'Add Selected' button below.");
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 20.0f));
 
     // Add selected actor button
     auto* player = RE::PlayerCharacter::GetSingleton();
@@ -1275,54 +1268,65 @@ void UI::POISystemExclusionListSettings() {
 
             auto* selectedActor = selectedRef->As<RE::Actor>();
 
-            if (selectedActor && !selectedActor->IsPlayerRef()) {
+            if (selectedActor) {
 
-                bool isExcluded = IsActorExcluded(selectedActor);
+                if (!selectedActor->IsPlayerRef()) {
 
-                if (isExcluded) {
+                    bool isExcluded = IsActorExcluded(selectedActor);
 
-                    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.6f, 1.0f });
-                    const char* actorName = selectedActor->GetName();
-                    std::string buttonText = std::string("Already Excluded: ") + (actorName ? actorName : "Unnamed");
-                    ImGuiMCP::Button(buttonText.c_str());
-                    ImGuiMCP::PopStyleColor();
+                    if (isExcluded) {
 
-                } else {
+                        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.6f, 1.0f });
+                        const char* actorName = selectedActor->GetName();
+                        std::string buttonText = std::string("Already Excluded: ") + (actorName ? actorName : "Unnamed");
+                        ImGuiMCP::Button(buttonText.c_str());
+                        ImGuiMCP::PopStyleColor();
 
-                    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, ImGuiMCP::ImVec4{ 0.2f, 0.6f, 0.2f, 1.0f });
-                    const char* actorName = selectedActor->GetName();
-                    std::string buttonText = std::string("Add Selected Actor: ") + (actorName ? actorName : "Unnamed");
+                    } else {
 
-                    if (ImGuiMCP::Button(buttonText.c_str())) {
+                        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, ImGuiMCP::ImVec4{ 0.2f, 0.6f, 0.2f, 1.0f });
+                        const char* actorName = selectedActor->GetName();
+                        std::string buttonText = std::string("Add Selected Actor: ") + (actorName ? actorName : "Unnamed");
 
-                        AddActorToExclusionList(selectedActor);
+                        if (ImGuiMCP::Button(buttonText.c_str())) {
+
+                            AddActorToExclusionList(selectedActor);
+
+                        }
+
+                        ImGuiMCP::PopStyleColor();
 
                     }
 
+                    HelpTooltip("Adds the currently console-selected actor to the exclusion list.");
+
+                } else {
+
+                    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+                    ImGuiMCP::Text("The player cannot be excluded from the POI System.");
                     ImGuiMCP::PopStyleColor();
 
                 }
 
-                HelpTooltip("Adds the currently console-selected actor to the exclusion list.");
-
             } else {
 
-                ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.6f, 1.0f });
-                ImGuiMCP::Text("No valid actor selected in console.");
+                ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+                ImGuiMCP::Text("The currently selected object is not an actor.");
                 ImGuiMCP::PopStyleColor();
 
             }
 
         } else {
 
-            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.6f, 1.0f });
-            ImGuiMCP::Text("Open the console and select an actor first.");
+            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.7f, 0.7f, 0.8f, 1.0f });
+            ImGuiMCP::TextWrapped("To exclude an actor, open the console, click on the actor, then use the 'Add Selected' button below.");
             ImGuiMCP::PopStyleColor();
 
         }
 
     }
 
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 20.0f));
     ImGuiMCP::Separator();
 
     // Display exclusion list
@@ -1340,42 +1344,46 @@ void UI::POISystemExclusionListSettings() {
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.9f, 0.9f, 1.0f, 1.0f });
     ImGuiMCP::Text("Excluded Actors:");
     ImGuiMCP::PopStyleColor();
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+
+    // Begin scrollable child window - max height for 5 items + some padding
+    ImGuiMCP::BeginChild("ExcludedActorsList", ImGuiMCP::ImVec2(0.0f, 750.0f), true);
 
     for (size_t i = 0; i < g_actorExclusionList.size(); ++i) {
-
         auto& entry = g_actorExclusionList[i];
 
         ImGuiMCP::PushID(static_cast<int>(i));
         ImGuiMCP::Indent(20.0f);
 
-        ImGuiMCP::Text("%s (%08X)", entry.name.c_str(), entry.formID);
+        // Button on the left
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, ImGuiMCP::ImVec4{ 0.8f, 0.2f, 0.2f, 1.0f });
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonHovered, ImGuiMCP::ImVec4{ 1.0f, 0.3f, 0.3f, 1.0f });
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonActive, ImGuiMCP::ImVec4{ 0.6f, 0.1f, 0.1f, 1.0f });
+
+        if (ImGuiMCP::Button("Remove")) {
+            RemoveFromActorExclusionList(i);
+        }
+        ImGuiMCP::PopStyleColor(3); // Pop all 3 button colors
 
         ImGuiMCP::SameLine();
 
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, ImGuiMCP::ImVec4{ 0.8f, 0.2f, 0.2f, 1.0f });
-
-        if (ImGuiMCP::Button("Remove")) {
-
-            RemoveFromActorExclusionList(i);
-
-        }
-
-        ImGuiMCP::PopStyleColor();
+        // Actor name and form ID on the right of the button
+        ImGuiMCP::Text("%s (%08X)", entry.name.c_str(), entry.formID);
 
         ImGuiMCP::Unindent(20.0f);
         ImGuiMCP::PopID();
-
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
     }
+
+    ImGuiMCP::EndChild();
 
     // Reset button
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
     std::string resetText = std::string(resetIcon) + " Clear All Exclusions";
 
     if (ImGuiMCP::Button(resetText.c_str())) {
-
         g_actorExclusionList.clear();
         IniParser::Save();
-
     }
 
     HelpTooltip("Removes all actors from the exclusion list.");
