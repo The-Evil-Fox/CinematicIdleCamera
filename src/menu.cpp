@@ -268,6 +268,7 @@ auto cameraIcon                 = FontAwesome::UnicodeToUtf8(0xf03d);
 auto playerIcon                 = FontAwesome::UnicodeToUtf8(0xf183);
 auto debugIcon                  = FontAwesome::UnicodeToUtf8(0xf7d9);
 auto resetIcon                  = FontAwesome::UnicodeToUtf8(0xf2ea);
+auto anglesRightIcon            = FontAwesome::UnicodeToUtf8(0xf101);
 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  Shows a hovering tooltip describing the parameter. Call this right after the widget (slider/checkbox) it
@@ -411,6 +412,96 @@ static void ScoreWithProximityControl(const char* a_id, const char* a_label, con
 //  Exclusion list specific functions
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  Helper: Get actor name from Form ID at runtime (language-independent)
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+static std::string GetActorNameFromFormID(RE::FormID a_formID) {
+
+    auto* form = RE::TESForm::LookupByID(a_formID);
+
+    if (!form) {
+
+        logger::debug("GetActorNameFromFormID: Form 0x{:08X} not found", a_formID);
+        return "Unknown";
+
+    }
+
+    // First, search for a loaded reference with this Base ID
+    auto* tes = RE::TES::GetSingleton();
+
+    if (tes) {
+
+        std::string foundName;
+        int refCount = 0;
+
+        logger::debug("GetActorNameFromFormID: Searching for references with Base ID 0x{:08X}", a_formID);
+
+        tes->ForEachReference([&](RE::TESObjectREFR* a_ref) -> RE::BSContainer::ForEachResult {
+
+            if (!a_ref) return RE::BSContainer::ForEachResult::kContinue;
+
+            refCount++;
+
+            auto* refBase = a_ref->GetBaseObject();
+
+            if (refBase && refBase->GetFormID() == a_formID) {
+
+                const char* refName = a_ref->GetName();
+                logger::debug("GetActorNameFromFormID: Found reference with matching Base ID, Name: '{}'", refName ? refName : "null");
+
+                if (refName && refName[0] != '\0') {
+
+                    foundName = refName;
+                    return RE::BSContainer::ForEachResult::kStop;
+
+                }
+
+            }
+
+            return RE::BSContainer::ForEachResult::kContinue;
+        });
+
+        logger::debug("GetActorNameFromFormID: Checked {} references, found name: '{}'", refCount, foundName.empty() ? "none" : foundName);
+
+        if (!foundName.empty()) {
+
+            return foundName;
+
+        }
+
+    }
+
+    // If no reference found, try as NPC (base form)
+    auto* npc = form->As<RE::TESNPC>();
+
+    if (npc) {
+
+        const char* name = npc->GetName();
+        logger::debug("GetActorNameFromFormID: Base Form name: '{}'", name ? name : "null");
+
+        if (name && name[0] != '\0') {
+
+            return std::string(name);
+
+        }
+
+    }
+
+    // Fallback to EditorID
+    const char* editorID = form->GetFormEditorID();
+
+    if (editorID && editorID[0] != '\0') {
+
+        logger::debug("GetActorNameFromFormID: EditorID: '{}'", editorID);
+        return std::string(editorID);
+
+    }
+
+    return "Unknown";
+
+}
+
 void UI::AddActorToExclusionList(RE::Actor* a_actor) {
 
     if (!a_actor) {
@@ -420,7 +511,6 @@ void UI::AddActorToExclusionList(RE::Actor* a_actor) {
 
     }
 
-    const char* actorName = a_actor->GetName();
     auto* actorBase = a_actor->GetActorBase();
 
     if (!actorBase) {
@@ -430,11 +520,68 @@ void UI::AddActorToExclusionList(RE::Actor* a_actor) {
 
     }
 
-    // ALWAYS use the ActorBase Form ID
-    RE::FormID finalFormID = actorBase->GetFormID();
+    // Get the actor base ID
+    RE::FormID actorBaseID = actorBase->GetFormID();
+    logger::info("ActorBase Form ID: 0x{:08X}", actorBaseID);
+
+    RE::FormID finalFormID = actorBaseID;
+
+    // Check if this is a dynamic/temporary ID (starts with FF)
+    if ((finalFormID & 0xFF000000) == 0xFF000000) {
+
+        // Try to get the root template
+        auto* rootTemplate = actorBase->GetRootFaceNPC();
+
+        if (rootTemplate && rootTemplate != actorBase) {
+
+            RE::FormID rootID = rootTemplate->GetFormID();
+            logger::info("Root Template Form ID: 0x{:08X}", rootID);
+
+            // If root ID is not dynamic, use it
+            if ((rootID & 0xFF000000) != 0xFF000000) {
+
+                finalFormID = rootID;
+                logger::info("Using Root Template Form ID: 0x{:08X}", finalFormID);
+
+            }
+
+        }
+
+        // If still dynamic, try faceNPC
+        if ((finalFormID & 0xFF000000) == 0xFF000000) {
+
+            auto* templateNPC = actorBase->faceNPC;
+
+            if (templateNPC) {
+
+                RE::FormID faceID = templateNPC->GetFormID();
+                logger::info("faceNPC Form ID: 0x{:08X}", faceID);
+
+                if ((faceID & 0xFF000000) != 0xFF000000) {
+
+                    finalFormID = faceID;
+                    logger::info("Using faceNPC Form ID: 0x{:08X}", finalFormID);
+
+                }
+
+            }
+
+        }
+
+    }
+
+    // If we STILL have a dynamic ID (FF), use the Reference ID as last resort
+    if ((finalFormID & 0xFF000000) == 0xFF000000) {
+
+        finalFormID = a_actor->GetFormID();
+        logger::warn("Using Reference ID as last resort: 0x{:08X}", finalFormID);
+
+    }
+
+    const char* actorName = a_actor->GetName();
     logger::info("=== Adding actor to exclusion list ===");
     logger::info("Actor name: {}", actorName ? actorName : "Unnamed");
-    logger::info("Base Form ID: 0x{:08X}", finalFormID);
+    logger::info("Final Form ID: 0x{:08X}", finalFormID);
 
     // Check if already in list
     for (auto& entry : g_actorExclusionList) {
@@ -448,10 +595,10 @@ void UI::AddActorToExclusionList(RE::Actor* a_actor) {
 
     }
 
-    std::string nameStr = actorName ? actorName : "Unnamed";
-    g_actorExclusionList.push_back({ finalFormID, nameStr });
+    // Only store the Form ID (no name)
+    g_actorExclusionList.push_back({ finalFormID });
 
-    logger::info("Added {} (Form ID: 0x{:08X}) to exclusion list", nameStr, finalFormID);
+    logger::info("Added actor (Form ID: 0x{:08X}) to exclusion list", finalFormID);
     IniParser::Save();
 
     // If this actor is currently the focused POI, clear it
@@ -468,10 +615,12 @@ void UI::RemoveFromActorExclusionList(size_t index) {
 
     if (index < g_actorExclusionList.size()) {
 
-        logger::info("Removed {} from exclusion list", g_actorExclusionList[index].name);
+        // Get name at runtime for logging
+        std::string name = GetActorNameFromFormID(g_actorExclusionList[index].formID);
+        logger::info("Removed {} from exclusion list", name);
         g_actorExclusionList.erase(g_actorExclusionList.begin() + index);
         IniParser::Save();
-    
+
     }
 
 }
@@ -481,23 +630,59 @@ bool UI::IsActorExcluded(RE::Actor* a_actor) {
     if (!a_actor) return false;
 
     auto* actorBase = a_actor->GetActorBase();
+
     if (!actorBase) return false;
 
-    // ALWAYS use the ActorBase Form ID - this matches what the console shows as "Base Form"
     RE::FormID formID = actorBase->GetFormID();
+
+    // If dynamic, try to get the root template
+    if ((formID & 0xFF000000) == 0xFF000000) {
+
+        auto* rootTemplate = actorBase->GetRootFaceNPC();
+
+        if (rootTemplate && rootTemplate != actorBase) {
+
+            RE::FormID rootID = rootTemplate->GetFormID();
+
+            if ((rootID & 0xFF000000) != 0xFF000000) {
+
+                formID = rootID;
+            
+            }
+        
+        }
+
+        // If still dynamic, try faceNPC
+        if ((formID & 0xFF000000) == 0xFF000000) {
+
+            auto* templateNPC = actorBase->faceNPC;
+
+            if (templateNPC) {
+
+                RE::FormID faceID = templateNPC->GetFormID();
+                
+                if ((faceID & 0xFF000000) != 0xFF000000) {
+                    
+                    formID = faceID;
+                
+                }
+            
+            }
+        
+        }
+    
+    }
 
     for (auto& entry : g_actorExclusionList) {
 
         if (entry.formID == formID) {
 
-            logger::debug("IsActorExcluded: MATCH found for formID 0x{:08X}", formID);
             return true;
 
         }
-
+    
     }
-
-    logger::debug("IsActorExcluded: NO match for formID 0x{:08X}", formID);
+    
     return false;
 
 }
@@ -1259,6 +1444,7 @@ void UI::POISystemExclusionListSettings() {
 
     // Add selected actor button
     auto* player = RE::PlayerCharacter::GetSingleton();
+    RE::Actor* selectedActor = nullptr;
 
     if (player) {
 
@@ -1266,7 +1452,7 @@ void UI::POISystemExclusionListSettings() {
 
         if (selectedRef) {
 
-            auto* selectedActor = selectedRef->As<RE::Actor>();
+            selectedActor = selectedRef->As<RE::Actor>();
 
             if (selectedActor) {
 
@@ -1341,38 +1527,209 @@ void UI::POISystemExclusionListSettings() {
 
     }
 
+    // ---------------------------------------------------------------------------------------------------------------------
+    //  Build a sorted copy of the exclusion list
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    std::vector<ActorExclusionEntry> sortedList = g_actorExclusionList;
+
+    // Sort alphabetically by name (case-insensitive for better UX)
+    std::sort(sortedList.begin(), sortedList.end(), [](const ActorExclusionEntry& a, const ActorExclusionEntry& b) {
+            // Get names at runtime for sorting
+            std::string aName = GetActorNameFromFormID(a.formID);
+            std::string bName = GetActorNameFromFormID(b.formID);
+            std::transform(aName.begin(), aName.end(), aName.begin(), ::tolower);
+            std::transform(bName.begin(), bName.end(), bName.begin(), ::tolower);
+            return aName < bName;
+        }
+    );
+
+    // Find the selected actor in the sorted list (if any)
+    size_t selectedIndex = SIZE_MAX;
+
+    if (selectedActor && !selectedActor->IsPlayerRef()) {
+
+        RE::FormID selectedFormID = 0;
+        auto* actorBase = selectedActor->GetActorBase();
+
+        if (actorBase) {
+
+            selectedFormID = actorBase->GetFormID();
+
+            // If dynamic, try to get the root template
+            if ((selectedFormID & 0xFF000000) == 0xFF000000) {
+
+                auto* rootTemplate = actorBase->GetRootFaceNPC();
+
+                if (rootTemplate && rootTemplate != actorBase) {
+
+                    RE::FormID rootID = rootTemplate->GetFormID();
+
+                    if ((rootID & 0xFF000000) != 0xFF000000) {
+
+                        selectedFormID = rootID;
+
+                    }
+
+                }
+
+                if ((selectedFormID & 0xFF000000) == 0xFF000000) {
+
+                    auto* templateNPC = actorBase->faceNPC;
+
+                    if (templateNPC) {
+
+                        RE::FormID faceID = templateNPC->GetFormID();
+
+                        if ((faceID & 0xFF000000) != 0xFF000000) {
+
+                            selectedFormID = faceID;
+                        }
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        // Find the selected actor in the sorted list
+        for (size_t i = 0; i < sortedList.size(); ++i) {
+
+            if (sortedList[i].formID == selectedFormID) {
+
+                selectedIndex = i;
+                break;
+
+            }
+
+        }
+
+    }
+
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.9f, 0.9f, 1.0f, 1.0f });
     ImGuiMCP::Text("Excluded Actors:");
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
 
-    // Begin scrollable child window - max height for 5 items + some padding
+    // Begin scrollable child window
     ImGuiMCP::BeginChild("ExcludedActorsList", ImGuiMCP::ImVec2(0.0f, 750.0f), true);
 
-    for (size_t i = 0; i < g_actorExclusionList.size(); ++i) {
-        auto& entry = g_actorExclusionList[i];
+    // ---------------------------------------------------------------------------------------------------------------------
+    //  If there's a selected actor, move it to the top
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    if (selectedIndex != SIZE_MAX && selectedIndex > 0) {
+
+        // Move the selected entry to the front
+        ActorExclusionEntry selectedEntry = sortedList[selectedIndex];
+        sortedList.erase(sortedList.begin() + selectedIndex);
+        sortedList.insert(sortedList.begin(), selectedEntry);
+
+    }
+
+    // ---------------------------------------------------------------------------------------------------------------------
+    //  Display the list (SINGLE loop, not nested)
+    // ---------------------------------------------------------------------------------------------------------------------
+
+    for (size_t i = 0; i < sortedList.size(); ++i) {
+
+        auto& entry = sortedList[i];
+
+        // Get the name at runtime (language-independent)
+        std::string actorName = GetActorNameFromFormID(entry.formID);
+
+        // Check if this is the selected actor (should be at index 0 if found)
+        bool isSelected = (selectedIndex != SIZE_MAX && i == 0 && selectedActor != nullptr);
+
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.5f));
 
         ImGuiMCP::PushID(static_cast<int>(i));
+
+        // If this is the selected actor, draw a highlighted background
+        if (isSelected) {
+
+            // Draw a highlight background
+            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ChildBg, ImGuiMCP::ImVec4{ 0.2f, 0.4f, 0.8f, 0.3f });
+            ImGuiMCP::BeginChild(ImGuiMCP::GetID("Highlight"), ImGuiMCP::ImVec2(0.0f, 45.0f), false);
+
+        }
+
         ImGuiMCP::Indent(20.0f);
 
-        // Button on the left
+        // Remove button
         ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, ImGuiMCP::ImVec4{ 0.8f, 0.2f, 0.2f, 1.0f });
         ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonHovered, ImGuiMCP::ImVec4{ 1.0f, 0.3f, 0.3f, 1.0f });
         ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonActive, ImGuiMCP::ImVec4{ 0.6f, 0.1f, 0.1f, 1.0f });
 
-        if (ImGuiMCP::Button("Remove")) {
-            RemoveFromActorExclusionList(i);
+        // Find the original index in g_actorExclusionList
+        size_t originalIndex = SIZE_MAX;
+
+        for (size_t j = 0; j < g_actorExclusionList.size(); ++j) {
+
+            if (g_actorExclusionList[j].formID == entry.formID) {
+
+                originalIndex = j;
+                break;
+
+            }
+
         }
-        ImGuiMCP::PopStyleColor(3); // Pop all 3 button colors
+
+        if (ImGuiMCP::Button("Remove")) {
+
+            if (originalIndex != SIZE_MAX) {
+
+                RemoveFromActorExclusionList(originalIndex);
+
+                ImGuiMCP::PopStyleColor(3);
+                ImGuiMCP::Unindent(20.0f);
+                ImGuiMCP::PopID();
+
+                if (isSelected) {
+
+                    ImGuiMCP::EndChild();
+                    ImGuiMCP::PopStyleColor();
+
+                }
+
+                ImGuiMCP::EndChild();
+                return;
+
+            }
+
+        }
+
+        ImGuiMCP::PopStyleColor(3);
 
         ImGuiMCP::SameLine();
 
-        // Actor name and form ID on the right of the button
-        ImGuiMCP::Text("%s (%08X)", entry.name.c_str(), entry.formID);
+        // Actor name and form ID - use runtime name
+        if (isSelected) {
+
+            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.9f, 0.6f, 1.0f });
+            ImGuiMCP::Text("%s %s (%08X)  [CURRENTLY SELECTED IN THE CONSOLE]", anglesRightIcon.c_str(), actorName.c_str(), entry.formID);
+            ImGuiMCP::PopStyleColor();
+
+        } else {
+
+            ImGuiMCP::Text("%s (%08X)", actorName.c_str(), entry.formID);
+
+        }
 
         ImGuiMCP::Unindent(20.0f);
+
+        if (isSelected) {
+
+            ImGuiMCP::EndChild();
+            ImGuiMCP::PopStyleColor();
+
+        }
+
         ImGuiMCP::PopID();
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.5f));
+
     }
 
     ImGuiMCP::EndChild();
@@ -1382,8 +1739,10 @@ void UI::POISystemExclusionListSettings() {
     std::string resetText = std::string(resetIcon) + " Clear All Exclusions";
 
     if (ImGuiMCP::Button(resetText.c_str())) {
+
         g_actorExclusionList.clear();
         IniParser::Save();
+
     }
 
     HelpTooltip("Removes all actors from the exclusion list.");

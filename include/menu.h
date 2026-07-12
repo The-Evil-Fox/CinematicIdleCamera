@@ -90,8 +90,9 @@ namespace UI {
 
     // Exclusion list
     struct ActorExclusionEntry {
+
         RE::FormID formID;
-        std::string name;
+
     };
 
     extern std::vector<ActorExclusionEntry> g_actorExclusionList;

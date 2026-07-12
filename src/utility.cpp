@@ -155,35 +155,21 @@ void IniParser::Load() {
 
         } else if (key == "exclusionList") {
 
-            std::vector<std::string> parts;
-            std::stringstream ss(value);
-            std::string part;
+            // Format: "FormID" (name is retrieved at runtime)
+            UI::ActorExclusionEntry entry;
 
-            while (std::getline(ss, part, '|')) {
+            try {
 
-                parts.push_back(part);
+                entry.formID = std::stoul(value, nullptr, 16);
+                UI::g_actorExclusionList.push_back(entry);
+                logger::debug("Loaded exclusion entry: 0x{:08X}", entry.formID);
 
-            }
+            } catch (const std::exception& e) {
 
-            if (parts.size() >= 2) {
-
-                UI::ActorExclusionEntry entry;
-
-                try {
-
-                    entry.formID = std::stoul(parts[0], nullptr, 16);
-                    entry.name = parts[1];
-                    UI::g_actorExclusionList.push_back(entry);
-                    logger::debug("Loaded exclusion entry: {} (0x{:08X})", entry.name, entry.formID);
-
-                } catch (const std::exception& e) {
-
-                    logger::warn("Failed to parse exclusion entry: {} - {}", value, e.what());
-
-                }
+                logger::warn("Failed to parse exclusion entry: {} - {}", value, e.what());
 
             }
-
+            
         } else if (key == "dragonScore") {
 
             UI::g_dragonScore = std::stof(value);
@@ -399,12 +385,12 @@ void IniParser::Save() {
 
         for (auto& entry : UI::g_actorExclusionList) {
 
-            file << "exclusionList=" << std::hex << std::uppercase << std::setw(8) << std::setfill('0') << entry.formID << "|"
-                << entry.name << "\n";
+            file << "exclusionList=" << std::hex << std::uppercase << std::setw(8) << std::setfill('0') << entry.formID << "\n";
 
         }
 
     }
+
     file << "\n";
     file << "; Base score awarded to an actor per action state, plus an optional proximity bonus\n";
     file << "; (added on top of the initial score, and then scaled by how close the POI is relative to the player)\n";
