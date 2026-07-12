@@ -11,6 +11,8 @@ namespace Hooks {
     //  Default POI system state
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+    static bool                             s_enteringVanity                = true;
+
     RE::TESObjectREFR*                      g_currentPOI                    = nullptr;
 
     static float                            s_currentScore                  = 0.0f;
@@ -1361,21 +1363,67 @@ namespace Hooks {
 
     }
 
+    // Reads the camera's actual current facing angle straight from its NiNode world
+    // transform, independent of autoVanityRot (which vanilla's own _Update() appears
+    // to reset to the player's forward angle on the first vanity frame, before we can
+    // read anything useful from it).
+    static float GetLiveCameraYaw() {
+
+        auto* camera = RE::PlayerCamera::GetSingleton();
+
+        if (!camera || !camera->cameraRoot) {
+
+            return 0.0f;
+
+        }
+
+        RE::NiPoint3 fwd = camera->cameraRoot->world.rotate.GetVectorY();
+
+        return std::atan2(fwd.x, fwd.y);
+
+    }
+
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     //  Vanity mode begins here
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     void AutoVanityStateHook::Update(RE::AutoVanityState* a_this, RE::BSTSmartPointer<RE::TESCameraState>& a_nextState) {
 
-        SmoothCamCompat::Acquire();
-
-        _Update(a_this, a_nextState);
-
         auto* player = RE::PlayerCharacter::GetSingleton();
 
         if (!player) {
 
             return;
+
+        }
+
+        SmoothCamCompat::Acquire();
+
+        float baseRot = player->GetAngleZ();
+
+        // Capture the live camera facing BEFORE vanilla's _Update() runs, since that's
+        // the last point where it still reflects wherever the player was actually looking
+        // prior to vanity mode engaging.
+
+        const bool isEnteringThisFrame = s_enteringVanity;
+
+        float capturedCameraYaw = a_this->autoVanityRot;
+
+        if (s_enteringVanity) {
+
+            capturedCameraYaw = GetLiveCameraYaw();
+
+        }
+
+        _Update(a_this, a_nextState);
+
+        if (s_enteringVanity) {
+
+            s_enteringVanity = false;
+
+            logger::debug("Entering vanity mode - capturedCameraYaw {:.2f}, postUpdateAutoVanityRot {:.2f}, baseRot {:.2f}", capturedCameraYaw, a_this->autoVanityRot, baseRot);
+
+            BeginBlend(capturedCameraYaw, baseRot);
 
         }
 
@@ -1397,8 +1445,6 @@ namespace Hooks {
 
             return;
         }
-
-        float baseRot = player->GetAngleZ();
 
         if (UI::g_debugRaycasts) {
 
@@ -1527,7 +1573,9 @@ namespace Hooks {
                     auto  dir = candidate->GetPosition() - player->GetPosition();
                     float incomingRot = std::atan2(dir.x, dir.y);
 
-                    BeginBlend(a_this->autoVanityRot, incomingRot);
+                    float blendFromAngle = isEnteringThisFrame ? capturedCameraYaw : a_this->autoVanityRot;
+
+                    BeginBlend(blendFromAngle, incomingRot);
 
                     g_currentPOI = candidate;
                     s_currentScore = foundScore;
@@ -1677,6 +1725,7 @@ namespace Hooks {
         //  Reset all POI/blend state so the next vanity session starts clean.
         // -----------------------------------------------------------------------------------
 
+        s_enteringVanity = true;
         g_currentPOI = nullptr;
         s_currentScore = 0.0f;
         s_lockTimer = 0.0f;
