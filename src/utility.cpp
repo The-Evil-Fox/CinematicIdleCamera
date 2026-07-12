@@ -374,7 +374,7 @@ void IniParser::Save() {
     file << "lockDuration=" << UI::g_lockDuration << "\n";
     file << "\n";
     file << "; Exclusion list (by Base Form ID)\n";
-    file << "; Format: BaseFormID|Name\n";
+    file << "; Format: BaseFormID\n";
     file << "; Add actors here to prevent them from being detected as POIs\n";
 
     if (UI::g_actorExclusionList.empty()) {

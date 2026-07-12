@@ -412,9 +412,9 @@ static void ScoreWithProximityControl(const char* a_id, const char* a_label, con
 //  Exclusion list specific functions
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 //  Helper: Get actor name from Form ID at runtime (language-independent)
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 static std::string GetActorNameFromFormID(RE::FormID a_formID) {
 
@@ -501,6 +501,10 @@ static std::string GetActorNameFromFormID(RE::FormID a_formID) {
     return "Unknown";
 
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+//  Add the console selected actor to the exclusion list
+// ---------------------------------------------------------------------------------------------------------------------
 
 void UI::AddActorToExclusionList(RE::Actor* a_actor) {
 
@@ -611,6 +615,10 @@ void UI::AddActorToExclusionList(RE::Actor* a_actor) {
 
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+//  Remove an actor from the exclusion list when pressing the button on its left in the exclusion list
+// ---------------------------------------------------------------------------------------------------------------------
+
 void UI::RemoveFromActorExclusionList(size_t index) {
 
     if (index < g_actorExclusionList.size()) {
@@ -624,6 +632,11 @@ void UI::RemoveFromActorExclusionList(size_t index) {
     }
 
 }
+
+// ---------------------------------------------------------------------------------------------------------------------
+//  Checks if an actor is excluded. 
+//  Also used inside playercamerahook.cpp to check if a potential poi is excluded.
+// ---------------------------------------------------------------------------------------------------------------------
 
 bool UI::IsActorExcluded(RE::Actor* a_actor) {
 
