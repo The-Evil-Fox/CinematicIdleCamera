@@ -782,9 +782,9 @@ namespace Hooks {
             // Skip FLORA type references (hanging fishs on display rack, ingredients, etc.)
             auto* base = ref->GetBaseObject();
 
-            if (base && base->GetFormType() == RE::FormType::Flora) {
+            if (base && base->GetFormType() == RE::FormType::Flora || base && base->GetFormType() == RE::FormType::Furniture) {
 
-                logger::debug("{} rejected: POIs with the FLORA type are not supported", ref->GetName());
+                logger::debug("{} rejected: POIs with the FLORA or FURNITURE type are not supported", ref->GetName());
                 return RE::BSContainer::ForEachResult::kContinue;
 
             }
