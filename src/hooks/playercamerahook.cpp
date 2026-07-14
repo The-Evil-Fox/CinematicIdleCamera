@@ -1427,25 +1427,6 @@ namespace Hooks {
 
         }
 
-        if (!UI::g_poiSystemEnabled) {
-
-            // Reset any lingering POI state
-            if (g_currentPOI) {
-
-                g_currentPOI = nullptr;
-                s_currentScore = 0.0f;
-                s_lockTimer = 0.0f;
-                s_headTrackWeight = 0.0f;
-                s_dezoomWeight = 0.0f;
-                UpdatePlayerHeadtrack(player, nullptr, 0.0f);
-
-            }
-
-            a_this->autoVanityRot = player->GetAngleZ();
-
-            return;
-        }
-
         if (UI::g_debugRaycasts) {
 
             DebugAPI::GetSingleton()->Update();
@@ -1458,6 +1439,53 @@ namespace Hooks {
 
 
         const float dt = RE::BSTimer::GetSingleton()->realTimeDelta;
+
+        if (!UI::g_poiSystemEnabled) {
+
+            // blend to the default position if the POI System was disabled while in vanity mode and a POI was focused
+            if (g_currentPOI || s_blendT < 1.0f) {
+
+                if (g_currentPOI) {
+
+                    logger::debug("POI System disabled - beginning exit blend");
+                    BeginBlend(a_this->autoVanityRot, baseRot);
+                    g_currentPOI = nullptr;
+                    s_currentScore = 0.0f;
+                    s_lockTimer = 0.0f;
+                    s_headTrackWeight = 0.0f;
+
+                }
+
+                // Continue blending if we're in the middle of one
+                if (s_blendT < 1.0f) {
+
+                    // Keep retargeting to live forward angle every frame
+                    s_blendTargetRot = baseRot;
+                    s_blendT = std::min(1.0f, s_blendT + dt / std::max(0.01f, UI::g_blendDuration));
+                    float easedT = Smoothstep(s_blendT);
+                    float delta = WrapAngle(s_blendTargetRot - s_blendFromRot);
+                    a_this->autoVanityRot = s_blendFromRot + easedT * delta;
+
+                } else {
+
+                    // Blend complete: snap to forward
+                    a_this->autoVanityRot = baseRot;
+
+                }
+
+                // Fade out head tracking
+                s_headTrackWeight = std::max(0.0f, s_headTrackWeight - dt * UI::g_headTrackFadeSpeed);
+                UpdatePlayerHeadtrack(player, nullptr, s_headTrackWeight);
+
+            } else {
+
+                a_this->autoVanityRot = player->GetAngleZ();
+
+            }
+
+            return;
+
+        }
 
         // ---------------------------------------------------------------------------------------------------------------------
         //  1. Tick the POI lock timer
