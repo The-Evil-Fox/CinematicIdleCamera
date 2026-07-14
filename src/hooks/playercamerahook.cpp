@@ -1588,7 +1588,6 @@ namespace Hooks {
                 // Same actor is still the best candidate - re-arm the lock timer so we
                 // don't re-scan for a POI every single frame while nothing has changed.
                 s_currentScore = foundScore;
-                s_lockTimer = UI::g_lockDuration;
 
             } else if (!candidate) {
 
