@@ -266,76 +266,79 @@ static void ApplyIdleTimerToIniSettings(std::string settingName, float value) {
 //  Section Icons (Headers)
 // =====================================================================================================================
 
-auto cameraIcon = FontAwesome::UnicodeToUtf8(0xf03d);  // Camera
-auto headTrackIcon = FontAwesome::UnicodeToUtf8(0xf06e);  // Eye (Head Tracking)
-auto poiSystemIcon = FontAwesome::UnicodeToUtf8(0xf3c5);  // Map Marker
-auto debugIcon = FontAwesome::UnicodeToUtf8(0xf7d9);  // Bug
+auto cameraIcon = FontAwesome::UnicodeToUtf8(0xf03d);
+auto headTrackIcon = FontAwesome::UnicodeToUtf8(0xf06e);
+auto poiSystemIcon = FontAwesome::UnicodeToUtf8(0xf3c5);
+auto debugIcon = FontAwesome::UnicodeToUtf8(0xf7d9);
 
 // =====================================================================================================================
 //  Arrows & Direction Icons
 // =====================================================================================================================
 
-auto arrowUpIcon = FontAwesome::UnicodeToUtf8(0xf062);  // Arrow Up
-auto anglesRightIcon = FontAwesome::UnicodeToUtf8(0xf101);  // Angles Right
-auto arrowLeftAndRightIcon = FontAwesome::UnicodeToUtf8(0xf07e);  // Arrows Left-Right
-auto arrowUpAndDownIcon = FontAwesome::UnicodeToUtf8(0xf07d);  // Arrows Up-Down
-auto zoomIcon = FontAwesome::UnicodeToUtf8(0xf002);  // Magnifying Glass
+auto arrowUpIcon = FontAwesome::UnicodeToUtf8(0xf062);
+auto anglesRightIcon = FontAwesome::UnicodeToUtf8(0xf101);
+auto arrowLeftAndRightIcon = FontAwesome::UnicodeToUtf8(0xf07e);
+auto arrowUpAndDownIcon = FontAwesome::UnicodeToUtf8(0xf07d);
+auto zoomIcon = FontAwesome::UnicodeToUtf8(0xf002);
 
 // =====================================================================================================================
 //  Camera Settings Icons
 // =====================================================================================================================
 
-auto clockIcon = FontAwesome::UnicodeToUtf8(0xf017);  // Clock (Timer, Duration)
-auto filmIcon = FontAwesome::UnicodeToUtf8(0xf008);  // Film (Black Bars)
-auto speedIcon = FontAwesome::UnicodeToUtf8(0xf625);  // Gauge (Speed)
-auto soundIcon = FontAwesome::UnicodeToUtf8(0xf028);  // Volume (Sound Effects)
-auto radiusIcon = FontAwesome::UnicodeToUtf8(0xf192);  // Circle Dot (Radius)
+auto clockIcon = FontAwesome::UnicodeToUtf8(0xf017);
+auto filmIcon = FontAwesome::UnicodeToUtf8(0xf008);
+auto speedIcon = FontAwesome::UnicodeToUtf8(0xf625);
+auto soundIcon = FontAwesome::UnicodeToUtf8(0xf028);
+auto radiusIcon = FontAwesome::UnicodeToUtf8(0xf192);
 
 // =====================================================================================================================
 //  POI System Icons
 // =====================================================================================================================
 
-auto poiTypesIcon = FontAwesome::UnicodeToUtf8(0xf5fd);  // Layer Group (POI Types)
-auto poiLockIcon = FontAwesome::UnicodeToUtf8(0xe51f);  // Lock (Lock Duration)
-auto followerIcon = FontAwesome::UnicodeToUtf8(0xe535);  // User Group (Followers)
+auto poiTypesIcon = FontAwesome::UnicodeToUtf8(0xf5fd);
+auto ExcludeListIcon = FontAwesome::UnicodeToUtf8(0xf023);
+auto poiLockIcon = FontAwesome::UnicodeToUtf8(0xe51f);
+auto followerIcon = FontAwesome::UnicodeToUtf8(0xe535);
 
 // =====================================================================================================================
 //  Actor POI Icons
 // =====================================================================================================================
 
-auto dragonScoreIcon = FontAwesome::UnicodeToUtf8(0xf6d5);  // Dragon
-auto inCombatScoreIcon = FontAwesome::UnicodeToUtf8(0xf0e3);  // Crossed Swords
-auto movingScoreIcon = FontAwesome::UnicodeToUtf8(0xf554);  // Person Walking
-auto inSceneScoreIcon = FontAwesome::UnicodeToUtf8(0xf630);  // Theater Masks
-auto personIcon = FontAwesome::UnicodeToUtf8(0xf183);  // Person (General purpose)
+auto dragonScoreIcon = FontAwesome::UnicodeToUtf8(0xf6d5);
+auto inCombatScoreIcon = FontAwesome::UnicodeToUtf8(0xf0e3);
+auto movingScoreIcon = FontAwesome::UnicodeToUtf8(0xf554);
+auto inSceneScoreIcon = FontAwesome::UnicodeToUtf8(0xf630);
+auto personIcon = FontAwesome::UnicodeToUtf8(0xf183);
 
 // =====================================================================================================================
 //  Critter POI Icons
 // =====================================================================================================================
 
-auto flyingCritterIcon = FontAwesome::UnicodeToUtf8(0xf4ba);  // Butterfly
-auto fishCritterIcon = FontAwesome::UnicodeToUtf8(0xf578);  // Fish
+auto flyingCritterIcon = FontAwesome::UnicodeToUtf8(0xf4ba);
+auto fishCritterIcon = FontAwesome::UnicodeToUtf8(0xf578);
 
 // =====================================================================================================================
 //  Exclusion List Icons
 // =====================================================================================================================
 
-auto trashIcon = FontAwesome::UnicodeToUtf8(0xf2ed);  // Trash (Clear All)
-auto addIcon = FontAwesome::UnicodeToUtf8(0xf067);  // Plus (Add Actor)
-auto infoIcon = FontAwesome::UnicodeToUtf8(0xf05a);  // Info Circle
+auto trashIcon = FontAwesome::UnicodeToUtf8(0xf2ed);
+auto addIcon = FontAwesome::UnicodeToUtf8(0xf067);
+auto infoIcon = FontAwesome::UnicodeToUtf8(0xf05a);
 
 // =====================================================================================================================
 //  Debug Icons
 // =====================================================================================================================
 
-auto raycastIcon = FontAwesome::UnicodeToUtf8(0xf05b);  // Crosshairs
-auto loggingIcon = FontAwesome::UnicodeToUtf8(0xf120);  // Terminal/Code
+auto raycastIcon = FontAwesome::UnicodeToUtf8(0xf05b);
+auto loggingIcon = FontAwesome::UnicodeToUtf8(0xf120);
 
 // =====================================================================================================================
 //  General UI Icons
 // =====================================================================================================================
 
-auto resetIcon = FontAwesome::UnicodeToUtf8(0xf2ea);  // Undo (Reset)
+auto resetIcon = FontAwesome::UnicodeToUtf8(0xf2ea);
+auto deniedIcon = FontAwesome::UnicodeToUtf8(0xf05e);
+auto folderOpenIcon = FontAwesome::UnicodeToUtf8(0xf07c);
 
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -413,6 +416,378 @@ static void HelpTooltip(const char* text) {
         ImGuiMCP::EndTooltip();
 
     }
+
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  Reset Button Helper with separator and spacing
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+// Structure to hold a setting value and its default, with optional custom reset logic
+template<typename T>
+
+struct SettingWithDefault {
+    
+    T* currentValue;
+    T defaultValue;
+    std::function<void()> customResetAction;  // Optional custom action
+
+    SettingWithDefault(T* value, T defaultVal, std::function<void()> customAction = nullptr) : currentValue(value), defaultValue(defaultVal), customResetAction(customAction) {}
+
+};
+
+// Helper to check if any settings have changed from their defaults
+template<typename... Args>
+
+static bool HasSettingsChanged(const Args&... settings) {
+
+    bool changed = false;
+    ([&]() {
+
+        if (*(settings.currentValue) != settings.defaultValue) {
+
+            changed = true;
+
+        }
+
+    }(), ...);
+
+    return changed;
+
+}
+
+struct ExclusionListReset {
+
+    std::vector<UI::ActorExclusionEntry>* list;
+
+    ExclusionListReset(std::vector<UI::ActorExclusionEntry>* l) : list(l) {}
+
+    bool HasChanged() const {
+
+        return !list->empty();
+
+    }
+
+    void Reset() const {
+
+        list->clear();
+        IniParser::Save();
+        logger::info("POI Exclusion List cleared.");
+
+    }
+
+};
+
+// Helper to reset multiple settings to their defaults
+template<typename... Args>
+
+static void ResetSettings(const std::string& sectionName, const Args&... settings) {
+
+    ([&]() {
+
+        *(settings.currentValue) = settings.defaultValue;
+
+        if (settings.customResetAction) {
+
+            settings.customResetAction();
+
+        }
+
+    }(), ...);
+
+    IniParser::Save();
+    logger::info("{} reset to default values.", sectionName);
+
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+//  Draw Reset Button with separator and spacing:
+// 
+//  Shows only when any setting in the list has changed & always reserves space to prevent layout shifts
+// ---------------------------------------------------------------------------------------------------------------------
+
+template<typename... Args>
+
+static void DrawResetButtonWithSeparator(const std::string& sectionName, const std::string& buttonId, const Args&... settings) {
+
+    // Check if any settings have changed
+    const bool hasChanges = HasSettingsChanged(settings...);
+
+    // Get the available width for positioning
+    ImGuiMCP::ImVec2 avail;
+    ImGuiMCP::GetContentRegionAvail(&avail);
+    float availWidth = avail.x;
+
+    // Calculate the full button text
+    std::string fullButtonText = std::format("{} Reset To Default##{}", resetIcon, buttonId);
+    ImGuiMCP::ImVec2 resetTextSize;
+    ImGuiMCP::CalcTextSize(&resetTextSize, fullButtonText.c_str(), nullptr, true, -1.0f);
+
+    // Calculate button width (add padding for button margins)
+    float buttonWidth = resetTextSize.x + 20.0f;
+
+    // Define margin from edges (30px on each side)
+    const float kEdgeMargin = 30.0f;
+
+    // Calculate the position for the button then align to the right with margin
+    float buttonPosX = ImGuiMCP::GetCursorPosX() + availWidth - buttonWidth - kEdgeMargin;
+    ImGuiMCP::SetCursorPosX(buttonPosX);
+
+    // Store the current cursor Y position
+    float cursorY = ImGuiMCP::GetCursorPosY();
+
+    // Get the height of the current text line
+    float textHeight = ImGuiMCP::GetTextLineHeight();
+    float frameHeight = ImGuiMCP::GetFrameHeight();
+
+    // Calculate vertical offset to align button with text
+    float verticalOffset = (frameHeight - textHeight) / 2.0f;
+
+    if (hasChanges) {
+
+        // Adjust cursor Y to align button with text
+        ImGuiMCP::SetCursorPosY(cursorY - verticalOffset);
+
+        // Show the actual button
+        if (ImGuiMCP::Button(fullButtonText.c_str())) {
+
+            ResetSettings(sectionName, settings...);
+
+        }
+
+        HelpTooltip(std::format("Restores all {} settings on this page to their default values.", sectionName).c_str());
+
+    } else {
+
+        // Reserve space with a dummy that matches button height
+        ImGuiMCP::SetCursorPosY(cursorY - verticalOffset);
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(buttonWidth, frameHeight));
+
+    }
+
+    // Restore cursor Y for the separator
+    ImGuiMCP::SetCursorPosY(cursorY + frameHeight + 5.0f);
+    ImGuiMCP::Separator();
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+}
+
+// OVERLOAD for ExclusionListReset
+// Always reserves space to prevent layout shifts
+static inline void DrawResetButtonWithSeparator(const std::string& sectionName, const std::string& buttonId, const ExclusionListReset& exclusionSettings) {
+
+    const bool hasChanges = exclusionSettings.HasChanged();
+
+    // Get the available width for positioning
+    ImGuiMCP::ImVec2 avail;
+    ImGuiMCP::GetContentRegionAvail(&avail);
+    float availWidth = avail.x;
+
+    // Calculate the full button text
+    std::string fullButtonText = std::format("{} Clear All Exclusions##{}", resetIcon, buttonId);
+    ImGuiMCP::ImVec2 resetTextSize;
+    ImGuiMCP::CalcTextSize(&resetTextSize, fullButtonText.c_str(), nullptr, true, -1.0f);
+
+    // Calculate button width (add padding for button margins)
+    float buttonWidth = resetTextSize.x + 20.0f;
+
+    // Define margin from edges (30px on each side)
+    const float kEdgeMargin = 30.0f;
+
+    // Calculate the position for the button then align to the right with margin
+    float buttonPosX = ImGuiMCP::GetCursorPosX() + availWidth - buttonWidth - kEdgeMargin;
+    ImGuiMCP::SetCursorPosX(buttonPosX);
+
+    // Store the current cursor Y position
+    float cursorY = ImGuiMCP::GetCursorPosY();
+
+    // Get the height of the current text line
+    float textHeight = ImGuiMCP::GetTextLineHeight();
+    float frameHeight = ImGuiMCP::GetFrameHeight();
+
+    // Calculate vertical offset to align button with text
+    float verticalOffset = (frameHeight - textHeight) / 2.0f;
+
+    if (hasChanges) {
+
+        // Adjust cursor Y to align button with text
+        ImGuiMCP::SetCursorPosY(cursorY - verticalOffset);
+
+        // Show the actual button
+        if (ImGuiMCP::Button(fullButtonText.c_str())) {
+
+            exclusionSettings.Reset();
+
+        }
+
+        HelpTooltip(std::format("Removes all actors from the {} list.", sectionName).c_str());
+
+    } else {
+
+        // Reserve space with a dummy that matches button height
+        ImGuiMCP::SetCursorPosY(cursorY - verticalOffset);
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(buttonWidth, frameHeight));
+
+    }
+
+    // Restore cursor Y for the separator
+    ImGuiMCP::SetCursorPosY(cursorY + frameHeight + 5.0f);
+    ImGuiMCP::Separator();
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+//  Draw UI Header with Reset Button - Complete header with margins and separator
+// ---------------------------------------------------------------------------------------------------------------------
+
+template<typename... Args>
+
+static void DrawUIHeaderWithReset(const std::string& title, const std::string& icon, const std::string& sectionName, const std::string& buttonId, const Args&... settings) {
+
+    // Add top padding
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
+
+    // Define margin from edges (30px on each side)
+    const float kEdgeMargin = 30.0f;
+
+    ImGuiMCP::ImVec2 winSize;
+    ImGuiMCP::GetWindowSize(&winSize);
+
+    // Pull the title toward the left border, leaving a small margin
+    ImGuiMCP::SetCursorPosX(kEdgeMargin);
+
+    // Draw the title with gold color
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
+    ImGuiMCP::Text("%s %s", icon.c_str(), title.c_str());
+    ImGuiMCP::PopStyleColor();
+    ImGuiMCP::SameLine();
+
+    // Check if any settings have changed
+    const bool hasChanges = HasSettingsChanged(settings...);
+
+    // Calculate the full button text
+    std::string fullButtonText = std::format("{} Reset To Default##{}", resetIcon, buttonId);
+    ImGuiMCP::ImVec2 resetTextSize;
+    ImGuiMCP::CalcTextSize(&resetTextSize, fullButtonText.c_str(), nullptr, true, -1.0f);
+
+    // Match ImGui's actual button sizing formula: label size + FramePadding.x * 2
+    ImGuiMCP::ImGuiStyle* style = ImGuiMCP::GetStyle();
+    float buttonWidth = resetTextSize.x + style->FramePadding.x * 2.0f;
+
+    // Push the button toward the right border, leaving a small margin, using the window's own width directly so it's tied to the real edge regardless of style padding quirks.
+    float buttonPosX = winSize.x - kEdgeMargin - buttonWidth;
+    ImGuiMCP::SetCursorPosX(buttonPosX);
+
+    // Store the current cursor Y position
+    float cursorY = ImGuiMCP::GetCursorPosY();
+
+    // Get the height of the current text line
+    float textHeight = ImGuiMCP::GetTextLineHeight();
+    float frameHeight = ImGuiMCP::GetFrameHeight();
+
+    // Calculate vertical offset to align button with text
+    float verticalOffset = (frameHeight - textHeight) / 2.0f;
+
+    if (hasChanges) {
+
+        ImGuiMCP::SetCursorPosY(cursorY - verticalOffset);
+
+        if (ImGuiMCP::Button(fullButtonText.c_str())) {
+
+            ResetSettings(sectionName, settings...);
+
+        }
+
+        HelpTooltip(std::format("Restores all {} settings on this page to their default values.", sectionName).c_str());
+    
+    } else {
+
+        ImGuiMCP::SetCursorPosY(cursorY - verticalOffset);
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(buttonWidth, frameHeight));
+
+    }
+
+    // Restore cursor Y for the separator
+    ImGuiMCP::SetCursorPosY(cursorY + frameHeight + 5.0f);
+    ImGuiMCP::Separator();
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+}
+
+// Overload for ExclusionListReset
+static void DrawUIHeaderWithReset(const std::string& title, const std::string& icon,
+    const std::string& sectionName, const std::string& buttonId,
+    const ExclusionListReset& exclusionSettings) {
+    // Add top padding
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
+
+    // Define margin from edges (30px on each side)
+    const float kEdgeMargin = 30.0f;
+
+    ImGuiMCP::ImVec2 winSize;
+    ImGuiMCP::GetWindowSize(&winSize);
+
+    // Pull the title toward the left border, leaving a small margin
+    ImGuiMCP::SetCursorPosX(kEdgeMargin);
+
+    // Draw the title with gold color
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
+    ImGuiMCP::Text("%s %s", icon.c_str(), title.c_str());
+    ImGuiMCP::PopStyleColor();
+    ImGuiMCP::SameLine();
+
+    // Check if any settings have changed
+    const bool hasChanges = exclusionSettings.HasChanged();
+
+    // Calculate the full button text
+    std::string fullButtonText = std::format("{} Clear All Exclusions##{}", resetIcon, buttonId);
+    ImGuiMCP::ImVec2 resetTextSize;
+    ImGuiMCP::CalcTextSize(&resetTextSize, fullButtonText.c_str(), nullptr, true, -1.0f);
+
+    // Match ImGui's actual button sizing formula: label size + FramePadding.x * 2
+    ImGuiMCP::ImGuiStyle* style = ImGuiMCP::GetStyle();
+    float buttonWidth = resetTextSize.x + style->FramePadding.x * 2.0f;
+
+    // Push the button toward the right border, leaving a small margin, using the window's own width directly so it's tied to the real edge regardless of style padding quirks.
+    float buttonPosX = winSize.x - kEdgeMargin - buttonWidth;
+    ImGuiMCP::SetCursorPosX(buttonPosX);
+
+    // Store the current cursor Y position
+    float cursorY = ImGuiMCP::GetCursorPosY();
+
+    // Get the height of the current text line
+    float textHeight = ImGuiMCP::GetTextLineHeight();
+    float frameHeight = ImGuiMCP::GetFrameHeight();
+
+    // Calculate vertical offset to align button with text
+    float verticalOffset = (frameHeight - textHeight) / 2.0f;
+
+    if (hasChanges) {
+
+        // Adjust cursor Y to align button with text
+        ImGuiMCP::SetCursorPosY(cursorY - verticalOffset);
+
+        // Show the actual button
+        if (ImGuiMCP::Button(fullButtonText.c_str())) {
+
+            exclusionSettings.Reset();
+        }
+
+        HelpTooltip(std::format("Removes all actors from the {} list.", sectionName).c_str());
+
+    } else {
+
+        // Reserve space with a dummy that matches button height
+        ImGuiMCP::SetCursorPosY(cursorY - verticalOffset);
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(buttonWidth, frameHeight));
+
+    }
+
+    // Restore cursor Y for the separator
+    ImGuiMCP::SetCursorPosY(cursorY + frameHeight + 5.0f);
+    ImGuiMCP::Separator();
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
 
 }
 
@@ -846,43 +1221,16 @@ void UI::CameraMainSettings() {
 
     FontAwesome::PushSolid();
 
-    // Header with Reset button at top right
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%s Camera Settings - Main Settings", cameraIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
+    DrawUIHeaderWithReset("Camera Settings - Main Settings", cameraIcon, "Camera Main Settings", "resetCameraMain",
+        SettingWithDefault(&g_idleTimer, k_defaultIdleTimer, []() {
 
-    // ---------------------------------------------------------------------------------------------------------------------
-    //  Reset button at top right
-    // ---------------------------------------------------------------------------------------------------------------------
+            ApplyIdleTimerToIniSettings("fAutoVanityModeDelay:Camera", g_idleTimer);
 
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    float availWidth = avail.x;
-
-    std::string resetButtonText = std::format("{} Reset To Default##resetCameraMain", resetIcon);
-    ImGuiMCP::ImVec2 resetTextSize;
-    ImGuiMCP::CalcTextSize(&resetTextSize, resetButtonText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + availWidth - resetTextSize.x);
-
-    if (ImGuiMCP::Button(resetButtonText.c_str())) {
-
-        g_idleTimer = k_defaultIdleTimer;
-        g_blackBarsEnabled = k_defaultBlackBarsEnabled;
-        g_blackBarsSpeed = k_defaultBlackBarsSpeed;
-        g_blackBarsSoundEnabled = k_defaultBlackBarsSoundEnabled;
-        ApplyIdleTimerToIniSettings("fAutoVanityModeDelay:Camera", g_idleTimer);
-        IniParser::Save();
-        logger::info("Camera Main Settings reset to default values.");
-
-    }
-
-    HelpTooltip("Restores all camera main settings on this page to their default values.");
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+        }),
+        SettingWithDefault(&g_blackBarsEnabled, k_defaultBlackBarsEnabled),
+        SettingWithDefault(&g_blackBarsSpeed, k_defaultBlackBarsSpeed),
+        SettingWithDefault(&g_blackBarsSoundEnabled, k_defaultBlackBarsSoundEnabled)
+    );
 
     // =====================================================================================================================
     //  Mini-Card Styling
@@ -906,6 +1254,7 @@ void UI::CameraMainSettings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::Text(" Idle Timer");
     ImGuiMCP::SameLine();
+    ImGuiMCP::ImVec2 avail;
     ImGuiMCP::GetContentRegionAvail(&avail);
     std::string valueText = std::format("{:.0f} sec", g_idleTimer);
     ImGuiMCP::ImVec2 valueTextSize;
@@ -1114,41 +1463,12 @@ void UI::CameraPositionSettings() {
 
     FontAwesome::PushSolid();
 
-    // Header with Reset button at top right
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%s Camera Settings - Position", cameraIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-
-    // ---------------------------------------------------------------------------------------------------------------------
-    //  Reset button at top right
-    // ---------------------------------------------------------------------------------------------------------------------
-
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    float availWidth = avail.x;
-
-    std::string resetButtonText = std::format("{} Reset To Default##resetCameraPosition", resetIcon);
-    ImGuiMCP::ImVec2 resetTextSize;
-    ImGuiMCP::CalcTextSize(&resetTextSize, resetButtonText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + availWidth - resetTextSize.x);
-
-    if (ImGuiMCP::Button(resetButtonText.c_str())) {
-
-        g_IdleCamOffsetX = k_defaultVanityCamOffsetX;
-        g_IdleCamOffsetY = k_defaultVanityCamOffsetY;
-        g_IdleCamOffsetZ = k_defaultVanityCamOffsetZ;
-        g_blendDuration = k_defaultBlendDuration;
-        IniParser::Save();
-
-    }
-
-    HelpTooltip("Restores all camera position settings on this page to their default values.");
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+    DrawUIHeaderWithReset("Camera Settings - Position", cameraIcon, "Camera Position", "resetCameraPosition",
+        SettingWithDefault(&g_IdleCamOffsetX, k_defaultVanityCamOffsetX),
+        SettingWithDefault(&g_IdleCamOffsetY, k_defaultVanityCamOffsetY),
+        SettingWithDefault(&g_IdleCamOffsetZ, k_defaultVanityCamOffsetZ),
+        SettingWithDefault(&g_blendDuration, k_defaultBlendDuration)
+    );
 
     // =====================================================================================================================
     //  Mini-Card Styling
@@ -1172,6 +1492,7 @@ void UI::CameraPositionSettings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::Text(" Idle Camera Offset X");
     ImGuiMCP::SameLine();
+    ImGuiMCP::ImVec2 avail;
     ImGuiMCP::GetContentRegionAvail(&avail);
     std::string valueText = std::format("{:.0f}", g_IdleCamOffsetX);
     ImGuiMCP::ImVec2 valueTextSize;
@@ -1381,41 +1702,12 @@ void UI::CameraZoomSettings() {
 
     FontAwesome::PushSolid();
 
-    // Header with Reset button at top right
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%s Camera Settings - Zoom/Dezoom", cameraIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-
-    // ---------------------------------------------------------------------------------------------------------------------
-    //  Reset button at top right
-    // ---------------------------------------------------------------------------------------------------------------------
-
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    float availWidth = avail.x;
-
-    std::string resetButtonText = std::format("{} Reset To Default##resetCameraZoom", resetIcon);
-    ImGuiMCP::ImVec2 resetTextSize;
-    ImGuiMCP::CalcTextSize(&resetTextSize, resetButtonText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + availWidth - resetTextSize.x);
-
-    if (ImGuiMCP::Button(resetButtonText.c_str())) {
-
-        g_dezoomTriggerRadius = k_defaultDezoomTriggerRadius;
-        g_dezoomTriggerHeight = k_defaultDezoomTriggerHeight;
-        g_dezoomAmount = k_defaultDezoomAmount;
-        g_dezoomBlendSpeed = k_defaultDezoomBlendSpeed;
-        IniParser::Save();
-
-    }
-
-    HelpTooltip("Restores all zoom/dezoom settings on this page to their default values.");
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+    DrawUIHeaderWithReset("Camera Settings - Zoom/Dezoom", cameraIcon, "Zoom/Dezoom", "resetCameraZoom",
+        SettingWithDefault(&g_dezoomTriggerRadius, k_defaultDezoomTriggerRadius),
+        SettingWithDefault(&g_dezoomTriggerHeight, k_defaultDezoomTriggerHeight),
+        SettingWithDefault(&g_dezoomAmount, k_defaultDezoomAmount),
+        SettingWithDefault(&g_dezoomBlendSpeed, k_defaultDezoomBlendSpeed)
+    );
 
     // =====================================================================================================================
     //  Mini-Card Styling
@@ -1445,6 +1737,7 @@ void UI::CameraZoomSettings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::Text(" Dezoom Trigger Radius");
     ImGuiMCP::SameLine();
+    ImGuiMCP::ImVec2 avail;
     ImGuiMCP::GetContentRegionAvail(&avail);
     float dezoomRadiusMeters = g_dezoomTriggerRadius / 70.0f;
     std::string valueText = std::format("{:.1f} m", dezoomRadiusMeters);
@@ -1659,39 +1952,9 @@ void UI::HeadTrackingSettings() {
 
     FontAwesome::PushSolid();
 
-    // Header with Reset button at top right
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%s Head Tracking Settings", headTrackIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-
-    // ---------------------------------------------------------------------------------------------------------------------
-    //  Reset button at top right
-    // ---------------------------------------------------------------------------------------------------------------------
-
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    float availWidth = avail.x;
-
-    std::string resetButtonText = std::format("{} Reset To Default##resetHeadTracking", resetIcon);
-    ImGuiMCP::ImVec2 resetTextSize;
-    ImGuiMCP::CalcTextSize(&resetTextSize, resetButtonText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + availWidth - resetTextSize.x);
-
-    if (ImGuiMCP::Button(resetButtonText.c_str())) {
-
-        g_headTrackFadeSpeed = k_defaultHeadTrackFadeSpeed;
-        IniParser::Save();
-        logger::info("Head Tracking settings reset to default values.");
-
-    }
-
-    HelpTooltip("Restores all head tracking settings on this page to their default values.");
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+    DrawUIHeaderWithReset("Head Tracking Settings", headTrackIcon, "Head Tracking", "resetHeadTracking",
+        SettingWithDefault(&g_headTrackFadeSpeed, k_defaultHeadTrackFadeSpeed)
+    );
 
     // =====================================================================================================================
     //  Mini-Card Styling
@@ -1715,6 +1978,7 @@ void UI::HeadTrackingSettings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::Text(" Head Tracking Fade Speed");
     ImGuiMCP::SameLine();
+    ImGuiMCP::ImVec2 avail;
     ImGuiMCP::GetContentRegionAvail(&avail);
     std::string valueText = std::format("{:.2f} units/s", g_headTrackFadeSpeed);
     ImGuiMCP::ImVec2 valueTextSize;
@@ -1768,45 +2032,15 @@ void UI::POISystemMainSettings() {
 
     FontAwesome::PushSolid();
 
-    // Header with Reset button at top right
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%s POI System - Main Settings", poiSystemIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-
-    // ---------------------------------------------------------------------------------------------------------------------
-    //  Reset button at top right
-    // ---------------------------------------------------------------------------------------------------------------------
-
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    float availWidth = avail.x;
-
-    std::string resetButtonText = std::format("{} Reset To Default##resetPoiGeneral", resetIcon);
-    ImGuiMCP::ImVec2 resetTextSize;
-    ImGuiMCP::CalcTextSize(&resetTextSize, resetButtonText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + availWidth - resetTextSize.x);
-
-    if (ImGuiMCP::Button(resetButtonText.c_str())) {
-
-        g_poiSystemEnabled = k_defaultPoiSystemEnabled;
-        g_actorPoiEnabled = k_defaultActorPoiEnabled;
-        g_preventFollowers = k_defaultPreventFollowers;
-        g_flyingCritterPoiEnabled = k_defaultFlyingCritterPoiEnabled;
-        g_fishPoiEnabled = k_defaultFishPoiEnabled;
-        g_poiDetectionRadius = k_defaultPoiDetectionRadius;
-        g_lockDuration = k_defaultLockDuration;
-        IniParser::Save();
-        logger::info("POI System Main Settings reset to default values.");
-
-    }
-
-    HelpTooltip("Restores all general POI system settings on this page to their default values.");
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+    DrawUIHeaderWithReset("POI System - Main Settings", poiSystemIcon, "POI System Main Settings", "resetPoiGeneral",
+        SettingWithDefault(&g_poiSystemEnabled, k_defaultPoiSystemEnabled),
+        SettingWithDefault(&g_actorPoiEnabled, k_defaultActorPoiEnabled),
+        SettingWithDefault(&g_preventFollowers, k_defaultPreventFollowers),
+        SettingWithDefault(&g_flyingCritterPoiEnabled, k_defaultFlyingCritterPoiEnabled),
+        SettingWithDefault(&g_fishPoiEnabled, k_defaultFishPoiEnabled),
+        SettingWithDefault(&g_poiDetectionRadius, k_defaultPoiDetectionRadius),
+        SettingWithDefault(&g_lockDuration, k_defaultLockDuration)
+    );
 
     // =====================================================================================================================
     //  Mini-Card Styling
@@ -1830,6 +2064,7 @@ void UI::POISystemMainSettings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::Text(" POI System Master Toggle");
     ImGuiMCP::SameLine();
+    ImGuiMCP::ImVec2 avail;
     ImGuiMCP::GetContentRegionAvail(&avail);
     std::string statusText = g_poiSystemEnabled ? "Enabled" : "Disabled";
     ImGuiMCP::ImVec2 statusTextSize;
@@ -2127,38 +2362,9 @@ void UI::POISystemExclusionListSettings() {
 
     FontAwesome::PushSolid();
 
-    // Header with Reset button at top right
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%s POI System - Exclusion List", FontAwesome::UnicodeToUtf8(0xf023).c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-
-    // ---------------------------------------------------------------------------------------------------------------------
-    //  Reset button at top right
-    // ---------------------------------------------------------------------------------------------------------------------
-
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    float availWidth = avail.x;
-
-    std::string resetButtonText = std::format("{} Clear All Exclusions##resetPoiExclusion", resetIcon);
-    ImGuiMCP::ImVec2 resetTextSize;
-    ImGuiMCP::CalcTextSize(&resetTextSize, resetButtonText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + availWidth - resetTextSize.x);
-
-    if (ImGuiMCP::Button(resetButtonText.c_str())) {
-
-        g_actorExclusionList.clear();
-        IniParser::Save();
-
-    }
-
-    HelpTooltip("Removes all actors from the exclusion list.");
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+    DrawUIHeaderWithReset("POI System - Exclusion List", ExcludeListIcon, "Exclusion List", "resetPoiExclusion",
+        ExclusionListReset(&g_actorExclusionList)
+    );
 
     // =====================================================================================================================
     //  Card Styling
@@ -2255,7 +2461,7 @@ void UI::POISystemExclusionListSettings() {
 
         // Selected object is not an actor
         ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xe74c3c));
-        ImGuiMCP::Text("%s The currently selected object is not an actor.", FontAwesome::UnicodeToUtf8(0xf05e).c_str());
+        ImGuiMCP::Text("%s The currently selected object is not an actor.", deniedIcon.c_str());
         ImGuiMCP::PopStyleColor();
 
         ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
@@ -2271,7 +2477,7 @@ void UI::POISystemExclusionListSettings() {
 
         // Player cannot be excluded
         ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xe74c3c));
-        ImGuiMCP::Text("%s The player cannot be excluded.", FontAwesome::UnicodeToUtf8(0xf05e).c_str());
+        ImGuiMCP::Text("%s The player cannot be excluded.", deniedIcon.c_str());
         ImGuiMCP::PopStyleColor();
 
         ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
@@ -2289,7 +2495,7 @@ void UI::POISystemExclusionListSettings() {
 
         // Already excluded - show warning message and gray button
         ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xf39c12));
-        ImGuiMCP::Text("%s Already Excluded: %s", FontAwesome::UnicodeToUtf8(0xf05e).c_str(), selectedActor->GetName() ? selectedActor->GetName() : "Unnamed");
+        ImGuiMCP::Text("%s Already Excluded: %s", deniedIcon.c_str(), selectedActor->GetName() ? selectedActor->GetName() : "Unnamed");
         ImGuiMCP::PopStyleColor();
 
         ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
@@ -2352,7 +2558,7 @@ void UI::POISystemExclusionListSettings() {
     if (g_actorExclusionList.empty()) {
 
         ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.5f, 0.5f, 0.5f, 1.0f });
-        ImGuiMCP::Text("%s No actors in exclusion list.", FontAwesome::UnicodeToUtf8(0xf07c).c_str());
+        ImGuiMCP::Text("%s No actors in exclusion list.", folderOpenIcon.c_str());
         ImGuiMCP::PopStyleColor();
 
         ImGuiMCP::EndChild();
@@ -2590,58 +2796,23 @@ void UI::POISystemActorScores() {
 
     FontAwesome::PushSolid();
 
-    // Header with Reset button at top right
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("POI System - Actor Scores");
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-
-    // ---------------------------------------------------------------------------------------------------------------------
-    //  Reset the actor score settings back to default
-    // ---------------------------------------------------------------------------------------------------------------------
-
-    ImGuiMCP::ImVec2 availWidthVec;
-    ImGuiMCP::GetContentRegionAvail(&availWidthVec);
-    float availWidth = availWidthVec.x;
-
-    std::string resetButtonText = std::format("{} Reset To Default##resetPoiActor", resetIcon);
-    ImGuiMCP::ImVec2 resetTextSize;
-    ImGuiMCP::CalcTextSize(&resetTextSize, resetButtonText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + availWidth - resetTextSize.x);
-
-    if (ImGuiMCP::Button(resetButtonText.c_str())) {
-
-        g_dragonScore = k_defaultDragonScore;
-        g_dragonProximityEnabled = k_defaultDragonProximityEnabled;
-        g_dragonProximityFactor = k_defaultDragonProximityFactor;
-
-        g_actorCombatScore = k_defaultActorCombatScore;
-        g_actorCombatProximityEnabled = k_defaultActorCombatProximityEnabled;
-        g_actorCombatProximityFactor = k_defaultActorCombatProximityFactor;
-
-        g_actorMovingScore = k_defaultActorMovingScore;
-        g_actorMovingProximityEnabled = k_defaultActorMovingProximityEnabled;
-        g_actorMovingProximityFactor = k_defaultActorMovingProximityFactor;
-
-        g_actorInSceneScore = k_defaultActorInSceneScore;
-        g_actorInSceneProximityEnabled = k_defaultActorInSceneProximityEnabled;
-        g_actorInSceneProximityFactor = k_defaultActorInSceneProximityFactor;
-
-        g_actorIdleScore = k_defaultActorIdleScore;
-        g_actorIdleProximityEnabled = k_defaultActorIdleProximityEnabled;
-        g_actorIdleProximityFactor = k_defaultActorIdleProximityFactor;
-
-        IniParser::Save();
-
-    }
-
-    HelpTooltip("Restores all actor score settings on this page to their default values.");
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+    DrawUIHeaderWithReset("POI System - Actor Scores", poiTypesIcon, "Actor Score Settings", "resetPoiActor",
+        SettingWithDefault(&g_dragonScore, k_defaultDragonScore),
+        SettingWithDefault(&g_dragonProximityEnabled, k_defaultDragonProximityEnabled),
+        SettingWithDefault(&g_dragonProximityFactor, k_defaultDragonProximityFactor),
+        SettingWithDefault(&g_actorCombatScore, k_defaultActorCombatScore),
+        SettingWithDefault(&g_actorCombatProximityEnabled, k_defaultActorCombatProximityEnabled),
+        SettingWithDefault(&g_actorCombatProximityFactor, k_defaultActorCombatProximityFactor),
+        SettingWithDefault(&g_actorMovingScore, k_defaultActorMovingScore),
+        SettingWithDefault(&g_actorMovingProximityEnabled, k_defaultActorMovingProximityEnabled),
+        SettingWithDefault(&g_actorMovingProximityFactor, k_defaultActorMovingProximityFactor),
+        SettingWithDefault(&g_actorInSceneScore, k_defaultActorInSceneScore),
+        SettingWithDefault(&g_actorInSceneProximityEnabled, k_defaultActorInSceneProximityEnabled),
+        SettingWithDefault(&g_actorInSceneProximityFactor, k_defaultActorInSceneProximityFactor),
+        SettingWithDefault(&g_actorIdleScore, k_defaultActorIdleScore),
+        SettingWithDefault(&g_actorIdleProximityEnabled, k_defaultActorIdleProximityEnabled),
+        SettingWithDefault(&g_actorIdleProximityFactor, k_defaultActorIdleProximityFactor)
+    );
 
     // =====================================================================================================================
     //  Actor Score System - Card Based Layout
@@ -2667,6 +2838,7 @@ void UI::POISystemActorScores() {
     ImGuiMCP::SameLine();
     ImGuiMCP::Text(" Dragon");
     ImGuiMCP::SameLine();
+    ImGuiMCP::ImVec2 avail;
     ImGuiMCP::GetContentRegionAvail(&avail);
 
     // Calculate total score (base + proximity bonus if enabled)
@@ -3234,46 +3406,14 @@ void UI::POISystemCritterScores() {
 
     FontAwesome::PushSolid();
 
-    // Header with Reset button at top right
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("POI System - Critter Scores");
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-
-    // ---------------------------------------------------------------------------------------------------------------------
-    //  Reset the critter score settings back to default
-    // ---------------------------------------------------------------------------------------------------------------------
-
-    ImGuiMCP::ImVec2 availWidthVec;
-    ImGuiMCP::GetContentRegionAvail(&availWidthVec);
-    float availWidth = availWidthVec.x;
-
-    std::string resetButtonText = std::format("{} Reset To Default##resetPoiCritter", resetIcon);
-    ImGuiMCP::ImVec2 resetTextSize;
-    ImGuiMCP::CalcTextSize(&resetTextSize, resetButtonText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + availWidth - resetTextSize.x);
-
-    if (ImGuiMCP::Button(resetButtonText.c_str())) {
-
-        g_flyingCritterScore = k_defaultFlyingCritterScore;
-        g_flyingCritterProximityEnabled = k_defaultFlyingCritterProximityEnabled;
-        g_flyingCritterProximityFactor = k_defaultFlyingCritterProximityFactor;
-
-        g_pondFishScore = k_defaultFishScore;
-        g_pondFishProximityEnabled = k_defaultFishProximityEnabled;
-        g_pondFishProximityFactor = k_defaultFishProximityFactor;
-
-        IniParser::Save();
-
-    }
-
-    HelpTooltip("Restores all critter score settings on this page to their default values.");
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+    DrawUIHeaderWithReset("POI System - Critter Scores", poiTypesIcon, "Critter Score Settings", "resetPoiCritter",
+        SettingWithDefault(&g_flyingCritterScore, k_defaultFlyingCritterScore),
+        SettingWithDefault(&g_flyingCritterProximityEnabled, k_defaultFlyingCritterProximityEnabled),
+        SettingWithDefault(&g_flyingCritterProximityFactor, k_defaultFlyingCritterProximityFactor),
+        SettingWithDefault(&g_pondFishScore, k_defaultFishScore),
+        SettingWithDefault(&g_pondFishProximityEnabled, k_defaultFishProximityEnabled),
+        SettingWithDefault(&g_pondFishProximityFactor, k_defaultFishProximityFactor)
+    );
 
     // =====================================================================================================================
     //  Critter Score System - Card Based Layout
@@ -3299,6 +3439,7 @@ void UI::POISystemCritterScores() {
     ImGuiMCP::SameLine();
     ImGuiMCP::Text(" Flying Critter");
     ImGuiMCP::SameLine();
+    ImGuiMCP::ImVec2 avail;
     ImGuiMCP::GetContentRegionAvail(&avail);
 
     // Calculate total score (base + proximity bonus if enabled)
@@ -3527,45 +3668,15 @@ void UI::DebugSettings() {
 
     FontAwesome::PushSolid();
 
-    // Header with Reset button at top right
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%s Debug Settings", debugIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-
-    // ---------------------------------------------------------------------------------------------------------------------
-    //  Reset button at top right
-    // ---------------------------------------------------------------------------------------------------------------------
-
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    float availWidth = avail.x;
-
-    std::string resetButtonText = std::format("{} Reset To Default##resetDebug", resetIcon);
-    ImGuiMCP::ImVec2 resetTextSize;
-    ImGuiMCP::CalcTextSize(&resetTextSize, resetButtonText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + availWidth - resetTextSize.x);
-
-    if (ImGuiMCP::Button(resetButtonText.c_str())) {
-
-        g_debugRaycasts = k_defaultDebugRaycasts;
-        g_loggingLevel = k_defaultLoggingLevel;
-
-        auto lvl = LoggingLevelToSpdlog(g_loggingLevel);
-        spdlog::set_level(lvl);
-        spdlog::flush_on(lvl);
-        logger::info("Logging level reset to default ('{}')", k_loggingLevelNames[g_loggingLevel]);
-
-        IniParser::Save();
-
-    }
-
-    HelpTooltip("Restores all debug settings on this page to their default values.");
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+    DrawUIHeaderWithReset("Debug Settings", debugIcon, "Debug", "resetDebug",
+        SettingWithDefault(&g_debugRaycasts, k_defaultDebugRaycasts),
+        SettingWithDefault(&g_loggingLevel, k_defaultLoggingLevel, []() {
+            auto lvl = LoggingLevelToSpdlog(g_loggingLevel);
+            spdlog::set_level(lvl);
+            spdlog::flush_on(lvl);
+            logger::info("Logging level reset to default ('{}')", k_loggingLevelNames[g_loggingLevel]);
+            })
+    );
 
     // =====================================================================================================================
     //  Mini-Card Styling
@@ -3589,6 +3700,7 @@ void UI::DebugSettings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::Text(" Debug Raycast Visualization");
     ImGuiMCP::SameLine();
+    ImGuiMCP::ImVec2 avail;
     ImGuiMCP::GetContentRegionAvail(&avail);
     std::string statusText = g_debugRaycasts ? "Enabled" : "Disabled";
     ImGuiMCP::ImVec2 statusTextSize;
