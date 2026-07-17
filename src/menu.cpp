@@ -8,19 +8,19 @@
 
 namespace logger = SKSE::log;
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  Skyrim Constants
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
 static constexpr float SKYRIM_UNITS_TO_METERS = 70.0f;  // 1 meter = 70 game units
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  Default settings used when the ini doesn't exist when the game is started (ordered by menus)
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 //  Camera
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 
 // Main Settings
 
@@ -43,15 +43,15 @@ static constexpr float              k_defaultDezoomTriggerHeight                
 static constexpr float              k_defaultDezoomAmount                                       = 250.0f;
 static constexpr float              k_defaultDezoomBlendSpeed                                   = 0.7f;
 
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 //  Head Tracking
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 
 static constexpr float              k_defaultHeadTrackFadeSpeed = 0.3f;
 
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 //  POI System
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 
 // Main settings
 
@@ -97,20 +97,20 @@ static constexpr float              k_defaultFishScore                          
 static constexpr bool               k_defaultFishProximityEnabled                               = true;
 static constexpr float              k_defaultFishProximityFactor                                = 150.0f;
 
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 //  Debug
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 
 static constexpr bool               k_defaultDebugRaycasts                                      = false;
 static constexpr int                k_defaultLoggingLevel                                       = 2; // 0 = critical, 1 = warn, 2 = info, 3 = debug
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  Initalize the sliders in the ui with the default values (used only when the INI doesn't exist or a param in it was completely removed)
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 //  Camera
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 
 // Main settings
 
@@ -133,15 +133,15 @@ float                               UI::g_dezoomTriggerHeight                   
 float                               UI::g_dezoomAmount                                          = k_defaultDezoomAmount;
 float                               UI::g_dezoomBlendSpeed                                      = k_defaultDezoomBlendSpeed;
 
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 //  Head Tracking
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 
 float                               UI::g_headTrackFadeSpeed                                    = k_defaultHeadTrackFadeSpeed;
 
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 //  POI System
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 
 // Main settings
 
@@ -197,17 +197,17 @@ namespace Hooks {
 
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 //  Debug
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 
 bool                                UI::g_debugRaycasts                                         = k_defaultDebugRaycasts;
 int                                 UI::g_loggingLevel                                          = k_defaultLoggingLevel;
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  Logging level names, indexed 0-3 to match the simplified scheme:
 //  0 = Quiet (critical only), 1 = Warnings, 2 = Info (default), 3 = Debug
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
 static constexpr const char* k_loggingLevelNames[] = {
 
@@ -238,9 +238,9 @@ static spdlog::level::level_enum LoggingLevelToSpdlog(int loggingLevel) {
 
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  Used to force apply some new settings to the virtual copy of the ini user side. Only used for the idle timer for now.
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
 static void ApplyIdleTimerToIniSettings(std::string settingName, float value) {
 
@@ -264,9 +264,9 @@ static void ApplyIdleTimerToIniSettings(std::string settingName, float value) {
 
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  Font Awesome Icons
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
 // =====================================================================================================================
 //  Section Icons (Headers)
@@ -346,10 +346,26 @@ auto resetIcon = FontAwesome::UnicodeToUtf8(0xf2ea);
 auto deniedIcon = FontAwesome::UnicodeToUtf8(0xf05e);
 auto folderOpenIcon = FontAwesome::UnicodeToUtf8(0xf07c);
 
+// =====================================================================================================================
+//  Hexadecimal colors
+// =====================================================================================================================
 
-// ---------------------------------------------------------------------------------------------------------------------
+static const uint32_t               k_hexRed                            = 0xe74c3c;
+static const uint32_t               k_hexGreen                          = 0x7ef566;
+static const uint32_t               k_hexGoldLight                      = 0xF5D966;
+static const uint32_t               k_hexBlue                           = 0x036ffc;
+static const uint32_t               k_hexDarkRed                        = 0xc0392b;
+static const uint32_t               k_hexDarkerRed                      = 0x922b21;
+static const uint32_t               k_hexBrightGreen                    = 0x2ecc71;
+static const uint32_t               k_hexDarkGreen                      = 0x27ae60;
+static const uint32_t               k_hexDarkerGreen                    = 0x1e8449;
+static const uint32_t               k_hexWarning                        = 0xf39c12;
+static const uint32_t               k_hexCritterPink                    = 0xf566dd;
+static const uint32_t               k_hexFishCyan                       = 0x1ff0ff;
+
+// ==================================================================================================================================================================================
 //  UI Helper function to convert hex color values to ImVec4
-// ---------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
 inline ImGuiMCP::ImVec4 HexToImVec4(uint32_t hex) {
 
@@ -363,71 +379,9 @@ inline ImGuiMCP::ImVec4 HexToImVec4(uint32_t hex) {
 
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-//  Shows a hovering tooltip describing the parameter. Call this right after the widget (slider/checkbox) it
-//  belongs to, while the widget is still the "last item" (ImGui tracks hover state per last-submitted item).
-//
-//  The wrap width is computed dynamically from the longest line in `text` (splitting on '\n'), so the
-//  tooltip box is always exactly as wide as its widest line and nothing wraps unexpectedly.
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-static void HelpTooltip(const char* text) {
-
-    if (ImGuiMCP::IsItemHovered()) {
-
-        // ---------------------------------------------------------------------------------------------------------------
-        //  Walk the string, splitting on '\n', and measure each line's pixel width via ImGui's own text
-        //  measurement (CalcTextSize) so the result accounts for the actual font metrics rather than raw
-        //  character counts (which would be wrong for proportional fonts). SKSEMenuFramework's CalcTextSize
-        //  writes its result through an out-param (ImVec2*) rather than returning by value, and has no
-        //  default arguments, so all 5 parameters must be supplied explicitly.
-        // ---------------------------------------------------------------------------------------------------------------
-
-        float       longestLineWidth = 0.0f;
-        const char* lineStart = text;
-
-        for (const char* p = text; ; ++p) {
-
-            if (*p == '\n' || *p == '\0') {
-
-                ImGuiMCP::ImVec2 lineSize{};
-                ImGuiMCP::CalcTextSize(&lineSize, lineStart, p, false, -1.0f);
-
-                if (lineSize.x > longestLineWidth) {
-
-                    longestLineWidth = lineSize.x;
-
-                }
-
-                if (*p == '\0') {
-
-                    break;
-
-                }
-
-                lineStart = p + 1;
-
-            }
-
-        }
-
-        // Pad slightly so the wrap boundary sits just past the widest line's actual pixel width,
-        // preventing any edge-case wrapping caused by rounding.
-        const float wrapWidth = longestLineWidth + 1.0f;
-
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::PushTextWrapPos(ImGuiMCP::GetCursorPosX() + wrapWidth);
-        ImGuiMCP::TextUnformatted(text);
-        ImGuiMCP::PopTextWrapPos();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-}
-
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  Reset Button Helper with separator and spacing
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
 // Structure to hold a setting value and its default, with optional custom reset logic
 template<typename T>
@@ -506,11 +460,11 @@ static void ResetSettings(const std::string& sectionName, const Args&... setting
 
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 //  Draw Reset Button with separator and spacing:
 // 
 //  Shows only when any setting in the list has changed & always reserves space to prevent layout shifts
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 
 template<typename... Args>
 
@@ -561,7 +515,13 @@ static void DrawResetButtonWithSeparator(const std::string& sectionName, const s
 
         }
 
-        HelpTooltip(std::format("Restores all {} settings on this page to their default values.", sectionName).c_str());
+        if (ImGuiMCP::IsItemHovered()) {
+
+            ImGuiMCP::BeginTooltip();
+            ImGuiMCP::Text("Restores all %s settings on this page to their default values.", sectionName.c_str());
+            ImGuiMCP::EndTooltip();
+
+        }
 
     } else {
 
@@ -626,7 +586,13 @@ static inline void DrawResetButtonWithSeparator(const std::string& sectionName, 
 
         }
 
-        HelpTooltip(std::format("Removes all actors from the {} list.", sectionName).c_str());
+        if (ImGuiMCP::IsItemHovered()) {
+        
+            ImGuiMCP::BeginTooltip();
+            ImGuiMCP::Text("Removes all actors from the %s list.", sectionName.c_str());
+            ImGuiMCP::EndTooltip();
+        
+        }
 
     } else {
 
@@ -643,9 +609,9 @@ static inline void DrawResetButtonWithSeparator(const std::string& sectionName, 
 
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 //  Draw UI Header with Reset Button - Complete header with margins and separator
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 
 template<typename... Args>
 
@@ -664,7 +630,7 @@ static void DrawUIHeaderWithReset(const std::string& title, const std::string& i
     ImGuiMCP::SetCursorPosX(kEdgeMargin);
 
     // Draw the title with gold color
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s %s", icon.c_str(), title.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -705,7 +671,13 @@ static void DrawUIHeaderWithReset(const std::string& title, const std::string& i
 
         }
 
-        HelpTooltip(std::format("Restores all {} settings on this page to their default values.", sectionName).c_str());
+        if (ImGuiMCP::IsItemHovered()) {
+
+            ImGuiMCP::BeginTooltip();
+            ImGuiMCP::Text("Restores all %s settings on this page to their default values.", sectionName.c_str());
+            ImGuiMCP::EndTooltip();
+
+        }
     
     } else {
 
@@ -738,7 +710,7 @@ static void DrawUIHeaderWithReset(const std::string& title, const std::string& i
     ImGuiMCP::SetCursorPosX(kEdgeMargin);
 
     // Draw the title with gold color
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s %s", icon.c_str(), title.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -780,7 +752,13 @@ static void DrawUIHeaderWithReset(const std::string& title, const std::string& i
             exclusionSettings.Reset();
         }
 
-        HelpTooltip(std::format("Removes all actors from the {} list.", sectionName).c_str());
+        if (ImGuiMCP::IsItemHovered()) {
+
+            ImGuiMCP::BeginTooltip();
+            ImGuiMCP::Text("Removes all actors from the %s list.", sectionName.c_str());
+            ImGuiMCP::EndTooltip();
+
+        }
 
     } else {
 
@@ -797,9 +775,9 @@ static void DrawUIHeaderWithReset(const std::string& title, const std::string& i
 
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 //  Draw POI score cards (actors & critters)
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 
 struct ScoreCardData {
 
@@ -833,7 +811,7 @@ static const std::vector<ScoreCardData> actorCards = {
 
         dragonScoreIcon.c_str(),
         "Dragon",
-        0x7ef566,
+        k_hexGreen,
         &UI::g_dragonScore,
         k_defaultDragonScore,
         &UI::g_dragonProximityEnabled,
@@ -848,7 +826,7 @@ static const std::vector<ScoreCardData> actorCards = {
 
         inCombatScoreIcon.c_str(),
         "In Combat",
-        0x7ef566,
+        k_hexGreen,
         &UI::g_actorCombatScore,
         k_defaultActorCombatScore,
         &UI::g_actorCombatProximityEnabled,
@@ -863,7 +841,7 @@ static const std::vector<ScoreCardData> actorCards = {
 
         movingScoreIcon.c_str(),
         "Moving",
-        0x7ef566,
+        k_hexGreen,
         &UI::g_actorMovingScore,
         k_defaultActorMovingScore,
         &UI::g_actorMovingProximityEnabled,
@@ -878,7 +856,7 @@ static const std::vector<ScoreCardData> actorCards = {
 
         inSceneScoreIcon.c_str(),
         "In Scene",
-        0x7ef566,
+        k_hexGreen,
         &UI::g_actorInSceneScore,
         k_defaultActorInSceneScore,
         &UI::g_actorInSceneProximityEnabled,
@@ -893,7 +871,7 @@ static const std::vector<ScoreCardData> actorCards = {
 
         personIcon.c_str(),
         "Idle",
-        0x7ef566,
+        k_hexGreen,
         &UI::g_actorIdleScore,
         k_defaultActorIdleScore,
         &UI::g_actorIdleProximityEnabled,
@@ -917,7 +895,7 @@ static const std::vector<ScoreCardData> critterCards = {
 
         flyingCritterIcon.c_str(),
         "Flying Critter",
-        0xf566dd,
+        k_hexCritterPink,
         &UI::g_flyingCritterScore,
         k_defaultFlyingCritterScore,
         &UI::g_flyingCritterProximityEnabled,
@@ -932,7 +910,7 @@ static const std::vector<ScoreCardData> critterCards = {
 
         fishCritterIcon.c_str(),
         "Pond Fish",
-        0x1ff0ff,
+        k_hexFishCyan,
         &UI::g_pondFishScore,
         k_defaultFishScore,
         &UI::g_pondFishProximityEnabled,
@@ -946,9 +924,9 @@ static const std::vector<ScoreCardData> critterCards = {
 
 };
 
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 //  Draw a single score card
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 
 static void DrawScoreCard(const ScoreCardData& card) {
 
@@ -964,6 +942,7 @@ static void DrawScoreCard(const ScoreCardData& card) {
 
     // Total score display (right-aligned)
     float totalScore = *card.baseScore + (*card.proximityEnabled ? *card.proximityFactor : 0.0f);
+    float defaultTotalScore = card.baseDefault + (card.proximityEnabledDefault ? card.proximityFactorDefault : 0.0f);
     ImGuiMCP::SameLine();
     ImGuiMCP::ImVec2 avail;
     ImGuiMCP::GetContentRegionAvail(&avail);
@@ -991,7 +970,22 @@ static void DrawScoreCard(const ScoreCardData& card) {
             ImGuiMCP::Text("Proximity Bonus: Disabled");
 
         }
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default Total Score: %.0f", defaultTotalScore);
+        ImGuiMCP::Text("Default Base Score: %.0f", card.baseDefault);
 
+        if (card.proximityEnabledDefault) {
+
+            ImGuiMCP::Text("Default Proximity Bonus: +%.0f", card.proximityFactorDefault);
+
+        } else {
+
+            ImGuiMCP::Text("Default Proximity Bonus: Disabled");
+        
+        }
+
+        ImGuiMCP::PopStyleColor();
         ImGuiMCP::EndTooltip();
 
     }
@@ -1001,7 +995,14 @@ static void DrawScoreCard(const ScoreCardData& card) {
 
     // Base Score
     ImGuiMCP::Text("Base Score");
-    HelpTooltip(card.tooltip);
+    if (ImGuiMCP::IsItemHovered()) {
+
+        ImGuiMCP::BeginTooltip();
+        ImGuiMCP::Text("%s", card.tooltip);
+        ImGuiMCP::EndTooltip();
+
+    }
+
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_PlotHistogram, ImGuiMCP::ImVec4{ 0.4f, 0.7f, 1.0f, 1.0f });
 
     // Use PushID to create unique IDs for each slider
@@ -1032,7 +1033,13 @@ static void DrawScoreCard(const ScoreCardData& card) {
 
     ImGuiMCP::PopID();
 
-    HelpTooltip(card.proximityTooltip);
+    if (ImGuiMCP::IsItemHovered()) {
+
+        ImGuiMCP::BeginTooltip();
+        ImGuiMCP::Text("%s", card.proximityTooltip);
+        ImGuiMCP::EndTooltip();
+
+    }
 
     if (*card.proximityEnabled) {
 
@@ -1107,13 +1114,13 @@ static void DrawCritterScoreCards() {
 
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  Exclusion list specific functions
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 //  Helper: Get actor name from Form ID at runtime (language-independent)
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 
 static std::string GetActorNameFromFormID(RE::FormID a_formID) {
 
@@ -1201,9 +1208,9 @@ static std::string GetActorNameFromFormID(RE::FormID a_formID) {
 
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 //  Add the console selected actor to the exclusion list
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 
 void UI::AddActorToExclusionList(RE::Actor* a_actor) {
 
@@ -1314,9 +1321,9 @@ void UI::AddActorToExclusionList(RE::Actor* a_actor) {
 
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 //  Remove an actor from the exclusion list when pressing the button on its left in the exclusion list
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 
 void UI::RemoveFromActorExclusionList(size_t index) {
 
@@ -1332,10 +1339,10 @@ void UI::RemoveFromActorExclusionList(size_t index) {
 
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 //  Checks if an actor is excluded. 
 //  Also used inside playercamerahook.cpp to check if a potential poi is excluded.
-// ---------------------------------------------------------------------------------------------------------------------
+// =====================================================================================================================
 
 bool UI::IsActorExcluded(RE::Actor* a_actor) {
 
@@ -1399,9 +1406,9 @@ bool UI::IsActorExcluded(RE::Actor* a_actor) {
 
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  Register all the different setting sections in the SKSE menu
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
 void UI::Register() {
 
@@ -1430,9 +1437,9 @@ void UI::Register() {
 
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  Sound effect player
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
 static void playSoundEffect(const std::string& a_filePath) {
 
@@ -1442,9 +1449,9 @@ static void playSoundEffect(const std::string& a_filePath) {
 
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  Black bars used to make the vanity mode more cinematic
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
 void UI::DrawCinematicBars() {
 
@@ -1530,9 +1537,9 @@ void UI::DrawCinematicBars() {
 
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  Camera Settings - Main Settings
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
 void UI::CameraMainSettings() {
 
@@ -1565,7 +1572,7 @@ void UI::CameraMainSettings() {
     ImGuiMCP::BeginChild("##timerCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", clockIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -1586,6 +1593,10 @@ void UI::CameraMainSettings() {
 
         ImGuiMCP::BeginTooltip();
         ImGuiMCP::Text("Current Idle Timer: %.0f seconds", g_idleTimer);
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default value: %.0f seconds", k_defaultIdleTimer);
+        ImGuiMCP::PopStyleColor();
         ImGuiMCP::EndTooltip();
 
     }
@@ -1621,7 +1632,7 @@ void UI::CameraMainSettings() {
     ImGuiMCP::BeginChild("##blackBarsCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", filmIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -1629,9 +1640,10 @@ void UI::CameraMainSettings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::GetContentRegionAvail(&avail);
     std::string statusText = g_blackBarsEnabled ? "Enabled" : "Disabled";
+    std::string defaultStatus = k_defaultBlackBarsEnabled ? "Enabled" : "Disabled";
     ImGuiMCP::CalcTextSize(&valueTextSize, statusText.c_str(), nullptr, false, -1.0f);
     ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, g_blackBarsEnabled ? HexToImVec4(0x2ecc71) : HexToImVec4(0xe74c3c));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, g_blackBarsEnabled ? HexToImVec4(k_hexBrightGreen) : HexToImVec4(k_hexRed));
     ImGuiMCP::Text("%s", statusText.c_str());
     ImGuiMCP::PopStyleColor();
 
@@ -1639,6 +1651,10 @@ void UI::CameraMainSettings() {
 
         ImGuiMCP::BeginTooltip();
         ImGuiMCP::Text("Cinematic Black Bars: %s", statusText.c_str());
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default value: %s", defaultStatus.c_str());
+        ImGuiMCP::PopStyleColor();
         ImGuiMCP::EndTooltip();
 
     }
@@ -1672,7 +1688,7 @@ void UI::CameraMainSettings() {
         ImGuiMCP::BeginChild("##speedCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
         // Header with icon and current value
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
         ImGuiMCP::Text("%s", speedIcon.c_str());
         ImGuiMCP::PopStyleColor();
         ImGuiMCP::SameLine();
@@ -1690,6 +1706,10 @@ void UI::CameraMainSettings() {
 
             ImGuiMCP::BeginTooltip();
             ImGuiMCP::Text("Current Slide Speed: %.1f", g_blackBarsSpeed);
+            ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+            ImGuiMCP::Text("Default value: %.1f", k_defaultBlackBarsSpeed);
+            ImGuiMCP::PopStyleColor();
             ImGuiMCP::EndTooltip();
 
         }
@@ -1723,7 +1743,7 @@ void UI::CameraMainSettings() {
         ImGuiMCP::BeginChild("##soundCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
         // Header with icon and current value
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
         ImGuiMCP::Text("%s", soundIcon.c_str());
         ImGuiMCP::PopStyleColor();
         ImGuiMCP::SameLine();
@@ -1731,9 +1751,10 @@ void UI::CameraMainSettings() {
         ImGuiMCP::SameLine();
         ImGuiMCP::GetContentRegionAvail(&avail);
         statusText = g_blackBarsSoundEnabled ? "Enabled" : "Disabled";
+        defaultStatus = k_defaultBlackBarsSoundEnabled ? "Enabled" : "Disabled";
         ImGuiMCP::CalcTextSize(&valueTextSize, statusText.c_str(), nullptr, false, -1.0f);
         ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, g_blackBarsSoundEnabled ? HexToImVec4(0x2ecc71) : HexToImVec4(0xe74c3c));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, g_blackBarsSoundEnabled ? HexToImVec4(k_hexBrightGreen) : HexToImVec4(k_hexRed));
         ImGuiMCP::Text("%s", statusText.c_str());
         ImGuiMCP::PopStyleColor();
 
@@ -1741,6 +1762,10 @@ void UI::CameraMainSettings() {
 
             ImGuiMCP::BeginTooltip();
             ImGuiMCP::Text("Sound Effects: %s", statusText.c_str());
+            ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+            ImGuiMCP::Text("Default value: %s", defaultStatus.c_str());
+            ImGuiMCP::PopStyleColor();
             ImGuiMCP::EndTooltip();
 
         }
@@ -1772,9 +1797,9 @@ void UI::CameraMainSettings() {
 
 }
 
-/// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/// ==================================================================================================================================================================================
 //  Camera Settings - Position
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
 void UI::CameraPositionSettings() {
 
@@ -1803,7 +1828,7 @@ void UI::CameraPositionSettings() {
     ImGuiMCP::BeginChild("##offsetXCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", arrowLeftAndRightIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -1824,6 +1849,10 @@ void UI::CameraPositionSettings() {
 
         ImGuiMCP::BeginTooltip();
         ImGuiMCP::Text("Current Offset X: %.0f", g_IdleCamOffsetX);
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default value: %.0f", k_defaultVanityCamOffsetX);
+        ImGuiMCP::PopStyleColor();
         ImGuiMCP::EndTooltip();
 
     }
@@ -1858,7 +1887,7 @@ void UI::CameraPositionSettings() {
     ImGuiMCP::BeginChild("##offsetYCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", zoomIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -1876,6 +1905,10 @@ void UI::CameraPositionSettings() {
 
         ImGuiMCP::BeginTooltip();
         ImGuiMCP::Text("Current Zoom: %.0f", g_IdleCamOffsetY);
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default value: %.0f", k_defaultVanityCamOffsetY);
+        ImGuiMCP::PopStyleColor();
         ImGuiMCP::EndTooltip();
 
     }
@@ -1910,7 +1943,7 @@ void UI::CameraPositionSettings() {
     ImGuiMCP::BeginChild("##offsetZCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", arrowUpAndDownIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -1928,6 +1961,10 @@ void UI::CameraPositionSettings() {
 
         ImGuiMCP::BeginTooltip();
         ImGuiMCP::Text("Current Offset Z: %.0f", g_IdleCamOffsetZ);
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default value: %.0f", k_defaultVanityCamOffsetZ);
+        ImGuiMCP::PopStyleColor();
         ImGuiMCP::EndTooltip();
 
     }
@@ -1962,7 +1999,7 @@ void UI::CameraPositionSettings() {
     ImGuiMCP::BeginChild("##blendCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", clockIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -1980,6 +2017,10 @@ void UI::CameraPositionSettings() {
 
         ImGuiMCP::BeginTooltip();
         ImGuiMCP::Text("Current Blend Duration: %.2f sec", g_blendDuration);
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default value: %.2f sec", k_defaultBlendDuration);
+        ImGuiMCP::PopStyleColor();
         ImGuiMCP::EndTooltip();
 
     }
@@ -2011,9 +2052,9 @@ void UI::CameraPositionSettings() {
 
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  Camera Settings - Zoom/Dezoom
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
 void UI::CameraZoomSettings() {
 
@@ -2048,7 +2089,7 @@ void UI::CameraZoomSettings() {
     ImGuiMCP::BeginChild("##radiusCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", radiusIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -2057,6 +2098,7 @@ void UI::CameraZoomSettings() {
     ImGuiMCP::ImVec2 avail;
     ImGuiMCP::GetContentRegionAvail(&avail);
     float dezoomRadiusMeters = g_dezoomTriggerRadius / SKYRIM_UNITS_TO_METERS;
+    float defaultRadiusMeters = k_defaultDezoomTriggerRadius / SKYRIM_UNITS_TO_METERS;
     std::string valueText = std::format("{:.1f} m", dezoomRadiusMeters);
     ImGuiMCP::ImVec2 valueTextSize;
     ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
@@ -2070,6 +2112,10 @@ void UI::CameraZoomSettings() {
 
         ImGuiMCP::BeginTooltip();
         ImGuiMCP::Text("Current Trigger Radius: %.1f m (%.0f units)", dezoomRadiusMeters, g_dezoomTriggerRadius);
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default value: %.1f m (%.0f units)", defaultRadiusMeters, k_defaultDezoomTriggerRadius);
+        ImGuiMCP::PopStyleColor();
         ImGuiMCP::EndTooltip();
 
     }
@@ -2104,7 +2150,7 @@ void UI::CameraZoomSettings() {
     ImGuiMCP::BeginChild("##heightCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", arrowUpIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -2112,6 +2158,7 @@ void UI::CameraZoomSettings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::GetContentRegionAvail(&avail);
     float dezoomHeightMeters = g_dezoomTriggerHeight / SKYRIM_UNITS_TO_METERS;
+    float defaultHeightMeters = k_defaultDezoomTriggerHeight / SKYRIM_UNITS_TO_METERS;
     valueText = std::format("{:.1f} m", dezoomHeightMeters);
     ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
     ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
@@ -2124,6 +2171,10 @@ void UI::CameraZoomSettings() {
 
         ImGuiMCP::BeginTooltip();
         ImGuiMCP::Text("Current Trigger Height: %.1f m (%.0f units)", dezoomHeightMeters, g_dezoomTriggerHeight);
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default value: %.1f m (%.0f units)", defaultHeightMeters, k_defaultDezoomTriggerHeight);
+        ImGuiMCP::PopStyleColor();
         ImGuiMCP::EndTooltip();
 
     }
@@ -2158,7 +2209,7 @@ void UI::CameraZoomSettings() {
     ImGuiMCP::BeginChild("##dezoomAmountCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", zoomIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -2177,6 +2228,10 @@ void UI::CameraZoomSettings() {
 
         ImGuiMCP::BeginTooltip();
         ImGuiMCP::Text("Current Dezoom Amount: %.0f units", g_dezoomAmount);
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default value: %.0f units", k_defaultDezoomAmount);
+        ImGuiMCP::PopStyleColor();
         ImGuiMCP::EndTooltip();
 
     }
@@ -2211,7 +2266,7 @@ void UI::CameraZoomSettings() {
     ImGuiMCP::BeginChild("##blendSpeedCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", clockIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -2230,6 +2285,10 @@ void UI::CameraZoomSettings() {
 
         ImGuiMCP::BeginTooltip();
         ImGuiMCP::Text("Current Blend Speed: %.1f units/s", g_dezoomBlendSpeed);
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default value: %.1f units/s", k_defaultDezoomBlendSpeed);
+        ImGuiMCP::PopStyleColor();
         ImGuiMCP::EndTooltip();
 
     }
@@ -2261,9 +2320,9 @@ void UI::CameraZoomSettings() {
 
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  Head Tracking Settings
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
 void UI::HeadTrackingSettings() {
 
@@ -2289,7 +2348,7 @@ void UI::HeadTrackingSettings() {
     ImGuiMCP::BeginChild("##fadeSpeedCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", speedIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -2310,6 +2369,10 @@ void UI::HeadTrackingSettings() {
 
         ImGuiMCP::BeginTooltip();
         ImGuiMCP::Text("Current Fade Speed: %.2f units/s", g_headTrackFadeSpeed);
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default value: %.2f units/s", k_defaultHeadTrackFadeSpeed);
+        ImGuiMCP::PopStyleColor();
         ImGuiMCP::EndTooltip();
 
     }
@@ -2341,9 +2404,9 @@ void UI::HeadTrackingSettings() {
 
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  POI System - Main Settings
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
 void UI::POISystemMainSettings() {
 
@@ -2375,7 +2438,7 @@ void UI::POISystemMainSettings() {
     ImGuiMCP::BeginChild("##masterToggleCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", poiSystemIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -2384,10 +2447,11 @@ void UI::POISystemMainSettings() {
     ImGuiMCP::ImVec2 avail;
     ImGuiMCP::GetContentRegionAvail(&avail);
     std::string statusText = g_poiSystemEnabled ? "Enabled" : "Disabled";
+    std::string defaultStatus = k_defaultPoiSystemEnabled ? "Enabled" : "Disabled";
     ImGuiMCP::ImVec2 statusTextSize;
     ImGuiMCP::CalcTextSize(&statusTextSize, statusText.c_str(), nullptr, false, -1.0f);
     ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - statusTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, g_poiSystemEnabled ? HexToImVec4(0x2ecc71) : HexToImVec4(0xe74c3c));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, g_poiSystemEnabled ? HexToImVec4(k_hexBrightGreen) : HexToImVec4(k_hexRed));
     ImGuiMCP::Text("%s", statusText.c_str());
     ImGuiMCP::PopStyleColor();
 
@@ -2395,6 +2459,10 @@ void UI::POISystemMainSettings() {
 
         ImGuiMCP::BeginTooltip();
         ImGuiMCP::Text("POI System: %s", statusText.c_str());
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default value: %s", defaultStatus.c_str());
+        ImGuiMCP::PopStyleColor();
         ImGuiMCP::EndTooltip();
 
     }
@@ -2421,7 +2489,7 @@ void UI::POISystemMainSettings() {
     if (!g_poiSystemEnabled) {
 
         ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 8.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xe74c3c));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexRed));
         ImGuiMCP::Text("POI System is currently disabled. Toggle it on to configure settings.");
         ImGuiMCP::PopStyleColor();
 
@@ -2447,7 +2515,7 @@ void UI::POISystemMainSettings() {
     ImGuiMCP::BeginChild("##poiTypesCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", poiTypesIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -2457,7 +2525,7 @@ void UI::POISystemMainSettings() {
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));  // Small padding after separator
 
     // Actor POI toggle
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0x7ef566));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGreen));
     ImGuiMCP::Text("%s", personIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -2473,10 +2541,18 @@ void UI::POISystemMainSettings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 4.0f);
     ImGuiMCP::Text("Actors (NPCs, creatures)");
-    HelpTooltip(
-        "When enabled, the system will detect and track actors (NPCs, creatures)\n"
-        "as points of interest based on their current action state (combat, moving, etc)."
-    );
+    if (ImGuiMCP::IsItemHovered()) {
+
+        ImGuiMCP::BeginTooltip();
+        ImGuiMCP::Text("When enabled, the system will detect and track actors (NPCs, creatures)");
+        ImGuiMCP::Text("as points of interest based on their current action state (combat, moving, etc).");
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default: %s", k_defaultActorPoiEnabled ? "Enabled" : "Disabled");
+        ImGuiMCP::PopStyleColor();
+        ImGuiMCP::EndTooltip();
+
+    }
 
     // Prevent Followers (nested under Actor POI)
     if (g_actorPoiEnabled) {
@@ -2484,7 +2560,7 @@ void UI::POISystemMainSettings() {
         ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));  // Small spacing before nested
         ImGuiMCP::Indent(40.0f);
 
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0x7ef566));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGreen));
         ImGuiMCP::Text("%s", followerIcon.c_str());
         ImGuiMCP::PopStyleColor();
         ImGuiMCP::SameLine();
@@ -2500,10 +2576,19 @@ void UI::POISystemMainSettings() {
         ImGuiMCP::SameLine();
         ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 4.0f);
         ImGuiMCP::Text("Prevent Followers");
-        HelpTooltip(
-            "When enabled, followers (NPCs that are in the follower faction)\n"
-            "will NOT be targeted by the POI system."
-        );
+
+        if (ImGuiMCP::IsItemHovered()) {
+
+            ImGuiMCP::BeginTooltip();
+            ImGuiMCP::Text("When enabled, followers (NPCs that are in the follower faction)");
+            ImGuiMCP::Text("will NOT be targeted by the POI system.");
+            ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+            ImGuiMCP::Text("Default: %s", k_defaultPreventFollowers ? "Enabled" : "Disabled");
+            ImGuiMCP::PopStyleColor();
+            ImGuiMCP::EndTooltip();
+
+        }
 
         ImGuiMCP::Unindent(40.0f);
 
@@ -2512,7 +2597,7 @@ void UI::POISystemMainSettings() {
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));  // ← SPACING BETWEEN ITEMS
 
     // Flying Critter POI toggle
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xf566dd));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexCritterPink));
     ImGuiMCP::Text("%s", flyingCritterIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -2528,15 +2613,24 @@ void UI::POISystemMainSettings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 4.0f);
     ImGuiMCP::Text("Flying Critters (butterflies, moths, dragonflies, etc)");
-    HelpTooltip(
-        "When enabled, the system will detect and track flying critters\n"
-        "(butterflies, moths, dragonflies, fireflies, bees, etc)."
-    );
+
+    if (ImGuiMCP::IsItemHovered()) {
+
+        ImGuiMCP::BeginTooltip();
+        ImGuiMCP::Text("When enabled, the system will detect and track flying critters");
+        ImGuiMCP::Text("(butterflies, moths, dragonflies, fireflies, bees, etc).");
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default: %s", k_defaultFlyingCritterPoiEnabled ? "Enabled" : "Disabled");
+        ImGuiMCP::PopStyleColor();
+        ImGuiMCP::EndTooltip();
+
+    }
 
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));  // ← SPACING BETWEEN ITEMS
 
     // Fish Critter POI toggle
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0x1ff0ff));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexFishCyan));
     ImGuiMCP::Text("%s", fishCritterIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -2552,10 +2646,18 @@ void UI::POISystemMainSettings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 4.0f);
     ImGuiMCP::Text("Fish Critters (perches, salmon, pond fish, etc)");
-    HelpTooltip(
-        "When enabled, the system will detect and track fish critters\n"
-        "(perches, salmon, pond fish, and other aquatic critters)."
-    );
+    if (ImGuiMCP::IsItemHovered()) {
+
+        ImGuiMCP::BeginTooltip();
+        ImGuiMCP::Text("When enabled, the system will detect and track fish critters");
+        ImGuiMCP::Text("(perches, salmon, pond fish, and other aquatic critters).");
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default: %s", k_defaultFishPoiEnabled ? "Enabled" : "Disabled");
+        ImGuiMCP::PopStyleColor();
+        ImGuiMCP::EndTooltip();
+
+    }
 
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));  // Bottom padding
 
@@ -2569,7 +2671,7 @@ void UI::POISystemMainSettings() {
     ImGuiMCP::BeginChild("##radiusCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", radiusIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -2577,6 +2679,7 @@ void UI::POISystemMainSettings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::GetContentRegionAvail(&avail);
     float poiRadiusMeters = g_poiDetectionRadius / SKYRIM_UNITS_TO_METERS;
+    float defaultRadiusMeters = k_defaultPoiDetectionRadius / SKYRIM_UNITS_TO_METERS;
     std::string valueText = std::format("{:.1f} m", poiRadiusMeters);
     ImGuiMCP::ImVec2 valueTextSize;
     ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
@@ -2590,6 +2693,10 @@ void UI::POISystemMainSettings() {
 
         ImGuiMCP::BeginTooltip();
         ImGuiMCP::Text("Current Detection Radius: %.1f m (%.0f units)", poiRadiusMeters, g_poiDetectionRadius);
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default value: %.1f m (%.0f units)", defaultRadiusMeters, k_defaultPoiDetectionRadius);
+        ImGuiMCP::PopStyleColor();
         ImGuiMCP::EndTooltip();
 
     }
@@ -2624,7 +2731,7 @@ void UI::POISystemMainSettings() {
     ImGuiMCP::BeginChild("##lockCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", poiLockIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -2643,6 +2750,10 @@ void UI::POISystemMainSettings() {
 
         ImGuiMCP::BeginTooltip();
         ImGuiMCP::Text("Current Lock Duration: %.1f seconds", g_lockDuration);
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default value: %.1f seconds", k_defaultLockDuration);
+        ImGuiMCP::PopStyleColor();
         ImGuiMCP::EndTooltip();
 
     }
@@ -2671,9 +2782,9 @@ void UI::POISystemMainSettings() {
 
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  POI System - Exclusion List
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
 void UI::POISystemExclusionListSettings() {
 
@@ -2699,7 +2810,7 @@ void UI::POISystemExclusionListSettings() {
     ImGuiMCP::BeginChild("##addActorCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", addIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -2708,9 +2819,9 @@ void UI::POISystemExclusionListSettings() {
     ImGuiMCP::Separator();
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
 
-    // ---------------------------------------------------------------------------------------------------------------------
+    // =====================================================================================================================
     //  Add selected actor logic
-    // ---------------------------------------------------------------------------------------------------------------------
+    // =====================================================================================================================
 
     auto* player = RE::PlayerCharacter::GetSingleton();
     RE::Actor* selectedActor = nullptr;
@@ -2753,9 +2864,9 @@ void UI::POISystemExclusionListSettings() {
 
     }
 
-    // ---------------------------------------------------------------------------------------------------------------------
+    // =====================================================================================================================
     //  Display appropriate message based on selection state
-    // ---------------------------------------------------------------------------------------------------------------------
+    // =====================================================================================================================
 
     if (!hasSelectedActor && !selectedActor && !isNotActor) {
 
@@ -2771,13 +2882,20 @@ void UI::POISystemExclusionListSettings() {
         ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.5f, 0.5f, 0.5f, 1.0f });
         ImGuiMCP::Button("Add Selected Actor: [No actor selected]");
         ImGuiMCP::PopStyleColor(2);
-        HelpTooltip("Select an actor with the console first.");
+
+        if (ImGuiMCP::IsItemHovered()) {
+
+            ImGuiMCP::BeginTooltip();
+            ImGuiMCP::Text("Select an actor with the console first.");
+            ImGuiMCP::EndTooltip();
+
+        }
 
     }
     else if (isNotActor) {
 
         // Selected object is not an actor
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xe74c3c));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexRed));
         ImGuiMCP::Text("%s The currently selected object is not an actor.", deniedIcon.c_str());
         ImGuiMCP::PopStyleColor();
 
@@ -2788,12 +2906,19 @@ void UI::POISystemExclusionListSettings() {
         ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.5f, 0.5f, 0.5f, 1.0f });
         ImGuiMCP::Button("Add Selected Actor: [No actor selected]");
         ImGuiMCP::PopStyleColor(2);
-        HelpTooltip("The selected object with the console is not an actor.");
+
+        if (ImGuiMCP::IsItemHovered()) {
+
+            ImGuiMCP::BeginTooltip();
+            ImGuiMCP::Text("The selected object with the console is not an actor.");
+            ImGuiMCP::EndTooltip();
+
+        }
 
     } else if (isPlayer) {
 
         // Player cannot be excluded
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xe74c3c));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexRed));
         ImGuiMCP::Text("%s The player cannot be excluded.", deniedIcon.c_str());
         ImGuiMCP::PopStyleColor();
 
@@ -2806,12 +2931,19 @@ void UI::POISystemExclusionListSettings() {
         std::string buttonText = std::string("Add Selected Actor: ") + (playerName ? playerName : "Player");
         ImGuiMCP::Button(buttonText.c_str());
         ImGuiMCP::PopStyleColor(2);
-        HelpTooltip("The player cannot be excluded from the POI System.");
+
+        if (ImGuiMCP::IsItemHovered()) {
+
+            ImGuiMCP::BeginTooltip();
+            ImGuiMCP::Text("The player cannot be excluded from the POI System.");
+            ImGuiMCP::EndTooltip();
+
+        }
 
     } else if (isExcluded) {
 
         // Already excluded - show warning message and gray button
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xf39c12));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexWarning));
         ImGuiMCP::Text("%s Already Excluded: %s", deniedIcon.c_str(), selectedActor->GetName() ? selectedActor->GetName() : "Unnamed");
         ImGuiMCP::PopStyleColor();
 
@@ -2824,7 +2956,14 @@ void UI::POISystemExclusionListSettings() {
         std::string buttonText = std::string("Already Excluded: ") + (actorName ? actorName : "Unnamed");
         ImGuiMCP::Button(buttonText.c_str());
         ImGuiMCP::PopStyleColor(2);
-        HelpTooltip("The selected actor is already excluded.");
+
+        if (ImGuiMCP::IsItemHovered()) {
+
+            ImGuiMCP::BeginTooltip();
+            ImGuiMCP::Text("The selected actor is already excluded.");
+            ImGuiMCP::EndTooltip();
+
+        }
 
     } else {
 
@@ -2832,9 +2971,9 @@ void UI::POISystemExclusionListSettings() {
         const char* actorName = selectedActor->GetName();
         std::string buttonText = std::string("Add Selected Actor: ") + (actorName ? actorName : "Unnamed");
 
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, HexToImVec4(0x2ecc71));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonHovered, HexToImVec4(0x27ae60));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonActive, HexToImVec4(0x1e8449));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, HexToImVec4(k_hexBrightGreen));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonHovered, HexToImVec4(k_hexDarkGreen));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonActive, HexToImVec4(k_hexDarkerGreen));
 
         if (ImGuiMCP::Button(buttonText.c_str())) {
 
@@ -2843,7 +2982,14 @@ void UI::POISystemExclusionListSettings() {
         }
 
         ImGuiMCP::PopStyleColor(3);
-        HelpTooltip("Adds the currently selected actor to the exclusion list.");
+
+        if (ImGuiMCP::IsItemHovered()) {
+
+            ImGuiMCP::BeginTooltip();
+            ImGuiMCP::Text("Adds the currently selected actor to the exclusion list.");
+            ImGuiMCP::EndTooltip();
+
+        }
 
     }
 
@@ -2859,7 +3005,7 @@ void UI::POISystemExclusionListSettings() {
     ImGuiMCP::BeginChild("##excludedListCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon and count
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0x7ef566));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGreen));
     ImGuiMCP::Text("%s", personIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -2868,9 +3014,9 @@ void UI::POISystemExclusionListSettings() {
     ImGuiMCP::Separator();
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
 
-    // ---------------------------------------------------------------------------------------------------------------------
+    // =====================================================================================================================
     //  Display exclusion list
-    // ---------------------------------------------------------------------------------------------------------------------
+    // =====================================================================================================================
 
     if (g_actorExclusionList.empty()) {
 
@@ -2885,9 +3031,9 @@ void UI::POISystemExclusionListSettings() {
 
     }
 
-    // ---------------------------------------------------------------------------------------------------------------------
+    // =====================================================================================================================
     //  Build a sorted copy of the exclusion list
-    // ---------------------------------------------------------------------------------------------------------------------
+    // =====================================================================================================================
 
     std::vector<ActorExclusionEntry> sortedList = g_actorExclusionList;
 
@@ -2972,9 +3118,9 @@ void UI::POISystemExclusionListSettings() {
 
     }
 
-    // ---------------------------------------------------------------------------------------------------------------------
+    // =====================================================================================================================
     //  Scrollable list
-    // ---------------------------------------------------------------------------------------------------------------------
+    // =====================================================================================================================
 
     ImGuiMCP::BeginChild("ExcludedActorsList", ImGuiMCP::ImVec2(0.0f, 600.0f), ImGuiMCP::ImGuiChildFlags_Border);
 
@@ -2997,9 +3143,9 @@ void UI::POISystemExclusionListSettings() {
         ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
 
         // Delete button (first thing on the left)
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, HexToImVec4(0xe74c3c));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonHovered, HexToImVec4(0xc0392b));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonActive, HexToImVec4(0x922b21));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, HexToImVec4(k_hexRed));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonHovered, HexToImVec4(k_hexDarkRed));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonActive, HexToImVec4(k_hexDarkerRed));
 
         // Find original index
         size_t originalIndex = SIZE_MAX;
@@ -3039,13 +3185,21 @@ void UI::POISystemExclusionListSettings() {
 
         }
 
+        if (ImGuiMCP::IsItemHovered()) {
+
+            ImGuiMCP::BeginTooltip();
+            ImGuiMCP::Text("Remove this actor from the exclusion list.");
+            ImGuiMCP::EndTooltip();
+
+        }
+
         ImGuiMCP::PopStyleColor(3);
 
         ImGuiMCP::SameLine();
         ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 4.0f);
 
         // Icon
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0x7ef566));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGreen));
         ImGuiMCP::Text("%s", personIcon.c_str());
         ImGuiMCP::PopStyleColor();
         ImGuiMCP::SameLine();
@@ -3055,7 +3209,7 @@ void UI::POISystemExclusionListSettings() {
         // Actor name (bold if selected)
         if (isSelected) {
 
-            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
             ImGuiMCP::Text("%s", actorName.c_str());
             ImGuiMCP::PopStyleColor();
 
@@ -3076,7 +3230,7 @@ void UI::POISystemExclusionListSettings() {
         if (isSelected) {
 
             ImGuiMCP::SameLine();
-            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
             ImGuiMCP::Text("[Currently selected with the console]");
             ImGuiMCP::PopStyleColor();
 
@@ -3105,9 +3259,9 @@ void UI::POISystemExclusionListSettings() {
 
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  POI System - Actor Scores
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
 void UI::POISystemActorScores() {
 
@@ -3145,9 +3299,9 @@ void UI::POISystemActorScores() {
 
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  POI System - Critter Scores
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
 void UI::POISystemCritterScores() {
 
@@ -3176,9 +3330,9 @@ void UI::POISystemCritterScores() {
 
 }
 
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 //  Debug Settings
-// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// ==================================================================================================================================================================================
 
 void UI::DebugSettings() {
 
@@ -3213,7 +3367,7 @@ void UI::DebugSettings() {
     ImGuiMCP::BeginChild("##raycastCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", raycastIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -3222,10 +3376,11 @@ void UI::DebugSettings() {
     ImGuiMCP::ImVec2 avail;
     ImGuiMCP::GetContentRegionAvail(&avail);
     std::string statusText = g_debugRaycasts ? "Enabled" : "Disabled";
+    std::string defaultStatus = k_defaultDebugRaycasts ? "Enabled" : "Disabled";
     ImGuiMCP::ImVec2 statusTextSize;
     ImGuiMCP::CalcTextSize(&statusTextSize, statusText.c_str(), nullptr, false, -1.0f);
     ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - statusTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, g_debugRaycasts ? HexToImVec4(0x2ecc71) : HexToImVec4(0xe74c3c));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, g_debugRaycasts ? HexToImVec4(k_hexBrightGreen) : HexToImVec4(k_hexRed));
     ImGuiMCP::Text("%s", statusText.c_str());
     ImGuiMCP::PopStyleColor();
 
@@ -3233,6 +3388,10 @@ void UI::DebugSettings() {
 
         ImGuiMCP::BeginTooltip();
         ImGuiMCP::Text("Debug Raycast Visualization: %s", statusText.c_str());
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default value: %s", defaultStatus.c_str());
+        ImGuiMCP::PopStyleColor();
         ImGuiMCP::EndTooltip();
 
     }
@@ -3264,7 +3423,7 @@ void UI::DebugSettings() {
     ImGuiMCP::BeginChild("##loggingCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xF5D966));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", loggingIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
@@ -3281,7 +3440,11 @@ void UI::DebugSettings() {
     if (ImGuiMCP::IsItemHovered()) {
 
         ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Current Logging Level: %s", valueText.c_str());
+        ImGuiMCP::Text("Current Logging Level: %s", k_loggingLevelNames[g_loggingLevel]);
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default value: %s", k_loggingLevelNames[k_defaultLoggingLevel]);
+        ImGuiMCP::PopStyleColor();
         ImGuiMCP::EndTooltip();
 
     }
