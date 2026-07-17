@@ -9,6 +9,12 @@
 namespace logger = SKSE::log;
 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//  Skyrim Constants
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+static constexpr float SKYRIM_UNITS_TO_METERS = 70.0f;  // 1 meter = 70 game units
+
+// ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  Default settings used when the ini doesn't exist when the game is started (ordered by menus)
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -791,6 +797,316 @@ static void DrawUIHeaderWithReset(const std::string& title, const std::string& i
 
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+//  Draw POI score cards (actors & critters)
+// ---------------------------------------------------------------------------------------------------------------------
+
+struct ScoreCardData {
+
+    // Display
+    const char* icon;                   // FontAwesome icon code
+    const char* label;                  // Display name
+    uint32_t iconColor;                 // Hex color for the icon
+
+    // Settings pointers
+    float* baseScore;                   // Points to g_dragonScore, g_actorCombatScore, etc.
+    float baseDefault;                  // Default value for reset
+
+    bool* proximityEnabled;             // Points to g_dragonProximityEnabled, etc.
+    bool proximityEnabledDefault;       // Default value for reset
+
+    float* proximityFactor;             // Points to g_dragonProximityFactor, etc.
+    float proximityFactorDefault;       // Default value for reset
+
+    // Help text
+    const char* tooltip;                // Description shown in tooltip
+    const char* proximityTooltip;       // Description for the proximity bonus
+};
+
+// =====================================================================================================================
+//  Actor Score Cards Data
+// =====================================================================================================================
+
+static const std::vector<ScoreCardData> actorCards = {
+
+    {
+
+        dragonScoreIcon.c_str(),
+        "Dragon",
+        0x7ef566,
+        &UI::g_dragonScore,
+        k_defaultDragonScore,
+        &UI::g_dragonProximityEnabled,
+        k_defaultDragonProximityEnabled,
+        &UI::g_dragonProximityFactor,
+        k_defaultDragonProximityFactor,
+        "Base score awarded to a dragon.",
+        "Bonus increases as dragon gets closer."
+
+    },
+    {
+
+        inCombatScoreIcon.c_str(),
+        "In Combat",
+        0x7ef566,
+        &UI::g_actorCombatScore,
+        k_defaultActorCombatScore,
+        &UI::g_actorCombatProximityEnabled,
+        k_defaultActorCombatProximityEnabled,
+        &UI::g_actorCombatProximityFactor,
+        k_defaultActorCombatProximityFactor,
+        "Base score awarded to an actor who is currently in combat.",
+        "Bonus increases as actor gets closer."
+
+    },
+    {
+
+        movingScoreIcon.c_str(),
+        "Moving",
+        0x7ef566,
+        &UI::g_actorMovingScore,
+        k_defaultActorMovingScore,
+        &UI::g_actorMovingProximityEnabled,
+        k_defaultActorMovingProximityEnabled,
+        &UI::g_actorMovingProximityFactor,
+        k_defaultActorMovingProximityFactor,
+        "Base score awarded to an actor who is currently moving.",
+        "Bonus increases as actor gets closer."
+
+    },
+    {
+
+        inSceneScoreIcon.c_str(),
+        "In Scene",
+        0x7ef566,
+        &UI::g_actorInSceneScore,
+        k_defaultActorInSceneScore,
+        &UI::g_actorInSceneProximityEnabled,
+        k_defaultActorInSceneProximityEnabled,
+        &UI::g_actorInSceneProximityFactor,
+        k_defaultActorInSceneProximityFactor,
+        "Base score awarded to an actor who is actively engaged in a scripted sequence (dialogue, cinematic, or quest scene).",
+        "Bonus increases as actor gets closer."
+
+    },
+    {
+
+        personIcon.c_str(),
+        "Idle",
+        0x7ef566,
+        &UI::g_actorIdleScore,
+        k_defaultActorIdleScore,
+        &UI::g_actorIdleProximityEnabled,
+        k_defaultActorIdleProximityEnabled,
+        &UI::g_actorIdleProximityFactor,
+        k_defaultActorIdleProximityFactor,
+        "Base score awarded to an actor who is in an idle animation (not moving, not in combat and not in a scene).",
+        "Bonus increases as actor gets closer."
+
+    }
+
+};
+
+// =====================================================================================================================
+//  Critter Score Cards Data
+// =====================================================================================================================
+
+static const std::vector<ScoreCardData> critterCards = {
+
+    {
+
+        flyingCritterIcon.c_str(),
+        "Flying Critter",
+        0xf566dd,
+        &UI::g_flyingCritterScore,
+        k_defaultFlyingCritterScore,
+        &UI::g_flyingCritterProximityEnabled,
+        k_defaultFlyingCritterProximityEnabled,
+        &UI::g_flyingCritterProximityFactor,
+        k_defaultFlyingCritterProximityFactor,
+        "Base score awarded to a flying critter (butterflies, moths, dragonflies, fireflies, bees, etc).",
+        "Bonus increases as critter gets closer."
+
+    },
+    {
+
+        fishCritterIcon.c_str(),
+        "Pond Fish",
+        0x1ff0ff,
+        &UI::g_pondFishScore,
+        k_defaultFishScore,
+        &UI::g_pondFishProximityEnabled,
+        k_defaultFishProximityEnabled,
+        &UI::g_pondFishProximityFactor,
+        k_defaultFishProximityFactor,
+        "Base score awarded to a fish critter (perches, salmon, pond fish, and other aquatic critters).",
+        "Bonus increases as critter gets closer."
+
+    }
+
+};
+
+// ---------------------------------------------------------------------------------------------------------------------
+//  Draw a single score card
+// ---------------------------------------------------------------------------------------------------------------------
+
+static void DrawScoreCard(const ScoreCardData& card) {
+
+    // Card container
+    ImGuiMCP::BeginChild(ImGuiMCP::GetID(card.label), ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+
+    // Card header
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(card.iconColor));
+    ImGuiMCP::Text("%s", card.icon);
+    ImGuiMCP::PopStyleColor();
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Text(" %s", card.label);
+
+    // Total score display (right-aligned)
+    float totalScore = *card.baseScore + (*card.proximityEnabled ? *card.proximityFactor : 0.0f);
+    ImGuiMCP::SameLine();
+    ImGuiMCP::ImVec2 avail;
+    ImGuiMCP::GetContentRegionAvail(&avail);
+    std::string scoreText = std::format("{:.0f}", totalScore);
+    ImGuiMCP::ImVec2 textSize;
+    ImGuiMCP::CalcTextSize(&textSize, scoreText.c_str(), nullptr, false, -1.0f);
+    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - textSize.x);
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
+    ImGuiMCP::Text("%.0f", totalScore);
+    ImGuiMCP::PopStyleColor();
+
+    // Total score tooltip
+    if (ImGuiMCP::IsItemHovered()) {
+
+        ImGuiMCP::BeginTooltip();
+        ImGuiMCP::Text("Total Score: %.0f", totalScore);
+        ImGuiMCP::Text("Base Score: %.0f", *card.baseScore);
+
+        if (*card.proximityEnabled) {
+
+            ImGuiMCP::Text("Proximity Bonus: +%.0f", *card.proximityFactor);
+
+        } else {
+
+            ImGuiMCP::Text("Proximity Bonus: Disabled");
+
+        }
+
+        ImGuiMCP::EndTooltip();
+
+    }
+
+    ImGuiMCP::Separator();
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+
+    // Base Score
+    ImGuiMCP::Text("Base Score");
+    HelpTooltip(card.tooltip);
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_PlotHistogram, ImGuiMCP::ImVec4{ 0.4f, 0.7f, 1.0f, 1.0f });
+
+    // Use PushID to create unique IDs for each slider
+    ImGuiMCP::PushID(card.label);
+
+    if (ImGuiMCP::SliderFloat("##Base", card.baseScore, 0.0f, 2000.0f, "%.0f")) {
+
+        IniParser::Save();
+
+    }
+
+    ImGuiMCP::PopID();
+
+    ImGuiMCP::PopStyleColor();
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+
+    // Proximity Bonus
+    ImGuiMCP::Text("Proximity Bonus");
+    ImGuiMCP::SameLine();
+    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 10.0f);
+
+    ImGuiMCP::PushID(card.label);
+    if (ImGuiMCP::Checkbox("##ProxToggle", card.proximityEnabled)) {
+
+        IniParser::Save();
+
+    }
+
+    ImGuiMCP::PopID();
+
+    HelpTooltip(card.proximityTooltip);
+
+    if (*card.proximityEnabled) {
+
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_PlotHistogram, ImGuiMCP::ImVec4{ 0.4f, 0.9f, 0.4f, 1.0f });
+
+        ImGuiMCP::PushID(card.label);
+
+        if (ImGuiMCP::SliderFloat("##ProxFactor", card.proximityFactor, 0.0f, 1000.0f, "+%.0f")) {
+
+            IniParser::Save();
+
+        }
+
+        ImGuiMCP::PopID();
+
+        ImGuiMCP::PopStyleColor();
+
+    } else {
+
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.4f, 0.4f, 0.4f, 1.0f });
+        ImGuiMCP::Text("+0 (disabled)");
+        ImGuiMCP::PopStyleColor();
+
+    }
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+    ImGuiMCP::Separator();
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
+
+    // --- Helper text ---
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
+    ImGuiMCP::Text("%s", card.tooltip);
+
+    if (*card.proximityEnabled) {
+
+        ImGuiMCP::Text("%s", card.proximityTooltip);
+
+    }
+
+    ImGuiMCP::PopStyleColor();
+
+    ImGuiMCP::EndChild();
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+}
+
+// =====================================================================================================================
+//  Draw all actor score cards
+// =====================================================================================================================
+
+static void DrawActorScoreCards() {
+
+    for (const auto& card : actorCards) {
+
+        DrawScoreCard(card);
+
+    }
+
+}
+
+// =====================================================================================================================
+//  Draw all critter score cards
+// =====================================================================================================================
+
+static void DrawCritterScoreCards() {
+
+    for (const auto& card : critterCards) {
+
+        DrawScoreCard(card);
+
+    }
+
+}
+
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 //  Exclusion list specific functions
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1211,6 +1527,7 @@ void UI::DrawCinematicBars() {
 
     // Bottom bar
     ImGuiMCP::ImDrawListManager::AddRectFilled(drawList, ImGuiMCP::ImVec2{ 0.0f, botBarTop }, ImGuiMCP::ImVec2{ screenW, botBarTop + barHeight }, barColor, 0.0f, 0);
+
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -1739,7 +2056,7 @@ void UI::CameraZoomSettings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::ImVec2 avail;
     ImGuiMCP::GetContentRegionAvail(&avail);
-    float dezoomRadiusMeters = g_dezoomTriggerRadius / 70.0f;
+    float dezoomRadiusMeters = g_dezoomTriggerRadius / SKYRIM_UNITS_TO_METERS;
     std::string valueText = std::format("{:.1f} m", dezoomRadiusMeters);
     ImGuiMCP::ImVec2 valueTextSize;
     ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
@@ -1765,7 +2082,7 @@ void UI::CameraZoomSettings() {
 
     if (ImGuiMCP::SliderFloat("##dezoomTriggerRadius", &dezoomRadiusMeters, 0.0f, 20.0f, "%.1f m")) {
 
-        g_dezoomTriggerRadius = dezoomRadiusMeters * 70.0f;
+        g_dezoomTriggerRadius = dezoomRadiusMeters * SKYRIM_UNITS_TO_METERS;
         IniParser::Save();
 
     }
@@ -1794,7 +2111,7 @@ void UI::CameraZoomSettings() {
     ImGuiMCP::Text(" Dezoom Trigger Height");
     ImGuiMCP::SameLine();
     ImGuiMCP::GetContentRegionAvail(&avail);
-    float dezoomHeightMeters = g_dezoomTriggerHeight / 70.0f;
+    float dezoomHeightMeters = g_dezoomTriggerHeight / SKYRIM_UNITS_TO_METERS;
     valueText = std::format("{:.1f} m", dezoomHeightMeters);
     ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
     ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
@@ -1819,7 +2136,7 @@ void UI::CameraZoomSettings() {
 
     if (ImGuiMCP::SliderFloat("##dezoomTriggerHeight", &dezoomHeightMeters, 0.0f, 20.0f, "%.1f m")) {
 
-        g_dezoomTriggerHeight = dezoomHeightMeters * 70.0f;
+        g_dezoomTriggerHeight = dezoomHeightMeters * SKYRIM_UNITS_TO_METERS;
         IniParser::Save();
 
     }
@@ -2259,7 +2576,7 @@ void UI::POISystemMainSettings() {
     ImGuiMCP::Text(" Maximum Detection Radius");
     ImGuiMCP::SameLine();
     ImGuiMCP::GetContentRegionAvail(&avail);
-    float poiRadiusMeters = g_poiDetectionRadius / 70.0f;
+    float poiRadiusMeters = g_poiDetectionRadius / SKYRIM_UNITS_TO_METERS;
     std::string valueText = std::format("{:.1f} m", poiRadiusMeters);
     ImGuiMCP::ImVec2 valueTextSize;
     ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
@@ -2285,7 +2602,7 @@ void UI::POISystemMainSettings() {
 
     if (ImGuiMCP::SliderFloat("##poiDetectionRadius", &poiRadiusMeters, 0.0f, 100.0f, "%.1f m")) {
 
-        g_poiDetectionRadius = poiRadiusMeters * 70.0f;
+        g_poiDetectionRadius = poiRadiusMeters * SKYRIM_UNITS_TO_METERS;
         IniParser::Save();
 
     }
@@ -2814,585 +3131,15 @@ void UI::POISystemActorScores() {
         SettingWithDefault(&g_actorIdleProximityFactor, k_defaultActorIdleProximityFactor)
     );
 
-    // =====================================================================================================================
-    //  Actor Score System - Card Based Layout
-    // =====================================================================================================================
-
-    // Card styling
     ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildRounding, 8.0f);
     ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildBorderSize, 1.0f);
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ChildBg, ImGuiMCP::ImVec4{ 0.15f, 0.15f, 0.18f, 1.0f });
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.25f, 0.25f, 0.30f, 1.0f });
 
-    // =====================================================================================================================
-    //  Dragon Card
-    // =====================================================================================================================
-
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.5f));
-    ImGuiMCP::BeginChild("##dragonCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
-    // Header
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0x7ef566));
-    ImGuiMCP::Text("%s", dragonScoreIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Dragon");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::GetContentRegionAvail(&avail);
+    DrawActorScoreCards();
 
-    // Calculate total score (base + proximity bonus if enabled)
-    float dragonTotalScore = g_dragonScore + (g_dragonProximityEnabled ? g_dragonProximityFactor : 0.0f);
-    std::string scoreText = std::format("{:.0f}", dragonTotalScore);
-    ImGuiMCP::ImVec2 scoreTextSize;
-    ImGuiMCP::CalcTextSize(&scoreTextSize, scoreText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - scoreTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.0f", dragonTotalScore);
-    ImGuiMCP::PopStyleColor();
-
-    // Tooltip for total score
-    if (ImGuiMCP::IsItemHovered()) {
-
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Total Score: %.0f", dragonTotalScore);
-        ImGuiMCP::Text("Base Score: %.0f", g_dragonScore);
-
-        if (g_dragonProximityEnabled) {
-
-            ImGuiMCP::Text("Proximity Bonus: +%.0f", g_dragonProximityFactor);
-
-        } else {
-
-            ImGuiMCP::Text("Proximity Bonus: Disabled");
-
-        }
-
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Base Score
-    ImGuiMCP::Text("Base Score");
-    HelpTooltip("Base score awarded to a dragon.");
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_PlotHistogram, ImGuiMCP::ImVec4{ 0.4f, 0.7f, 1.0f, 1.0f });
-
-    if (ImGuiMCP::SliderFloat("##dragonBaseScore", &g_dragonScore, 0.0f, 2000.0f, "%.0f")) {
-
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Proximity Bonus Section
-    ImGuiMCP::Text("Proximity Bonus");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 10.0f);
-
-    if (ImGuiMCP::Checkbox("##dragonProxToggle", &g_dragonProximityEnabled)) {
-
-        IniParser::Save();
-
-    }
-
-    HelpTooltip("How much score is added the closer the dragon is to the player (max bonus at point-blank range, 0 at the detection radius).");
-
-    if (g_dragonProximityEnabled) {
-
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_PlotHistogram, ImGuiMCP::ImVec4{ 0.4f, 0.9f, 0.4f, 1.0f });
-
-        if (ImGuiMCP::SliderFloat("##dragonProxFactor", &g_dragonProximityFactor, 0.0f, 1000.0f, "+%.0f")) {
-
-            IniParser::Save();  // Save when slider changes
-
-        }
-
-        ImGuiMCP::PopStyleColor();
-
-    } else {
-
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.4f, 0.4f, 0.4f, 1.0f });
-        ImGuiMCP::Text("+0 (disabled)");
-        ImGuiMCP::PopStyleColor();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text - Always visible
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("Base score awarded to a dragon.");
-
-    if (g_dragonProximityEnabled) {
-
-        ImGuiMCP::Text("Bonus increases as dragon gets closer.");
-
-    }
-
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::EndChild();
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
-
-    // =====================================================================================================================
-    //  In Combat Card
-    // =====================================================================================================================
-
-    ImGuiMCP::BeginChild("##combatCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
-
-    // Header
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0x7ef566));
-    ImGuiMCP::Text("%s", inCombatScoreIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" In Combat");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::GetContentRegionAvail(&avail);
-
-    float combatTotalScore = g_actorCombatScore + (g_actorCombatProximityEnabled ? g_actorCombatProximityFactor : 0.0f);
-    scoreText = std::format("{:.0f}", combatTotalScore);
-    ImGuiMCP::CalcTextSize(&scoreTextSize, scoreText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - scoreTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.0f", combatTotalScore);
-    ImGuiMCP::PopStyleColor();
-
-    // Tooltip for total score
-    if (ImGuiMCP::IsItemHovered()) {
-
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Total Score: %.0f", combatTotalScore);
-        ImGuiMCP::Text("Base Score: %.0f", g_actorCombatScore);
-
-        if (g_actorCombatProximityEnabled) {
-
-            ImGuiMCP::Text("Proximity Bonus: +%.0f", g_actorCombatProximityFactor);
-
-        } else {
-
-            ImGuiMCP::Text("Proximity Bonus: Disabled");
-
-        }
-
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Base Score
-    ImGuiMCP::Text("Base Score");
-    HelpTooltip("Base score awarded to an actor who is currently in combat.");
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_PlotHistogram, ImGuiMCP::ImVec4{ 0.4f, 0.7f, 1.0f, 1.0f });
-
-    if (ImGuiMCP::SliderFloat("##combatBaseScore", &g_actorCombatScore, 0.0f, 2000.0f, "%.0f")) {
-
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Proximity Bonus Section
-    ImGuiMCP::Text("Proximity Bonus");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 10.0f);
-
-    if (ImGuiMCP::Checkbox("##combatProxToggle", &g_actorCombatProximityEnabled)) {
-
-        IniParser::Save();
-
-    }
-
-    HelpTooltip("How much score is added the closer the actor is to the player (max bonus at point-blank range, 0 at the detection radius).");
-
-    if (g_actorCombatProximityEnabled) {
-
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_PlotHistogram, ImGuiMCP::ImVec4{ 0.4f, 0.9f, 0.4f, 1.0f });
-
-        if (ImGuiMCP::SliderFloat("##combatProxFactor", &g_actorCombatProximityFactor, 0.0f, 1000.0f, "+%.0f")) {
-
-            IniParser::Save();
-
-        }
-
-        ImGuiMCP::PopStyleColor();
-
-    } else {
-
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.4f, 0.4f, 0.4f, 1.0f });
-        ImGuiMCP::Text("+0 (disabled)");
-        ImGuiMCP::PopStyleColor();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text - Always visible
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("Base score awarded to an actor who is currently in combat.");
-
-    if (g_actorCombatProximityEnabled) {
-
-        ImGuiMCP::Text("Bonus increases as actor gets closer.");
-
-    }
-
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::EndChild();
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
-
-    // =====================================================================================================================
-    //  Moving Card
-    // =====================================================================================================================
-
-    ImGuiMCP::BeginChild("##movingCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
-
-    // Header
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0x7ef566));
-    ImGuiMCP::Text("%s", movingScoreIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Moving");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::GetContentRegionAvail(&avail);
-
-    float movingTotalScore = g_actorMovingScore + (g_actorMovingProximityEnabled ? g_actorMovingProximityFactor : 0.0f);
-    scoreText = std::format("{:.0f}", movingTotalScore);
-    ImGuiMCP::CalcTextSize(&scoreTextSize, scoreText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - scoreTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.0f", movingTotalScore);
-    ImGuiMCP::PopStyleColor();
-
-    // Tooltip for total score
-    if (ImGuiMCP::IsItemHovered()) {
-
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Total Score: %.0f", movingTotalScore);
-        ImGuiMCP::Text("Base Score: %.0f", g_actorMovingScore);
-
-        if (g_actorMovingProximityEnabled) {
-
-            ImGuiMCP::Text("Proximity Bonus: +%.0f", g_actorMovingProximityFactor);
-
-        } else {
-
-            ImGuiMCP::Text("Proximity Bonus: Disabled");
-
-        }
-
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Base Score
-    ImGuiMCP::Text("Base Score");
-    HelpTooltip("Base score awarded to an actor who is currently moving.");
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_PlotHistogram, ImGuiMCP::ImVec4{ 0.4f, 0.7f, 1.0f, 1.0f });
-    if (ImGuiMCP::SliderFloat("##movingBaseScore", &g_actorMovingScore, 0.0f, 2000.0f, "%.0f")) {
-        IniParser::Save();
-    }
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Proximity Bonus Section
-    ImGuiMCP::Text("Proximity Bonus");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 10.0f);
-
-    if (ImGuiMCP::Checkbox("##movingProxToggle", &g_actorMovingProximityEnabled)) {
-
-        IniParser::Save();
-
-    }
-
-    HelpTooltip("How much score is added the closer the actor is to the player (max bonus at point-blank range, 0 at the detection radius).");
-
-    if (g_actorMovingProximityEnabled) {
-
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_PlotHistogram, ImGuiMCP::ImVec4{ 0.4f, 0.9f, 0.4f, 1.0f });
-
-        if (ImGuiMCP::SliderFloat("##movingProxFactor", &g_actorMovingProximityFactor, 0.0f, 1000.0f, "+%.0f")) {
-
-            IniParser::Save();
-
-        }
-
-        ImGuiMCP::PopStyleColor();
-
-    } else {
-
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.4f, 0.4f, 0.4f, 1.0f });
-        ImGuiMCP::Text("+0 (disabled)");
-        ImGuiMCP::PopStyleColor();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text - Always visible
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("Base score awarded to an actor who is currently moving.");
-
-    if (g_actorMovingProximityEnabled) {
-
-        ImGuiMCP::Text("Bonus increases as actor gets closer.");
-
-    }
-
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::EndChild();
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
-
-    // =====================================================================================================================
-    //  In Scene Card
-    // =====================================================================================================================
-
-    ImGuiMCP::BeginChild("##sceneCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
-
-    // Header
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0x7ef566));
-    ImGuiMCP::Text("%s", inSceneScoreIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" In Scene");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::GetContentRegionAvail(&avail);
-
-    float sceneTotalScore = g_actorInSceneScore + (g_actorInSceneProximityEnabled ? g_actorInSceneProximityFactor : 0.0f);
-    scoreText = std::format("{:.0f}", sceneTotalScore);
-    ImGuiMCP::CalcTextSize(&scoreTextSize, scoreText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - scoreTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.0f", sceneTotalScore);
-    ImGuiMCP::PopStyleColor();
-
-    // Tooltip for total score
-    if (ImGuiMCP::IsItemHovered()) {
-
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Total Score: %.0f", sceneTotalScore);
-        ImGuiMCP::Text("Base Score: %.0f", g_actorInSceneScore);
-
-        if (g_actorInSceneProximityEnabled) {
-
-            ImGuiMCP::Text("Proximity Bonus: +%.0f", g_actorInSceneProximityFactor);
-
-        } else {
-
-            ImGuiMCP::Text("Proximity Bonus: Disabled");
-
-        }
-
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Base Score
-    ImGuiMCP::Text("Base Score");
-    HelpTooltip("Base score awarded to an actor who is actively engaged in a scripted sequence (dialogue, cinematic, or quest scene)");
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_PlotHistogram, ImGuiMCP::ImVec4{ 0.4f, 0.7f, 1.0f, 1.0f });
-
-    if (ImGuiMCP::SliderFloat("##sceneBaseScore", &g_actorInSceneScore, 0.0f, 2000.0f, "%.0f")) {
-
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Proximity Bonus Section
-    ImGuiMCP::Text("Proximity Bonus");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 10.0f);
-
-    if (ImGuiMCP::Checkbox("##sceneProxToggle", &g_actorInSceneProximityEnabled)) {
-
-        IniParser::Save();
-
-    }
-
-    HelpTooltip("How much score is added the closer the actor is to the player (max bonus at point-blank range, 0 at the detection radius).");
-
-    if (g_actorInSceneProximityEnabled) {
-
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_PlotHistogram, ImGuiMCP::ImVec4{ 0.4f, 0.9f, 0.4f, 1.0f });
-
-        if (ImGuiMCP::SliderFloat("##sceneProxFactor", &g_actorInSceneProximityFactor, 0.0f, 1000.0f, "+%.0f")) {
-
-            IniParser::Save();
-
-        }
-
-        ImGuiMCP::PopStyleColor();
-
-    } else {
-
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.4f, 0.4f, 0.4f, 1.0f });
-        ImGuiMCP::Text("+0 (disabled)");
-        ImGuiMCP::PopStyleColor();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text - Always visible
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("Base score awarded to an actor who is actively engaged in a scripted sequence (dialogue, cinematic, or quest scene)");
-
-    if (g_actorInSceneProximityEnabled) {
-
-        ImGuiMCP::Text("Bonus increases as actor gets closer.");
-
-    }
-
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::EndChild();
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
-
-    // =====================================================================================================================
-    //  Idle Card
-    // =====================================================================================================================
-
-    ImGuiMCP::BeginChild("##idleCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
-
-    // Header
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0x7ef566));
-    ImGuiMCP::Text("%s", personIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Idle");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::GetContentRegionAvail(&avail);
-
-    float idleTotalScore = g_actorIdleScore + (g_actorIdleProximityEnabled ? g_actorIdleProximityFactor : 0.0f);
-    scoreText = std::format("{:.0f}", idleTotalScore);
-    ImGuiMCP::CalcTextSize(&scoreTextSize, scoreText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - scoreTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.0f", idleTotalScore);
-    ImGuiMCP::PopStyleColor();
-
-    // Tooltip for total score
-    if (ImGuiMCP::IsItemHovered()) {
-
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Total Score: %.0f", idleTotalScore);
-        ImGuiMCP::Text("Base Score: %.0f", g_actorIdleScore);
-
-        if (g_actorIdleProximityEnabled) {
-
-            ImGuiMCP::Text("Proximity Bonus: +%.0f", g_actorIdleProximityFactor);
-
-        } else {
-
-            ImGuiMCP::Text("Proximity Bonus: Disabled");
-
-        }
-
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Base Score
-    ImGuiMCP::Text("Base Score");
-    HelpTooltip("Base score awarded to an actor who is in a idle animation (not moving, not in combat and not in a scene).");
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_PlotHistogram, ImGuiMCP::ImVec4{ 0.4f, 0.7f, 1.0f, 1.0f });
-
-    if (ImGuiMCP::SliderFloat("##idleBaseScore", &g_actorIdleScore, 0.0f, 2000.0f, "%.0f")) {
-
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Proximity Bonus Section
-    ImGuiMCP::Text("Proximity Bonus");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 10.0f);
-
-    if (ImGuiMCP::Checkbox("##idleProxToggle", &g_actorIdleProximityEnabled)) {
-
-        IniParser::Save();
-
-    }
-
-    HelpTooltip("How much score is added the closer the actor is to the player (max bonus at point-blank range, 0 at the detection radius).");
-
-    if (g_actorIdleProximityEnabled) {
-
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_PlotHistogram, ImGuiMCP::ImVec4{ 0.4f, 0.9f, 0.4f, 1.0f });
-
-        if (ImGuiMCP::SliderFloat("##idleProxFactor", &g_actorIdleProximityFactor, 0.0f, 1000.0f, "+%.0f")) {
-
-            IniParser::Save();
-
-        }
-
-        ImGuiMCP::PopStyleColor();
-
-    } else {
-
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.4f, 0.4f, 0.4f, 1.0f });
-        ImGuiMCP::Text("+0 (disabled)");
-        ImGuiMCP::PopStyleColor();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text - Always visible
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("Base score awarded to an actor who is in a idle animation (not moving, not in combat and not in a scene).");
-
-    if (g_actorIdleProximityEnabled) {
-
-        ImGuiMCP::Text("Bonus increases as actor gets closer.");
-
-    }
-
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::EndChild();
-
-    // Pop card styling
     ImGuiMCP::PopStyleColor(2);
     ImGuiMCP::PopStyleVar(2);
 
@@ -3415,246 +3162,15 @@ void UI::POISystemCritterScores() {
         SettingWithDefault(&g_pondFishProximityFactor, k_defaultFishProximityFactor)
     );
 
-    // =====================================================================================================================
-    //  Critter Score System - Card Based Layout
-    // =====================================================================================================================
-
-    // Card styling
     ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildRounding, 8.0f);
     ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildBorderSize, 1.0f);
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ChildBg, ImGuiMCP::ImVec4{ 0.15f, 0.15f, 0.18f, 1.0f });
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.25f, 0.25f, 0.30f, 1.0f });
 
-    // =====================================================================================================================
-    //  Flying Critter Card
-    // =====================================================================================================================
-
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.5f));
-    ImGuiMCP::BeginChild("##flyingCritterCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
-    // Header
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0xf566dd));
-    ImGuiMCP::Text("%s", flyingCritterIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Flying Critter");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::GetContentRegionAvail(&avail);
+    DrawCritterScoreCards();
 
-    // Calculate total score (base + proximity bonus if enabled)
-    float flyingTotalScore = g_flyingCritterScore + (g_flyingCritterProximityEnabled ? g_flyingCritterProximityFactor : 0.0f);
-    std::string scoreText = std::format("{:.0f}", flyingTotalScore);
-    ImGuiMCP::ImVec2 scoreTextSize;
-    ImGuiMCP::CalcTextSize(&scoreTextSize, scoreText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - scoreTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.0f", flyingTotalScore);
-    ImGuiMCP::PopStyleColor();
-
-    // Tooltip for total score
-    if (ImGuiMCP::IsItemHovered()) {
-
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Total Score: %.0f", flyingTotalScore);
-        ImGuiMCP::Text("Base Score: %.0f", g_flyingCritterScore);
-
-        if (g_flyingCritterProximityEnabled) {
-
-            ImGuiMCP::Text("Proximity Bonus: +%.0f", g_flyingCritterProximityFactor);
-
-        } else {
-
-            ImGuiMCP::Text("Proximity Bonus: Disabled");
-        }
-
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Base Score
-    ImGuiMCP::Text("Base Score");
-    HelpTooltip("Base score awarded to a flying critter (butterflies, moths, dragonflies, etc).");
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_PlotHistogram, ImGuiMCP::ImVec4{ 0.4f, 0.7f, 1.0f, 1.0f });
-
-    if (ImGuiMCP::SliderFloat("##flyingCritterBaseScore", &g_flyingCritterScore, 0.0f, 2000.0f, "%.0f")) {
-
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Proximity Bonus Section
-    ImGuiMCP::Text("Proximity Bonus");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 10.0f);
-
-    if (ImGuiMCP::Checkbox("##flyingCritterProxToggle", &g_flyingCritterProximityEnabled)) {
-
-        IniParser::Save();
-
-    }
-
-    HelpTooltip("How much score is added the closer the critter is to the player (max bonus at point-blank range, 0 at the detection radius).");
-
-    if (g_flyingCritterProximityEnabled) {
-
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_PlotHistogram, ImGuiMCP::ImVec4{ 0.4f, 0.9f, 0.4f, 1.0f });
-
-        if (ImGuiMCP::SliderFloat("##flyingCritterProxFactor", &g_flyingCritterProximityFactor, 0.0f, 1000.0f, "+%.0f")) {
-
-            IniParser::Save();
-
-        }
-
-        ImGuiMCP::PopStyleColor();
-
-    } else {
-
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.4f, 0.4f, 0.4f, 1.0f });
-        ImGuiMCP::Text("+0 (disabled)");
-        ImGuiMCP::PopStyleColor();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text - Always visible
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("Base score awarded to a flying critter (butterflies, moths, dragonflies, etc).");
-
-    if (g_flyingCritterProximityEnabled) {
-
-        ImGuiMCP::Text("Bonus increases as critter gets closer.");
-
-    }
-
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::EndChild();
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
-
-    // =====================================================================================================================
-    //  Pond Fish Card
-    // =====================================================================================================================
-
-    ImGuiMCP::BeginChild("##pondFishCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
-
-    // Header
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(0x1ff0ff));
-    ImGuiMCP::Text("%s", fishCritterIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Pond Fish");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::GetContentRegionAvail(&avail);
-
-    float fishTotalScore = g_pondFishScore + (g_pondFishProximityEnabled ? g_pondFishProximityFactor : 0.0f);
-    scoreText = std::format("{:.0f}", fishTotalScore);
-    ImGuiMCP::CalcTextSize(&scoreTextSize, scoreText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - scoreTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.0f", fishTotalScore);
-    ImGuiMCP::PopStyleColor();
-
-    // Tooltip for total score
-    if (ImGuiMCP::IsItemHovered()) {
-
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Total Score: %.0f", fishTotalScore);
-        ImGuiMCP::Text("Base Score: %.0f", g_pondFishScore);
-
-        if (g_pondFishProximityEnabled) {
-
-            ImGuiMCP::Text("Proximity Bonus: +%.0f", g_pondFishProximityFactor);
-
-        } else {
-
-            ImGuiMCP::Text("Proximity Bonus: Disabled");
-
-        }
-
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Base Score
-    ImGuiMCP::Text("Base Score");
-    HelpTooltip("Base score awarded to a fish critter (perches, salmon, etc).");
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_PlotHistogram, ImGuiMCP::ImVec4{ 0.4f, 0.7f, 1.0f, 1.0f });
-
-    if (ImGuiMCP::SliderFloat("##pondFishBaseScore", &g_pondFishScore, 0.0f, 2000.0f, "%.0f")) {
-
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Proximity Bonus Section
-    ImGuiMCP::Text("Proximity Bonus");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 10.0f);
-
-    if (ImGuiMCP::Checkbox("##pondFishProxToggle", &g_pondFishProximityEnabled)) {
-
-        IniParser::Save();
-
-    }
-
-    HelpTooltip("How much score is added the closer the critter is to the player (max bonus at point-blank range, 0 at the detection radius).");
-
-    if (g_pondFishProximityEnabled) {
-
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_PlotHistogram, ImGuiMCP::ImVec4{ 0.4f, 0.9f, 0.4f, 1.0f });
-
-        if (ImGuiMCP::SliderFloat("##pondFishProxFactor", &g_pondFishProximityFactor, 0.0f, 1000.0f, "+%.0f")) {
-
-            IniParser::Save();
-
-        }
-
-        ImGuiMCP::PopStyleColor();
-
-    } else {
-
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.4f, 0.4f, 0.4f, 1.0f });
-        ImGuiMCP::Text("+0 (disabled)");
-        ImGuiMCP::PopStyleColor();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text - Always visible
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("Base score awarded to a fish critter (perches, salmon, etc).");
-
-    if (g_pondFishProximityEnabled) {
-
-        ImGuiMCP::Text("Bonus increases as critter gets closer.");
-
-    }
-
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::EndChild();
-
-    // Pop card styling
     ImGuiMCP::PopStyleColor(2);
     ImGuiMCP::PopStyleVar(2);
 
@@ -3671,11 +3187,14 @@ void UI::DebugSettings() {
     DrawUIHeaderWithReset("Debug Settings", debugIcon, "Debug", "resetDebug",
         SettingWithDefault(&g_debugRaycasts, k_defaultDebugRaycasts),
         SettingWithDefault(&g_loggingLevel, k_defaultLoggingLevel, []() {
+
             auto lvl = LoggingLevelToSpdlog(g_loggingLevel);
             spdlog::set_level(lvl);
             spdlog::flush_on(lvl);
             logger::info("Logging level reset to default ('{}')", k_loggingLevelNames[g_loggingLevel]);
-            })
+
+        })
+
     );
 
     // =====================================================================================================================
