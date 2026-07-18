@@ -776,6 +776,326 @@ static void DrawUIHeaderWithReset(const std::string& title, const std::string& i
 }
 
 // =====================================================================================================================
+//  Draw a standardized setting card with reset button
+// =====================================================================================================================
+
+// Structure to hold card content
+struct CardContent {
+
+    const char* icon;           // FontAwesome icon
+    const char* label;          // Display name
+    const char* tooltipText;    // Helper text shown at bottom
+    bool hasSlider;             // Whether this card has a slider
+    float* sliderValue;         // Pointer to the value (if hasSlider)
+    float sliderMin;            // Min value
+    float sliderMax;            // Max value
+    const char* sliderFormat;   // Format string for slider
+    float sliderDefault;        // Default value for the slider
+    bool hasCheckbox;           // Whether this card has a checkbox
+    bool* checkboxValue;        // Pointer to checkbox value (if hasCheckbox)
+    bool checkboxDefault;       // Default value for checkbox
+    std::function<void()> onSliderChange;  // Optional callback when slider changes
+    std::function<void()> onCheckboxChange; // Optional callback when checkbox changes
+    bool convertToMeters = false; // Can be set to true when creating a new setting card for some kind of distance setting that needs to be displayed in meters.
+
+};
+
+// Helper to check if card settings have changed
+static bool HasCardSettingsChanged(const CardContent& card) {
+
+    bool changed = false;
+
+    if (card.hasSlider && *card.sliderValue != card.sliderDefault) {
+
+        changed = true;
+
+    }
+
+    if (card.hasCheckbox && *card.checkboxValue != card.checkboxDefault) {
+
+        changed = true;
+
+    }
+
+    return changed;
+
+}
+
+// Helper to reset card settings to defaults
+static void ResetCardSettings(CardContent& card) {
+
+    if (card.hasSlider) {
+
+        *card.sliderValue = card.sliderDefault;
+
+        if (card.onSliderChange) {
+
+            card.onSliderChange();
+
+        }
+
+    }
+
+    if (card.hasCheckbox) {
+
+        *card.checkboxValue = card.checkboxDefault;
+
+        if (card.onCheckboxChange) {
+
+            card.onCheckboxChange();
+
+        }
+
+    }
+
+    IniParser::Save();
+
+}
+
+// Draw a standardized setting card
+static void DrawSettingCard(const std::string& cardId, CardContent& card) {
+
+    const bool hasChanges = HasCardSettingsChanged(card);
+
+    ImGuiMCP::BeginChild(cardId.c_str(), ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+
+    float startY = ImGuiMCP::GetCursorPosY();
+    float startX = ImGuiMCP::GetCursorPosX();
+
+    ImGuiMCP::ImVec2 avail;
+    ImGuiMCP::GetContentRegionAvail(&avail);
+    float availWidth = avail.x;
+
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
+    ImGuiMCP::Text("%s", card.icon);
+    ImGuiMCP::PopStyleColor();
+    ImGuiMCP::SameLine();
+    ImGuiMCP::Text(" %s", card.label);
+
+    float currentX = ImGuiMCP::GetCursorPosX();
+
+    // Helper: value actually shown to the user (converted to meters if needed)
+    auto DisplayValue = [&](float raw) {
+
+        return card.convertToMeters ? (raw / SKYRIM_UNITS_TO_METERS) : raw;
+
+    };
+
+    // Determine the current value text for width calculation
+    std::string currentValueText = "";
+
+    if (card.hasSlider) {
+
+        char buf[64];
+        std::snprintf(buf, sizeof(buf), card.sliderFormat, DisplayValue(*card.sliderValue));
+        currentValueText = buf;
+
+    } else if (card.hasCheckbox) {
+
+        currentValueText = *card.checkboxValue ? "Enabled" : "Disabled";
+
+    }
+
+    ImGuiMCP::ImVec2 valueTextSize;
+    ImGuiMCP::CalcTextSize(&valueTextSize, currentValueText.c_str(), nullptr, false, -1.0f);
+
+    float resetWidth = 0.0f;
+
+    if (hasChanges) {
+
+        std::string resetText = std::format("{}", resetIcon);
+        ImGuiMCP::ImVec2 resetTextSize;
+        ImGuiMCP::CalcTextSize(&resetTextSize, resetText.c_str(), nullptr, false, -1.0f);
+        resetWidth = resetTextSize.x + 4.0f;
+
+    }
+
+    float margin = 10.0f;
+    float rightEdge = startX + availWidth - margin;
+    float valueStartX = rightEdge - valueTextSize.x;
+    float spacing = 12.0f;
+    float resetStartX = valueStartX - resetWidth - spacing;
+
+    float minX = currentX + 10.0f;
+
+    if (hasChanges && resetStartX < minX) {
+
+        resetStartX = minX;
+        valueStartX = resetStartX + resetWidth + spacing;
+
+        if (valueStartX + valueTextSize.x > rightEdge) {
+
+            valueStartX = rightEdge - valueTextSize.x;
+
+        }
+
+    }
+
+    if (hasChanges) {
+
+        std::string resetButtonText = std::format("{}##reset_{}", resetIcon, cardId);
+
+        ImGuiMCP::SetCursorPosX(resetStartX);
+        ImGuiMCP::SetCursorPosY(startY);
+
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonHovered, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonActive, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_BorderShadow, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+
+        if (ImGuiMCP::Button(resetButtonText.c_str())) {
+
+            ResetCardSettings(card);
+
+        }
+
+        ImGuiMCP::PopStyleColor(6);
+
+        if (ImGuiMCP::IsItemHovered()) {
+
+            ImGuiMCP::BeginTooltip();
+            ImGuiMCP::Text("Reset to default value");
+            ImGuiMCP::EndTooltip();
+
+        }
+
+    }
+
+    ImGuiMCP::SetCursorPosX(valueStartX);
+    ImGuiMCP::SetCursorPosY(startY);
+
+    if (card.hasCheckbox) {
+
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, *card.checkboxValue ? HexToImVec4(k_hexBrightGreen) : HexToImVec4(k_hexRed));
+        ImGuiMCP::Text("%s", *card.checkboxValue ? "Enabled" : "Disabled");
+        ImGuiMCP::PopStyleColor();
+
+    } else {
+
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
+        ImGuiMCP::Text(card.sliderFormat, DisplayValue(*card.sliderValue));
+        ImGuiMCP::PopStyleColor();
+
+    }
+
+    if (ImGuiMCP::IsItemHovered()) {
+
+        ImGuiMCP::BeginTooltip();
+
+        if (card.hasSlider) {
+
+
+            char curBuf[64];
+            std::snprintf(curBuf, sizeof(curBuf), card.sliderFormat, DisplayValue(*card.sliderValue));
+            ImGuiMCP::Text("Current: %s", curBuf);
+
+            ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+
+            char defBuf[64];
+            std::snprintf(defBuf, sizeof(defBuf), card.sliderFormat, DisplayValue(card.sliderDefault));
+            ImGuiMCP::Text("Default: %s", defBuf);
+
+            ImGuiMCP::PopStyleColor();
+
+        } else if (card.hasCheckbox) {
+
+            ImGuiMCP::Text("Current: %s", *card.checkboxValue ? "Enabled" : "Disabled");
+            ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+            ImGuiMCP::Text("Default: %s", card.checkboxDefault ? "Enabled" : "Disabled");
+            ImGuiMCP::PopStyleColor();
+
+        }
+
+        ImGuiMCP::EndTooltip();
+    
+    }
+
+    float frameHeight = ImGuiMCP::GetFrameHeight();
+    ImGuiMCP::SetCursorPosY(startY + frameHeight + 4.0f);
+
+    ImGuiMCP::Separator();
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+
+    // =================================================================================================================
+    //  Content (Slider or Checkbox)
+    // =================================================================================================================
+
+    if (card.hasSlider) {
+
+        ImGuiMCP::SetNextItemWidth(-1.0f);
+
+        if (card.convertToMeters) {
+
+            // Slider operates on a temp value in meters; convert back to game units on change
+            float metersValue = *card.sliderValue / SKYRIM_UNITS_TO_METERS;
+            float metersMin = card.sliderMin / SKYRIM_UNITS_TO_METERS;
+            float metersMax = card.sliderMax / SKYRIM_UNITS_TO_METERS;
+
+            if (ImGuiMCP::SliderFloat("##slider", &metersValue, metersMin, metersMax, card.sliderFormat)) {
+                *card.sliderValue = metersValue * SKYRIM_UNITS_TO_METERS;
+                IniParser::Save();
+                
+                if (card.onSliderChange) {
+
+                    card.onSliderChange();
+
+                }
+
+            }
+
+        } else {
+
+            if (ImGuiMCP::SliderFloat("##slider", card.sliderValue, card.sliderMin, card.sliderMax, card.sliderFormat)) {
+                
+                IniParser::Save();
+                
+                if (card.onSliderChange) {
+                    
+                    card.onSliderChange();
+                
+                }
+            
+            }
+
+        }
+    }
+
+    if (card.hasCheckbox) {
+
+        if (ImGuiMCP::Checkbox("##checkbox", card.checkboxValue)) {
+
+            IniParser::Save();
+
+            if (card.onCheckboxChange) {
+
+                card.onCheckboxChange();
+
+            }
+
+        }
+
+    }
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
+
+    if (card.tooltipText) {
+
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
+        ImGuiMCP::Text("%s", card.tooltipText);
+        ImGuiMCP::PopStyleColor();
+
+    }
+
+    ImGuiMCP::EndChild();
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+
+}
+
+// =====================================================================================================================
 //  Draw POI score cards (actors & critters)
 // =====================================================================================================================
 
@@ -925,6 +1245,27 @@ static const std::vector<ScoreCardData> critterCards = {
 };
 
 // =====================================================================================================================
+//  Score card reset helpers
+// =====================================================================================================================
+
+static bool HasScoreCardChanged(const ScoreCardData& card) {
+
+    return (*card.baseScore != card.baseDefault) || (*card.proximityEnabled != card.proximityEnabledDefault) || (*card.proximityFactor != card.proximityFactorDefault);
+
+}
+
+static void ResetScoreCard(const ScoreCardData& card) {
+
+    *card.baseScore = card.baseDefault;
+    *card.proximityEnabled = card.proximityEnabledDefault;
+    *card.proximityFactor = card.proximityFactorDefault;
+
+    IniParser::Save();
+    logger::info("{} score settings reset to default values.", card.label);
+
+}
+
+// =====================================================================================================================
 //  Draw a single score card
 // =====================================================================================================================
 
@@ -933,23 +1274,108 @@ static void DrawScoreCard(const ScoreCardData& card) {
     // Card container
     ImGuiMCP::BeginChild(ImGuiMCP::GetID(card.label), ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
-    // Card header
+    // =================================================================================================================
+    //  Header with icon, label, reset button, and total score (all on ONE line, fixed height)
+    // =================================================================================================================
+
+    float startY = ImGuiMCP::GetCursorPosY();
+    float startX = ImGuiMCP::GetCursorPosX();
+
+    ImGuiMCP::ImVec2 avail;
+    ImGuiMCP::GetContentRegionAvail(&avail);
+    float availWidth = avail.x;
+
+    // Icon + label
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(card.iconColor));
     ImGuiMCP::Text("%s", card.icon);
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
     ImGuiMCP::Text(" %s", card.label);
 
-    // Total score display (right-aligned)
+    float currentX = ImGuiMCP::GetCursorPosX();
+
+    // Check if any of this card's settings differ from their defaults
+    const bool hasChanges = HasScoreCardChanged(card);
+
     float totalScore = *card.baseScore + (*card.proximityEnabled ? *card.proximityFactor : 0.0f);
     float defaultTotalScore = card.baseDefault + (card.proximityEnabledDefault ? card.proximityFactorDefault : 0.0f);
-    ImGuiMCP::SameLine();
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::GetContentRegionAvail(&avail);
+
     std::string scoreText = std::format("{:.0f}", totalScore);
-    ImGuiMCP::ImVec2 textSize;
-    ImGuiMCP::CalcTextSize(&textSize, scoreText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - textSize.x);
+    ImGuiMCP::ImVec2 scoreTextSize;
+    ImGuiMCP::CalcTextSize(&scoreTextSize, scoreText.c_str(), nullptr, false, -1.0f);
+
+    // Reset button width (if visible)
+    float resetWidth = 0.0f;
+
+    if (hasChanges) {
+
+        ImGuiMCP::ImVec2 resetTextSize;
+        ImGuiMCP::CalcTextSize(&resetTextSize, resetIcon.c_str(), nullptr, false, -1.0f);
+        resetWidth = resetTextSize.x + 4.0f;
+
+    }
+
+    float margin = 10.0f;
+    float rightEdge = startX + availWidth - margin;
+
+    float scoreStartX = rightEdge - scoreTextSize.x;
+
+    float spacing = 12.0f;
+    float resetStartX = scoreStartX - resetWidth - spacing;
+
+    // Ensure we don't overlap the label
+    float minX = currentX + 10.0f;
+
+    if (hasChanges && resetStartX < minX) {
+
+        resetStartX = minX;
+        scoreStartX = resetStartX + resetWidth + spacing;
+
+        if (scoreStartX + scoreTextSize.x > rightEdge) {
+
+            scoreStartX = rightEdge - scoreTextSize.x;
+
+        }
+
+    }
+
+    // Draw the reset button if visible (pinned to startY so it never affects row height)
+    if (hasChanges) {
+
+        std::string resetButtonText = std::format("{}##reset_{}", resetIcon, card.label);
+
+        ImGuiMCP::SetCursorPosX(resetStartX);
+        ImGuiMCP::SetCursorPosY(startY);
+
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonHovered, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonActive, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_BorderShadow, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+
+        if (ImGuiMCP::Button(resetButtonText.c_str())) {
+
+            ResetScoreCard(card);
+
+        }
+
+        ImGuiMCP::PopStyleColor(6);
+
+        if (ImGuiMCP::IsItemHovered()) {
+
+            ImGuiMCP::BeginTooltip();
+            ImGuiMCP::Text("Reset this card's settings to default values.");
+            ImGuiMCP::EndTooltip();
+
+        }
+
+    }
+
+    // Draw the total score (also pinned to startY)
+    ImGuiMCP::SetCursorPosX(scoreStartX);
+    ImGuiMCP::SetCursorPosY(startY);
+
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
     ImGuiMCP::Text("%.0f", totalScore);
     ImGuiMCP::PopStyleColor();
@@ -982,7 +1408,7 @@ static void DrawScoreCard(const ScoreCardData& card) {
         } else {
 
             ImGuiMCP::Text("Default Proximity Bonus: Disabled");
-        
+
         }
 
         ImGuiMCP::PopStyleColor();
@@ -990,11 +1416,17 @@ static void DrawScoreCard(const ScoreCardData& card) {
 
     }
 
+    // Always advance by the same fixed amount, regardless of whether the button was drawn,
+    // so the header row height (and therefore the card's AutoResizeY height) never changes.
+    float frameHeight = ImGuiMCP::GetFrameHeight();
+    ImGuiMCP::SetCursorPosY(startY + frameHeight + 4.0f);
+
     ImGuiMCP::Separator();
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
 
     // Base Score
     ImGuiMCP::Text("Base Score");
+
     if (ImGuiMCP::IsItemHovered()) {
 
         ImGuiMCP::BeginTooltip();
@@ -1005,7 +1437,6 @@ static void DrawScoreCard(const ScoreCardData& card) {
 
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_PlotHistogram, ImGuiMCP::ImVec4{ 0.4f, 0.7f, 1.0f, 1.0f });
 
-    // Use PushID to create unique IDs for each slider
     ImGuiMCP::PushID(card.label);
 
     if (ImGuiMCP::SliderFloat("##Base", card.baseScore, 0.0f, 2000.0f, "%.0f")) {
@@ -1025,6 +1456,7 @@ static void DrawScoreCard(const ScoreCardData& card) {
     ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 10.0f);
 
     ImGuiMCP::PushID(card.label);
+
     if (ImGuiMCP::Checkbox("##ProxToggle", card.proximityEnabled)) {
 
         IniParser::Save();
@@ -1566,232 +1998,111 @@ void UI::CameraMainSettings() {
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.25f, 0.25f, 0.30f, 1.0f });
 
     // =====================================================================================================================
-    //  Idle Timer
+    //  Idle Timer Card
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##timerCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    CardContent idleTimerCard = {
 
-    // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s", clockIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Idle Timer");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    std::string valueText = std::format("{:.0f} sec", g_idleTimer);
-    ImGuiMCP::ImVec2 valueTextSize;
-    ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.0f sec", g_idleTimer);
-    ImGuiMCP::PopStyleColor();
+        .icon = clockIcon.c_str(),
+        .label = "Idle Timer",
+        .tooltipText = "How many seconds of player inactivity before the camera switches into idle mode.",
+        .hasSlider = true,
+        .sliderValue = &g_idleTimer,
+        .sliderMin = 1.0f,
+        .sliderMax = 300.0f,
+        .sliderFormat = "%.0f sec",
+        .sliderDefault = k_defaultIdleTimer,
+        .hasCheckbox = false,
+        .checkboxValue = nullptr,
+        .checkboxDefault = false,
+        .onSliderChange = []() {
+            ApplyIdleTimerToIniSettings("fAutoVanityModeDelay:Camera", g_idleTimer);
+            logger::info("Camera Idle Timer Setting manually set to {} second(s)", g_idleTimer);
+        },
+        .onCheckboxChange = nullptr
 
-    // Tooltip for current value
-    if (ImGuiMCP::IsItemHovered()) {
+    };
 
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Current Idle Timer: %.0f seconds", g_idleTimer);
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default value: %.0f seconds", k_defaultIdleTimer);
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Slider
-    ImGuiMCP::SetNextItemWidth(-1.0f);
-
-    if (ImGuiMCP::SliderFloat("##idleTimer", &g_idleTimer, 1.0f, 300.0f, "%.0f sec")) {
-
-        IniParser::Save();
-        ApplyIdleTimerToIniSettings("fAutoVanityModeDelay:Camera", g_idleTimer);
-        logger::info("Camera Idle Timer Setting manually set to {} second(s)", g_idleTimer);
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("How many seconds of player inactivity before the camera switches into idle mode.");
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::EndChild();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+    DrawSettingCard("idleTimerCard", idleTimerCard);
 
     // =====================================================================================================================
-    //  Cinematic Black Bars Enabled
+    //  Cinematic Black Bars Enabled Card
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##blackBarsCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    CardContent blackBarsCard = {
 
-    // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s", filmIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Cinematic Black Bars");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    std::string statusText = g_blackBarsEnabled ? "Enabled" : "Disabled";
-    std::string defaultStatus = k_defaultBlackBarsEnabled ? "Enabled" : "Disabled";
-    ImGuiMCP::CalcTextSize(&valueTextSize, statusText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, g_blackBarsEnabled ? HexToImVec4(k_hexBrightGreen) : HexToImVec4(k_hexRed));
-    ImGuiMCP::Text("%s", statusText.c_str());
-    ImGuiMCP::PopStyleColor();
+        .icon = filmIcon.c_str(),
+        .label = "Cinematic Black Bars",
+        .tooltipText = "Enable or disable the cinematic black bars that appear when entering vanity mode.",
+        .hasSlider = false,
+        .sliderValue = nullptr,
+        .sliderMin = 0.0f,
+        .sliderMax = 0.0f,
+        .sliderFormat = "",
+        .sliderDefault = 0.0f,
+        .hasCheckbox = true,
+        .checkboxValue = &g_blackBarsEnabled,
+        .checkboxDefault = k_defaultBlackBarsEnabled,
+        .onSliderChange = nullptr,
+        .onCheckboxChange = nullptr
 
-    if (ImGuiMCP::IsItemHovered()) {
+    };
 
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Cinematic Black Bars: %s", statusText.c_str());
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default value: %s", defaultStatus.c_str());
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Checkbox
-    if (ImGuiMCP::Checkbox("##blackBarsEnabled", &g_blackBarsEnabled)) {
-
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("Enable or disable the cinematic black bars that appear when entering vanity mode.");
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::EndChild();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+    DrawSettingCard("blackBarsCard", blackBarsCard);
 
     // =====================================================================================================================
-    //  Black Bars Slide Speed (Only shown if enabled)
+    //  Black Bars Slide Speed Card (Only shown if enabled)
     // =====================================================================================================================
 
     if (g_blackBarsEnabled) {
 
-        ImGuiMCP::BeginChild("##speedCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+        CardContent speedCard = {
 
-        // Header with icon and current value
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-        ImGuiMCP::Text("%s", speedIcon.c_str());
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::SameLine();
-        ImGuiMCP::Text(" Black Bars Slide Speed");
-        ImGuiMCP::SameLine();
-        ImGuiMCP::GetContentRegionAvail(&avail);
-        valueText = std::format("{:.1f}", g_blackBarsSpeed);
-        ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
-        ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-        ImGuiMCP::Text("%.1f", g_blackBarsSpeed);
-        ImGuiMCP::PopStyleColor();
+            .icon = speedIcon.c_str(),
+            .label = "Black Bars Slide Speed",
+            .tooltipText = "How fast the cinematic bars slide in and out when entering/exiting vanity mode.",
+            .hasSlider = true,
+            .sliderValue = &g_blackBarsSpeed,
+            .sliderMin = 0.1f,
+            .sliderMax = 5.0f,
+            .sliderFormat = "%.1f",
+            .sliderDefault = k_defaultBlackBarsSpeed,
+            .hasCheckbox = false,
+            .checkboxValue = nullptr,
+            .checkboxDefault = false,
+            .onSliderChange = nullptr,
+            .onCheckboxChange = nullptr
 
-        if (ImGuiMCP::IsItemHovered()) {
+        };
 
-            ImGuiMCP::BeginTooltip();
-            ImGuiMCP::Text("Current Slide Speed: %.1f", g_blackBarsSpeed);
-            ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-            ImGuiMCP::Text("Default value: %.1f", k_defaultBlackBarsSpeed);
-            ImGuiMCP::PopStyleColor();
-            ImGuiMCP::EndTooltip();
-
-        }
-
-        ImGuiMCP::Separator();
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-        // Slider
-        ImGuiMCP::SetNextItemWidth(-1.0f);
-
-        if (ImGuiMCP::SliderFloat("##blackBarsSlideSpeed", &g_blackBarsSpeed, 0.1f, 5.0f, "%.1f")) {
-
-            IniParser::Save();
-
-        }
-
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-        // Helper text
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-        ImGuiMCP::Text("How fast the cinematic bars slide in and out when entering/exiting vanity mode.");
-        ImGuiMCP::PopStyleColor();
-
-        ImGuiMCP::EndChild();
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+        DrawSettingCard("speedCard", speedCard);
 
         // =====================================================================================================================
-        //  Black Bars Sound Effects
+        //  Black Bars Sound Effects Card
         // =====================================================================================================================
 
-        ImGuiMCP::BeginChild("##soundCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+        CardContent soundCard = {
 
-        // Header with icon and current value
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-        ImGuiMCP::Text("%s", soundIcon.c_str());
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::SameLine();
-        ImGuiMCP::Text(" Black Bars Sound Effects");
-        ImGuiMCP::SameLine();
-        ImGuiMCP::GetContentRegionAvail(&avail);
-        statusText = g_blackBarsSoundEnabled ? "Enabled" : "Disabled";
-        defaultStatus = k_defaultBlackBarsSoundEnabled ? "Enabled" : "Disabled";
-        ImGuiMCP::CalcTextSize(&valueTextSize, statusText.c_str(), nullptr, false, -1.0f);
-        ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, g_blackBarsSoundEnabled ? HexToImVec4(k_hexBrightGreen) : HexToImVec4(k_hexRed));
-        ImGuiMCP::Text("%s", statusText.c_str());
-        ImGuiMCP::PopStyleColor();
+            .icon = soundIcon.c_str(),
+            .label = "Black Bars Sound Effects",
+            .tooltipText = "Enable or disable the sound effects that play when the cinematic black bars appear or disappear.",
+            .hasSlider = false,
+            .sliderValue = nullptr,
+            .sliderMin = 0.0f,
+            .sliderMax = 0.0f,
+            .sliderFormat = "",
+            .sliderDefault = 0.0f,
+            .hasCheckbox = true,
+            .checkboxValue = &g_blackBarsSoundEnabled,
+            .checkboxDefault = k_defaultBlackBarsSoundEnabled,
+            .onSliderChange = nullptr,
+            .onCheckboxChange = nullptr
+        };
 
-        if (ImGuiMCP::IsItemHovered()) {
-
-            ImGuiMCP::BeginTooltip();
-            ImGuiMCP::Text("Sound Effects: %s", statusText.c_str());
-            ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-            ImGuiMCP::Text("Default value: %s", defaultStatus.c_str());
-            ImGuiMCP::PopStyleColor();
-            ImGuiMCP::EndTooltip();
-
-        }
-
-        ImGuiMCP::Separator();
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-        // Checkbox
-        if (ImGuiMCP::Checkbox("##blackBarsSoundEnabled", &g_blackBarsSoundEnabled)) {
-
-            IniParser::Save();
-
-        }
-
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-        // Helper text
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-        ImGuiMCP::Text("Enable or disable the sound effects that play when the cinematic black bars appear or disappear.");
-        ImGuiMCP::PopStyleColor();
-
-        ImGuiMCP::EndChild();
+        DrawSettingCard("soundCard", soundCard);
 
     }
 
-    // Pop styling
     ImGuiMCP::PopStyleColor(2);
     ImGuiMCP::PopStyleVar(2);
 
@@ -1822,229 +2133,110 @@ void UI::CameraPositionSettings() {
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.25f, 0.25f, 0.30f, 1.0f });
 
     // =====================================================================================================================
-    //  Idle Camera Offset X
+    //  Idle Camera Offset X Card
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##offsetXCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    CardContent offsetXCard = {
 
-    // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s", arrowLeftAndRightIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Idle Camera Offset X");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    std::string valueText = std::format("{:.0f}", g_IdleCamOffsetX);
-    ImGuiMCP::ImVec2 valueTextSize;
-    ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.0f", g_IdleCamOffsetX);
-    ImGuiMCP::PopStyleColor();
+        .icon = arrowLeftAndRightIcon.c_str(),
+        .label = "Idle Camera Offset X",
+        .tooltipText = "Horizontal (X-axis) offset of the idle camera relative to the player.",
+        .hasSlider = true,
+        .sliderValue = &g_IdleCamOffsetX,
+        .sliderMin = -500.0f,
+        .sliderMax = 500.0f,
+        .sliderFormat = "%.0f",
+        .sliderDefault = k_defaultVanityCamOffsetX,
+        .hasCheckbox = false,
+        .checkboxValue = nullptr,
+        .checkboxDefault = false,
+        .onSliderChange = []() {
+            g_IdleCamOffsetX = std::round(g_IdleCamOffsetX);
+        },
+        .onCheckboxChange = nullptr
 
-    // Tooltip for current value
-    if (ImGuiMCP::IsItemHovered()) {
+    };
 
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Current Offset X: %.0f", g_IdleCamOffsetX);
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default value: %.0f", k_defaultVanityCamOffsetX);
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Slider
-    ImGuiMCP::SetNextItemWidth(-1.0f);
-
-    if (ImGuiMCP::SliderFloat("##idleCameraOffsetX", &g_IdleCamOffsetX, -500.0f, 500.0f, "%.0f")) {
-
-        g_IdleCamOffsetX = std::round(g_IdleCamOffsetX);
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("Horizontal (X-axis) offset of the idle camera relative to the player.");
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::EndChild();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+    DrawSettingCard("offsetXCard", offsetXCard);
 
     // =====================================================================================================================
-    //  Idle Camera Zoom (Offset Y)
+    //  Idle Camera Zoom Card (Offset Y)
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##offsetYCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    CardContent zoomCard = {
 
-    // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s", zoomIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Idle Camera Zoom");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    valueText = std::format("{:.0f}", g_IdleCamOffsetY);
-    ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.0f", g_IdleCamOffsetY);
-    ImGuiMCP::PopStyleColor();
+        .icon = zoomIcon.c_str(),
+        .label = "Idle Camera Zoom",
+        .tooltipText = "Zoom (Y-axis offset) of the idle camera relative to the player.",
+        .hasSlider = true,
+        .sliderValue = &g_IdleCamOffsetY,
+        .sliderMin = -500.0f,
+        .sliderMax = 500.0f,
+        .sliderFormat = "%.0f",
+        .sliderDefault = k_defaultVanityCamOffsetY,
+        .hasCheckbox = false,
+        .checkboxValue = nullptr,
+        .checkboxDefault = false,
+        .onSliderChange = []() {
+            g_IdleCamOffsetY = std::round(g_IdleCamOffsetY);
+        },
+        .onCheckboxChange = nullptr
 
-    if (ImGuiMCP::IsItemHovered()) {
+    };
 
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Current Zoom: %.0f", g_IdleCamOffsetY);
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default value: %.0f", k_defaultVanityCamOffsetY);
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Slider
-    ImGuiMCP::SetNextItemWidth(-1.0f);
-
-    if (ImGuiMCP::SliderFloat("##idleCameraOffsetY", &g_IdleCamOffsetY, -500.0f, 500.0f, "%.0f")) {
-
-        g_IdleCamOffsetY = std::round(g_IdleCamOffsetY);
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("Zoom (Y-axis offset) of the idle camera relative to the player.");
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::EndChild();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+    DrawSettingCard("zoomCard", zoomCard);
 
     // =====================================================================================================================
-    //  Idle Camera Offset Z
+    //  Idle Camera Offset Z Card
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##offsetZCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    CardContent offsetZCard = {
 
-    // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s", arrowUpAndDownIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Idle Camera Offset Z");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    valueText = std::format("{:.0f}", g_IdleCamOffsetZ);
-    ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.0f", g_IdleCamOffsetZ);
-    ImGuiMCP::PopStyleColor();
+        .icon = arrowUpAndDownIcon.c_str(),
+        .label = "Idle Camera Offset Z",
+        .tooltipText = "Vertical (Z-axis) offset of the idle camera relative to the player.",
+        .hasSlider = true,
+        .sliderValue = &g_IdleCamOffsetZ,
+        .sliderMin = -500.0f,
+        .sliderMax = 500.0f,
+        .sliderFormat = "%.0f",
+        .sliderDefault = k_defaultVanityCamOffsetZ,
+        .hasCheckbox = false,
+        .checkboxValue = nullptr,
+        .checkboxDefault = false,
+        .onSliderChange = []() {
+            g_IdleCamOffsetZ = std::round(g_IdleCamOffsetZ);
+        },
+        .onCheckboxChange = nullptr
 
-    if (ImGuiMCP::IsItemHovered()) {
+    };
 
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Current Offset Z: %.0f", g_IdleCamOffsetZ);
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default value: %.0f", k_defaultVanityCamOffsetZ);
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Slider
-    ImGuiMCP::SetNextItemWidth(-1.0f);
-
-    if (ImGuiMCP::SliderFloat("##idleCameraOffsetZ", &g_IdleCamOffsetZ, -500.0f, 500.0f, "%.0f")) {
-
-        g_IdleCamOffsetZ = std::round(g_IdleCamOffsetZ);
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("Vertical (Z-axis) offset of the idle camera relative to the player.");
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::EndChild();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+    DrawSettingCard("offsetZCard", offsetZCard);
 
     // =====================================================================================================================
-    //  Blend Duration
+    //  Blend Duration Card
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##blendCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    CardContent blendCard = {
 
-    // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s", clockIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Blend Duration");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    valueText = std::format("{:.2f} sec", g_blendDuration);
-    ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.2f sec", g_blendDuration);
-    ImGuiMCP::PopStyleColor();
+        .icon = clockIcon.c_str(),
+        .label = "Blend Duration",
+        .tooltipText = "How long the camera takes to rotate to focus on a POI.",
+        .hasSlider = true,
+        .sliderValue = &g_blendDuration,
+        .sliderMin = 0.1f,
+        .sliderMax = 5.0f,
+        .sliderFormat = "%.2f sec",
+        .sliderDefault = k_defaultBlendDuration,
+        .hasCheckbox = false,
+        .checkboxValue = nullptr,
+        .checkboxDefault = false,
+        .onSliderChange = nullptr,
+        .onCheckboxChange = nullptr
 
-    if (ImGuiMCP::IsItemHovered()) {
+    };
 
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Current Blend Duration: %.2f sec", g_blendDuration);
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default value: %.2f sec", k_defaultBlendDuration);
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Slider
-    ImGuiMCP::SetNextItemWidth(-1.0f);
-
-    if (ImGuiMCP::SliderFloat("##blendDuration", &g_blendDuration, 0.1f, 5.0f, "%.2f sec")) {
-
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("How long the camera takes to rotate to focus on a POI.");
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::EndChild();
+    DrawSettingCard("blendCard", blendCard);
 
     // Pop styling
     ImGuiMCP::PopStyleColor(2);
@@ -2077,242 +2269,108 @@ void UI::CameraZoomSettings() {
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.25f, 0.25f, 0.30f, 1.0f });
 
     // =====================================================================================================================
-    //  Dezoom Trigger Radius
-    // =====================================================================================================================
-    //
-    //  A POI above the player can fall outside the vanity camera's fixed pitch, since this system only ever
-    //  rotates yaw to face a POI. Pulling the camera back (see Dezoom Amount below) widens the effective
-    //  vertical field of view onto it. This slider controls how close the POI has to be, horizontally, for
-    //  that to kick in.
+    //  Dezoom Trigger Radius Card
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##radiusCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    CardContent radiusCard = {
 
-    // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s", radiusIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Dezoom Trigger Radius");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    float dezoomRadiusMeters = g_dezoomTriggerRadius / SKYRIM_UNITS_TO_METERS;
-    float defaultRadiusMeters = k_defaultDezoomTriggerRadius / SKYRIM_UNITS_TO_METERS;
-    std::string valueText = std::format("{:.1f} m", dezoomRadiusMeters);
-    ImGuiMCP::ImVec2 valueTextSize;
-    ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.1f m", dezoomRadiusMeters);
-    ImGuiMCP::PopStyleColor();
+        .icon = radiusIcon.c_str(),
+        .label = "Dezoom Trigger Radius",
+        .tooltipText = "Horizontal distance from the player within which an overhead POI can trigger the dezoom.",
+        .hasSlider = true,
+        .sliderValue = &g_dezoomTriggerRadius,
+        .sliderMin = 0.0f,
+        .sliderMax = 1400.0f, // 20 meters * 70
+        .sliderFormat = "%.1f m",
+        .sliderDefault = k_defaultDezoomTriggerRadius,
+        .hasCheckbox = false,
+        .checkboxValue = nullptr,
+        .checkboxDefault = false,
+        .onSliderChange = nullptr,
+        .onCheckboxChange = nullptr,
+        .convertToMeters = true
 
-    // Tooltip for current value
-    if (ImGuiMCP::IsItemHovered()) {
+    };
 
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Current Trigger Radius: %.1f m (%.0f units)", dezoomRadiusMeters, g_dezoomTriggerRadius);
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default value: %.1f m (%.0f units)", defaultRadiusMeters, k_defaultDezoomTriggerRadius);
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Slider
-    ImGuiMCP::SetNextItemWidth(-1.0f);
-
-    if (ImGuiMCP::SliderFloat("##dezoomTriggerRadius", &dezoomRadiusMeters, 0.0f, 20.0f, "%.1f m")) {
-
-        g_dezoomTriggerRadius = dezoomRadiusMeters * SKYRIM_UNITS_TO_METERS;
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("Horizontal distance from the player within which an overhead POI can trigger the dezoom.");
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::EndChild();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+    DrawSettingCard("radiusCard", radiusCard);
 
     // =====================================================================================================================
-    //  Dezoom Trigger Height
+    //  Dezoom Trigger Height Card
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##heightCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    CardContent heightCard = {
 
-    // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s", arrowUpIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Dezoom Trigger Height");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    float dezoomHeightMeters = g_dezoomTriggerHeight / SKYRIM_UNITS_TO_METERS;
-    float defaultHeightMeters = k_defaultDezoomTriggerHeight / SKYRIM_UNITS_TO_METERS;
-    valueText = std::format("{:.1f} m", dezoomHeightMeters);
-    ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.1f m", dezoomHeightMeters);
-    ImGuiMCP::PopStyleColor();
+        .icon = arrowUpIcon.c_str(),
+        .label = "Dezoom Trigger Height",
+        .tooltipText = "How far above the player a POI must be, while inside the trigger radius, before the dezoom kicks in.",
+        .hasSlider = true,
+        .sliderValue = &g_dezoomTriggerHeight,
+        .sliderMin = 0.0f,
+        .sliderMax = 1400.0f, // 20 meters * 70
+        .sliderFormat = "%.1f m",
+        .sliderDefault = k_defaultDezoomTriggerHeight,
+        .hasCheckbox = false,
+        .checkboxValue = nullptr,
+        .checkboxDefault = false,
+        .onSliderChange = nullptr,
+        .onCheckboxChange = nullptr,
+        .convertToMeters = true
 
-    // Tooltip for current value
-    if (ImGuiMCP::IsItemHovered()) {
+    };
 
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Current Trigger Height: %.1f m (%.0f units)", dezoomHeightMeters, g_dezoomTriggerHeight);
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default value: %.1f m (%.0f units)", defaultHeightMeters, k_defaultDezoomTriggerHeight);
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Slider
-    ImGuiMCP::SetNextItemWidth(-1.0f);
-
-    if (ImGuiMCP::SliderFloat("##dezoomTriggerHeight", &dezoomHeightMeters, 0.0f, 20.0f, "%.1f m")) {
-
-        g_dezoomTriggerHeight = dezoomHeightMeters * SKYRIM_UNITS_TO_METERS;
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("How far above the player a POI must be, while inside the trigger radius, before the dezoom kicks in.");
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::EndChild();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+    DrawSettingCard("heightCard", heightCard);
 
     // =====================================================================================================================
-    //  Dezoom Amount
+    //  Dezoom Amount Card
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##dezoomAmountCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    CardContent amountCard = {
 
-    // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s", zoomIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Dezoom Amount");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    valueText = std::format("{:.0f}", g_dezoomAmount);
-    ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.0f", g_dezoomAmount);
-    ImGuiMCP::PopStyleColor();
+        .icon = zoomIcon.c_str(),
+        .label = "Dezoom Amount",
+        .tooltipText = "How far the camera pulls back once the dezoom is fully active (added on top of the Idle camera offset Y).",
+        .hasSlider = true,
+        .sliderValue = &g_dezoomAmount,
+        .sliderMin = 0.0f,
+        .sliderMax = 500.0f,
+        .sliderFormat = "%.0f",
+        .sliderDefault = k_defaultDezoomAmount,
+        .hasCheckbox = false,
+        .checkboxValue = nullptr,
+        .checkboxDefault = false,
+        .onSliderChange = []() {
+            g_dezoomAmount = std::round(g_dezoomAmount);
+        },
+        .onCheckboxChange = nullptr
 
-    // Tooltip for current value
-    if (ImGuiMCP::IsItemHovered()) {
+    };
 
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Current Dezoom Amount: %.0f units", g_dezoomAmount);
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default value: %.0f units", k_defaultDezoomAmount);
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Slider
-    ImGuiMCP::SetNextItemWidth(-1.0f);
-
-    if (ImGuiMCP::SliderFloat("##dezoomAmount", &g_dezoomAmount, 0.0f, 500.0f, "%.0f")) {
-
-        g_dezoomAmount = std::round(g_dezoomAmount);
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("How far the camera pulls back once the dezoom is fully active (added on top of the Idle camera offset Y).");
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::EndChild();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+    DrawSettingCard("amountCard", amountCard);
 
     // =====================================================================================================================
-    //  Dezoom Blend Speed
+    //  Dezoom Blend Speed Card
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##blendSpeedCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    CardContent blendSpeedCard = {
 
-    // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s", clockIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Dezoom Blend Speed");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    valueText = std::format("{:.1f} units/s", g_dezoomBlendSpeed);
-    ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.1f units/s", g_dezoomBlendSpeed);
-    ImGuiMCP::PopStyleColor();
+        .icon = clockIcon.c_str(),
+        .label = "Dezoom Blend Speed",
+        .tooltipText = "How quickly the dezoom fades in and out as a POI enters or leaves the trigger zone.",
+        .hasSlider = true,
+        .sliderValue = &g_dezoomBlendSpeed,
+        .sliderMin = 0.1f,
+        .sliderMax = 10.0f,
+        .sliderFormat = "%.1f units/s",
+        .sliderDefault = k_defaultDezoomBlendSpeed,
+        .hasCheckbox = false,
+        .checkboxValue = nullptr,
+        .checkboxDefault = false,
+        .onSliderChange = nullptr,
+        .onCheckboxChange = nullptr
 
-    // Tooltip for current value
-    if (ImGuiMCP::IsItemHovered()) {
+    };
 
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Current Blend Speed: %.1f units/s", g_dezoomBlendSpeed);
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default value: %.1f units/s", k_defaultDezoomBlendSpeed);
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Slider
-    ImGuiMCP::SetNextItemWidth(-1.0f);
-
-    if (ImGuiMCP::SliderFloat("##dezoomBlendSpeed", &g_dezoomBlendSpeed, 0.1f, 10.0f, "%.1f units/s")) {
-
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("How quickly the dezoom fades in and out as a POI enters or leaves the trigger zone.");
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::EndChild();
+    DrawSettingCard("blendSpeedCard", blendSpeedCard);
 
     // Pop styling
     ImGuiMCP::PopStyleColor(2);
@@ -2342,61 +2400,29 @@ void UI::HeadTrackingSettings() {
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.25f, 0.25f, 0.30f, 1.0f });
 
     // =====================================================================================================================
-    //  Head Tracking Fade Speed
+    //  Head Tracking Fade Speed Card
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##fadeSpeedCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    CardContent fadeSpeedCard = {
 
-    // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s", speedIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Head Tracking Fade Speed");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    std::string valueText = std::format("{:.2f} units/s", g_headTrackFadeSpeed);
-    ImGuiMCP::ImVec2 valueTextSize;
-    ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.2f units/s", g_headTrackFadeSpeed);
-    ImGuiMCP::PopStyleColor();
+        .icon = speedIcon.c_str(),
+        .label = "Head Tracking Fade Speed",
+        .tooltipText = "How quickly the player's head-tracking rotates toward a focused POI.",
+        .hasSlider = true,
+        .sliderValue = &g_headTrackFadeSpeed,
+        .sliderMin = 0.1f,
+        .sliderMax = 1.0f,
+        .sliderFormat = "%.2f units/s",
+        .sliderDefault = k_defaultHeadTrackFadeSpeed,
+        .hasCheckbox = false,
+        .checkboxValue = nullptr,
+        .checkboxDefault = false,
+        .onSliderChange = nullptr,
+        .onCheckboxChange = nullptr
 
-    // Tooltip for current value
-    if (ImGuiMCP::IsItemHovered()) {
+    };
 
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Current Fade Speed: %.2f units/s", g_headTrackFadeSpeed);
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default value: %.2f units/s", k_defaultHeadTrackFadeSpeed);
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Slider
-    ImGuiMCP::SetNextItemWidth(-1.0f);
-
-    if (ImGuiMCP::SliderFloat("##headTrackFadeSpeed", &g_headTrackFadeSpeed, 0.1f, 1.0f, "%.2f units/s")) {
-
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("How quickly the player's head-tracking rotates toward a focused POI.");
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::EndChild();
+    DrawSettingCard("fadeSpeedCard", fadeSpeedCard);
 
     // Pop styling
     ImGuiMCP::PopStyleColor(2);
@@ -2432,71 +2458,32 @@ void UI::POISystemMainSettings() {
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.25f, 0.25f, 0.30f, 1.0f });
 
     // =====================================================================================================================
-    //  POI System Master Toggle
+    //  POI System Master Toggle Card
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##masterToggleCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    // POI System Master Toggle
+    CardContent masterToggleCard = {
 
-    // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s", poiSystemIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" POI System Master Toggle");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    std::string statusText = g_poiSystemEnabled ? "Enabled" : "Disabled";
-    std::string defaultStatus = k_defaultPoiSystemEnabled ? "Enabled" : "Disabled";
-    ImGuiMCP::ImVec2 statusTextSize;
-    ImGuiMCP::CalcTextSize(&statusTextSize, statusText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - statusTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, g_poiSystemEnabled ? HexToImVec4(k_hexBrightGreen) : HexToImVec4(k_hexRed));
-    ImGuiMCP::Text("%s", statusText.c_str());
-    ImGuiMCP::PopStyleColor();
+        .icon = poiSystemIcon.c_str(),
+        .label = "POI System Master Toggle",
+        .tooltipText = "Master toggle for the entire POI (Point of Interest) system. When disabled, the camera will not track any POIs automatically.",
+        .hasSlider = false,
+        .sliderValue = nullptr,
+        .sliderMin = 0.0f,
+        .sliderMax = 0.0f,
+        .sliderFormat = "",
+        .sliderDefault = 0.0f,
+        .hasCheckbox = true,
+        .checkboxValue = &g_poiSystemEnabled,
+        .checkboxDefault = k_defaultPoiSystemEnabled,
+        .onSliderChange = nullptr,
+        .onCheckboxChange = []() {
+            logger::info("POI System master toggle set to: {}", g_poiSystemEnabled);
+        }
 
-    if (ImGuiMCP::IsItemHovered()) {
+    };
 
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("POI System: %s", statusText.c_str());
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default value: %s", defaultStatus.c_str());
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Checkbox
-    if (ImGuiMCP::Checkbox("##poiSystemMasterToggle", &g_poiSystemEnabled)) {
-
-        IniParser::Save();
-        logger::info("POI System master toggle set to: {}", g_poiSystemEnabled);
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text - Always visible
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("Master toggle for the entire POI (Point of Interest) system. When disabled, the camera will not track any POIs automatically.");
-    ImGuiMCP::PopStyleColor();
-
-    // If master toggle is disabled, show message inside the same card with red text
-    if (!g_poiSystemEnabled) {
-
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 8.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexRed));
-        ImGuiMCP::Text("POI System is currently disabled. Toggle it on to configure settings.");
-        ImGuiMCP::PopStyleColor();
-
-    }
-
-    ImGuiMCP::EndChild();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+    DrawSettingCard("masterToggleCard", masterToggleCard);
 
     // If master toggle is disabled, hide everything else below
     if (!g_poiSystemEnabled) {
@@ -2514,12 +2501,96 @@ void UI::POISystemMainSettings() {
 
     ImGuiMCP::BeginChild("##poiTypesCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
-    // Header
+    // =================================================================================================================
+    //  Header with icon, label, and reset button (fixed height, doesn't shift when button appears)
+    // =================================================================================================================
+
+    float poiTypesStartY = ImGuiMCP::GetCursorPosY();
+    float poiTypesStartX = ImGuiMCP::GetCursorPosX();
+
+    ImGuiMCP::ImVec2 poiTypesAvail;
+    ImGuiMCP::GetContentRegionAvail(&poiTypesAvail);
+    float poiTypesAvailWidth = poiTypesAvail.x;
+
+    // Icon + label
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", poiTypesIcon.c_str());
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
     ImGuiMCP::Text(" Enabled POI Types");
+
+    float poiTypesCurrentX = ImGuiMCP::GetCursorPosX();
+
+    // Check if any of these settings differ from their defaults
+    const bool poiTypesHasChanges = HasSettingsChanged(
+        SettingWithDefault(&g_actorPoiEnabled, k_defaultActorPoiEnabled),
+        SettingWithDefault(&g_preventFollowers, k_defaultPreventFollowers),
+        SettingWithDefault(&g_flyingCritterPoiEnabled, k_defaultFlyingCritterPoiEnabled),
+        SettingWithDefault(&g_fishPoiEnabled, k_defaultFishPoiEnabled)
+    );
+
+    // Reset button width (if visible) icon-only, same style as DrawSettingCard
+    float poiTypesResetWidth = 0.0f;
+
+    if (poiTypesHasChanges) {
+
+        ImGuiMCP::ImVec2 resetTextSize;
+        ImGuiMCP::CalcTextSize(&resetTextSize, resetIcon.c_str(), nullptr, false, -1.0f);
+        poiTypesResetWidth = resetTextSize.x + 4.0f;
+
+    }
+
+    float poiTypesMargin = 10.0f;
+    float poiTypesResetStartX = poiTypesStartX + poiTypesAvailWidth - poiTypesMargin - poiTypesResetWidth;
+
+    // Ensure we don't overlap the label
+    float poiTypesMinX = poiTypesCurrentX + 10.0f;
+    if (poiTypesHasChanges && poiTypesResetStartX < poiTypesMinX) {
+        poiTypesResetStartX = poiTypesMinX;
+    }
+
+    // Draw the reset button, pinned to the header row's Y so it never affects
+    // the row height (and therefore never affects the card's AutoResizeY height)
+    if (poiTypesHasChanges) {
+
+        std::string resetButtonText = std::format("{}##reset_poiTypes", resetIcon);
+
+        ImGuiMCP::SetCursorPosX(poiTypesResetStartX);
+        ImGuiMCP::SetCursorPosY(poiTypesStartY);
+
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonHovered, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonActive, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_BorderShadow, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+
+        if (ImGuiMCP::Button(resetButtonText.c_str())) {
+
+            ResetSettings("Enabled POI Types",
+                SettingWithDefault(&g_actorPoiEnabled, k_defaultActorPoiEnabled),
+                SettingWithDefault(&g_preventFollowers, k_defaultPreventFollowers),
+                SettingWithDefault(&g_flyingCritterPoiEnabled, k_defaultFlyingCritterPoiEnabled),
+                SettingWithDefault(&g_fishPoiEnabled, k_defaultFishPoiEnabled)
+            );
+
+        }
+
+        ImGuiMCP::PopStyleColor(6);
+
+        if (ImGuiMCP::IsItemHovered()) {
+
+            ImGuiMCP::BeginTooltip();
+            ImGuiMCP::Text("Reset to default value");
+            ImGuiMCP::EndTooltip();
+
+        }
+
+    }
+
+    // Always advance by the same fixed amount regardless of whether the button was drawn
+    float poiTypesFrameHeight = ImGuiMCP::GetFrameHeight();
+    ImGuiMCP::SetCursorPosY(poiTypesStartY + poiTypesFrameHeight + 4.0f);
 
     ImGuiMCP::Separator();
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));  // Small padding after separator
@@ -2541,6 +2612,7 @@ void UI::POISystemMainSettings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 4.0f);
     ImGuiMCP::Text("Actors (NPCs, creatures)");
+
     if (ImGuiMCP::IsItemHovered()) {
 
         ImGuiMCP::BeginTooltip();
@@ -2646,6 +2718,7 @@ void UI::POISystemMainSettings() {
     ImGuiMCP::SameLine();
     ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 4.0f);
     ImGuiMCP::Text("Fish Critters (perches, salmon, pond fish, etc)");
+
     if (ImGuiMCP::IsItemHovered()) {
 
         ImGuiMCP::BeginTooltip();
@@ -2665,116 +2738,58 @@ void UI::POISystemMainSettings() {
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
 
     // =====================================================================================================================
-    //  Maximum Detection Radius
+    //  Maximum Detection Radius Card
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##radiusCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    CardContent radiusCard = {
 
-    // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s", radiusIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Maximum Detection Radius");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    float poiRadiusMeters = g_poiDetectionRadius / SKYRIM_UNITS_TO_METERS;
-    float defaultRadiusMeters = k_defaultPoiDetectionRadius / SKYRIM_UNITS_TO_METERS;
-    std::string valueText = std::format("{:.1f} m", poiRadiusMeters);
-    ImGuiMCP::ImVec2 valueTextSize;
-    ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.1f m", poiRadiusMeters);
-    ImGuiMCP::PopStyleColor();
+        .icon = radiusIcon.c_str(),
+        .label = "Maximum Detection Radius",
+        .tooltipText = "Maximum POI detection range from the player.",
+        .hasSlider = true,
+        .sliderValue = &g_poiDetectionRadius,
+        .sliderMin = 0.0f,
+        .sliderMax = 7000.0f, // 100 meters * 70
+        .sliderFormat = "%.1f m",
+        .sliderDefault = k_defaultPoiDetectionRadius,
+        .hasCheckbox = false,
+        .checkboxValue = nullptr,
+        .checkboxDefault = false,
+        .onSliderChange = nullptr,
+        .onCheckboxChange = nullptr,
+        .convertToMeters = true
 
-    // Tooltip for current value
-    if (ImGuiMCP::IsItemHovered()) {
+    };
 
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Current Detection Radius: %.1f m (%.0f units)", poiRadiusMeters, g_poiDetectionRadius);
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default value: %.1f m (%.0f units)", defaultRadiusMeters, k_defaultPoiDetectionRadius);
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Slider
-    ImGuiMCP::SetNextItemWidth(-1.0f);
-
-    if (ImGuiMCP::SliderFloat("##poiDetectionRadius", &poiRadiusMeters, 0.0f, 100.0f, "%.1f m")) {
-
-        g_poiDetectionRadius = poiRadiusMeters * SKYRIM_UNITS_TO_METERS;
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("Maximum POI detection range from the player.");
-    ImGuiMCP::PopStyleColor();
+    DrawSettingCard("poiRadiusCard", radiusCard);
 
     ImGuiMCP::EndChild();
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
 
     // =====================================================================================================================
-    //  Minimum Lock Duration
+    //  Minimum Lock Duration Card
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##lockCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    CardContent lockCard = {
 
-    // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s", poiLockIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Minimum Lock Duration");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    valueText = std::format("{:.1f} sec", g_lockDuration);
-    ImGuiMCP::CalcTextSize(&valueTextSize, valueText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - valueTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%.1f sec", g_lockDuration);
-    ImGuiMCP::PopStyleColor();
+        .icon = poiLockIcon.c_str(),
+        .label = "Minimum Lock Duration",
+        .tooltipText = "Minimum time the camera stays locked onto a point of interest before it can switch to another.",
+        .hasSlider = true,
+        .sliderValue = &g_lockDuration,
+        .sliderMin = 0.0f,
+        .sliderMax = 30.0f,
+        .sliderFormat = "%.1f sec",
+        .sliderDefault = k_defaultLockDuration,
+        .hasCheckbox = false,
+        .checkboxValue = nullptr,
+        .checkboxDefault = false,
+        .onSliderChange = nullptr,
+        .onCheckboxChange = nullptr
 
-    // Tooltip for current value
-    if (ImGuiMCP::IsItemHovered()) {
+    };
 
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Current Lock Duration: %.1f seconds", g_lockDuration);
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default value: %.1f seconds", k_defaultLockDuration);
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Slider
-    ImGuiMCP::SetNextItemWidth(-1.0f);
-    if (ImGuiMCP::SliderFloat("##lockDuration", &g_lockDuration, 0.0f, 30.0f, "%.1f sec")) {
-        IniParser::Save();
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("Minimum time the camera stays locked onto a point of interest before it can switch to another.");
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::EndChild();
+    DrawSettingCard("lockCard", lockCard);
 
     // Pop styling
     ImGuiMCP::PopStyleColor(2);
@@ -3361,63 +3376,32 @@ void UI::DebugSettings() {
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.25f, 0.25f, 0.30f, 1.0f });
 
     // =====================================================================================================================
-    //  Debug Raycast Visualization
+    //  Debug Raycast Visualization Card
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##raycastCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    CardContent raycastCard = {
 
-    // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s", raycastIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Debug Raycast Visualization");
-    ImGuiMCP::SameLine();
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    std::string statusText = g_debugRaycasts ? "Enabled" : "Disabled";
-    std::string defaultStatus = k_defaultDebugRaycasts ? "Enabled" : "Disabled";
-    ImGuiMCP::ImVec2 statusTextSize;
-    ImGuiMCP::CalcTextSize(&statusTextSize, statusText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - statusTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, g_debugRaycasts ? HexToImVec4(k_hexBrightGreen) : HexToImVec4(k_hexRed));
-    ImGuiMCP::Text("%s", statusText.c_str());
-    ImGuiMCP::PopStyleColor();
+        .icon = raycastIcon.c_str(),
+        .label = "Debug Raycast Visualization",
+        .tooltipText = "Draws debug raycast lines used by the POI detection system, for troubleshooting purposes.",
+        .hasSlider = false,
+        .sliderValue = nullptr,
+        .sliderMin = 0.0f,
+        .sliderMax = 0.0f,
+        .sliderFormat = "",
+        .sliderDefault = 0.0f,
+        .hasCheckbox = true,
+        .checkboxValue = &g_debugRaycasts,
+        .checkboxDefault = k_defaultDebugRaycasts,
+        .onSliderChange = nullptr,
+        .onCheckboxChange = nullptr
 
-    if (ImGuiMCP::IsItemHovered()) {
+    };
 
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Debug Raycast Visualization: %s", statusText.c_str());
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default value: %s", defaultStatus.c_str());
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Checkbox
-    if (ImGuiMCP::Checkbox("##debugRaycasts", &g_debugRaycasts)) {
-
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text("Draws debug raycast lines used by the POI detection system, for troubleshooting purposes.");
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::EndChild();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+    DrawSettingCard("raycastCard", raycastCard);
 
     // =====================================================================================================================
-    //  Logging Level
+    //  Logging Level Card
     // =====================================================================================================================
 
     ImGuiMCP::BeginChild("##loggingCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
@@ -3428,9 +3412,13 @@ void UI::DebugSettings() {
     ImGuiMCP::PopStyleColor();
     ImGuiMCP::SameLine();
     ImGuiMCP::Text(" Logging Level");
+
+    // Get the current value text
     ImGuiMCP::SameLine();
+    ImGuiMCP::ImVec2 avail;
     ImGuiMCP::GetContentRegionAvail(&avail);
     std::string valueText = k_loggingLevelNames[g_loggingLevel];
+    ImGuiMCP::ImVec2 statusTextSize;
     ImGuiMCP::CalcTextSize(&statusTextSize, valueText.c_str(), nullptr, false, -1.0f);
     ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - statusTextSize.x);
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
