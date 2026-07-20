@@ -12,7 +12,15 @@ namespace logger = SKSE::log;
 //  Skyrim Constants
 // ==================================================================================================================================================================================
 
-static constexpr float SKYRIM_UNITS_TO_METERS = 70.0f;  // 1 meter = 70 game units
+static constexpr float              SKYRIM_UNITS_TO_METERS                                      = 70.0f;  // 1 meter = 70 game units
+
+// ==================================================================================================================================================================================
+//  UI Layout constants
+// ==================================================================================================================================================================================
+
+static constexpr float              k_iconColumnWidth                                           = 50.0f;
+static constexpr float              k_spaceAfterIcon                                            = 15.0f;
+static constexpr float              k_marginBetweenBordersInMenuHeader                          = 30.0f;
 
 // ==================================================================================================================================================================================
 //  Default settings used when the ini doesn't exist when the game is started (ordered by menus)
@@ -620,20 +628,20 @@ static void DrawUIHeaderWithReset(const std::string& title, const std::string& i
     // Add top padding
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
 
-    // Define margin from edges (30px on each side)
-    const float kEdgeMargin = 30.0f;
-
     ImGuiMCP::ImVec2 winSize;
     ImGuiMCP::GetWindowSize(&winSize);
 
     // Pull the title toward the left border, leaving a small margin
-    ImGuiMCP::SetCursorPosX(kEdgeMargin);
+    ImGuiMCP::SetCursorPosX(k_marginBetweenBordersInMenuHeader);
+
+    float startY = ImGuiMCP::GetCursorPosY();
 
     // Draw the title with gold color
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s %s", icon.c_str(), title.c_str());
+    ImGuiMCP::Text("%s", icon.c_str());
+    ImGuiMCP::SameLine(0.0f, k_spaceAfterIcon);
+    ImGuiMCP::Text("%s", title.c_str());
     ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
 
     // Check if any settings have changed
     const bool hasChanges = HasSettingsChanged(settings...);
@@ -647,12 +655,11 @@ static void DrawUIHeaderWithReset(const std::string& title, const std::string& i
     ImGuiMCP::ImGuiStyle* style = ImGuiMCP::GetStyle();
     float buttonWidth = resetTextSize.x + style->FramePadding.x * 2.0f;
 
-    // Push the button toward the right border, leaving a small margin, using the window's own width directly so it's tied to the real edge regardless of style padding quirks.
-    float buttonPosX = winSize.x - kEdgeMargin - buttonWidth;
+    // Push the button toward the right border, leaving a small margin
+    float buttonPosX = winSize.x - k_marginBetweenBordersInMenuHeader - buttonWidth;
     ImGuiMCP::SetCursorPosX(buttonPosX);
 
-    // Store the current cursor Y position
-    float cursorY = ImGuiMCP::GetCursorPosY();
+    float cursorY = startY;
 
     // Get the height of the current text line
     float textHeight = ImGuiMCP::GetTextLineHeight();
@@ -678,7 +685,7 @@ static void DrawUIHeaderWithReset(const std::string& title, const std::string& i
             ImGuiMCP::EndTooltip();
 
         }
-    
+
     } else {
 
         ImGuiMCP::SetCursorPosY(cursorY - verticalOffset);
@@ -694,26 +701,25 @@ static void DrawUIHeaderWithReset(const std::string& title, const std::string& i
 }
 
 // Overload for ExclusionListReset
-static void DrawUIHeaderWithReset(const std::string& title, const std::string& icon,
-    const std::string& sectionName, const std::string& buttonId,
-    const ExclusionListReset& exclusionSettings) {
+static void DrawUIHeaderWithReset(const std::string& title, const std::string& icon, const std::string& sectionName, const std::string& buttonId, const ExclusionListReset& exclusionSettings) {
+
     // Add top padding
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
-
-    // Define margin from edges (30px on each side)
-    const float kEdgeMargin = 30.0f;
 
     ImGuiMCP::ImVec2 winSize;
     ImGuiMCP::GetWindowSize(&winSize);
 
     // Pull the title toward the left border, leaving a small margin
-    ImGuiMCP::SetCursorPosX(kEdgeMargin);
+    ImGuiMCP::SetCursorPosX(k_marginBetweenBordersInMenuHeader);
+
+    float startY = ImGuiMCP::GetCursorPosY();
 
     // Draw the title with gold color
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s %s", icon.c_str(), title.c_str());
+    ImGuiMCP::Text("%s", icon.c_str());
+    ImGuiMCP::SameLine(0.0f, k_spaceAfterIcon);
+    ImGuiMCP::Text("%s", title.c_str());
     ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
 
     // Check if any settings have changed
     const bool hasChanges = exclusionSettings.HasChanged();
@@ -727,12 +733,11 @@ static void DrawUIHeaderWithReset(const std::string& title, const std::string& i
     ImGuiMCP::ImGuiStyle* style = ImGuiMCP::GetStyle();
     float buttonWidth = resetTextSize.x + style->FramePadding.x * 2.0f;
 
-    // Push the button toward the right border, leaving a small margin, using the window's own width directly so it's tied to the real edge regardless of style padding quirks.
-    float buttonPosX = winSize.x - kEdgeMargin - buttonWidth;
+    // Push the button toward the right border, leaving a small margin
+    float buttonPosX = winSize.x - k_marginBetweenBordersInMenuHeader - buttonWidth;
     ImGuiMCP::SetCursorPosX(buttonPosX);
 
-    // Store the current cursor Y position
-    float cursorY = ImGuiMCP::GetCursorPosY();
+    float cursorY = startY;
 
     // Get the height of the current text line
     float textHeight = ImGuiMCP::GetTextLineHeight();
@@ -785,7 +790,7 @@ struct CardContent {
     const char* icon;           // FontAwesome icon
     const char* label;          // Display name
     const char* tooltipText;    // Helper text shown at bottom
-    bool hasSlider;             // Whether this card has a slider
+    bool hasSlider;             // Whether this card has a float slider
     float* sliderValue;         // Pointer to the value (if hasSlider)
     float sliderMin;            // Min value
     float sliderMax;            // Max value
@@ -797,6 +802,15 @@ struct CardContent {
     std::function<void()> onSliderChange;  // Optional callback when slider changes
     std::function<void()> onCheckboxChange; // Optional callback when checkbox changes
     bool convertToMeters = false; // Can be set to true when creating a new setting card for some kind of distance setting that needs to be displayed in meters.
+
+    // Enum-style int slider (named steps, e.g. logging level) mutually exclusive with hasSlider/hasCheckbox
+    bool hasIntSlider = false;
+    int* intSliderValue = nullptr;
+    int intSliderMin = 0;
+    int intSliderMax = 0;
+    int intSliderDefault = 0;
+    const char* const* intSliderNames = nullptr;   // array of display names indexed by value
+    std::function<void()> onIntSliderChange;
 
 };
 
@@ -812,6 +826,12 @@ static bool HasCardSettingsChanged(const CardContent& card) {
     }
 
     if (card.hasCheckbox && *card.checkboxValue != card.checkboxDefault) {
+
+        changed = true;
+
+    }
+
+    if (card.hasIntSlider && *card.intSliderValue != card.intSliderDefault) {
 
         changed = true;
 
@@ -848,6 +868,18 @@ static void ResetCardSettings(CardContent& card) {
 
     }
 
+    if (card.hasIntSlider) {
+
+        *card.intSliderValue = card.intSliderDefault;
+
+        if (card.onIntSliderChange) {
+
+            card.onIntSliderChange();
+
+        }
+
+    }
+
     IniParser::Save();
 
 }
@@ -857,7 +889,15 @@ static void DrawSettingCard(const std::string& cardId, CardContent& card) {
 
     const bool hasChanges = HasCardSettingsChanged(card);
 
-    ImGuiMCP::BeginChild(cardId.c_str(), ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    ImGuiMCP::SetCursorPosX(k_marginBetweenBordersInMenuHeader);
+
+    // Calculate card width to match header's right margin
+    ImGuiMCP::ImVec2 winSize;
+    ImGuiMCP::GetWindowSize(&winSize);
+    float cardWidth = winSize.x - (k_marginBetweenBordersInMenuHeader * 2);
+
+    // Begin child with explicit width
+    ImGuiMCP::BeginChild(cardId.c_str(), ImGuiMCP::ImVec2(cardWidth, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     float startY = ImGuiMCP::GetCursorPosY();
     float startX = ImGuiMCP::GetCursorPosX();
@@ -869,8 +909,12 @@ static void DrawSettingCard(const std::string& cardId, CardContent& card) {
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", card.icon);
     ImGuiMCP::PopStyleColor();
+
+    // Label is placed at a fixed column so labels align across cards,
+    // regardless of each icon glyph's own width.
     ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" %s", card.label);
+    ImGuiMCP::SetCursorPosX(startX + k_iconColumnWidth + k_spaceAfterIcon);
+    ImGuiMCP::Text("%s", card.label);
 
     float currentX = ImGuiMCP::GetCursorPosX();
 
@@ -894,44 +938,43 @@ static void DrawSettingCard(const std::string& cardId, CardContent& card) {
 
         currentValueText = *card.checkboxValue ? "Enabled" : "Disabled";
 
+    } else if (card.hasIntSlider) {
+
+        currentValueText = card.intSliderNames[*card.intSliderValue];
+
     }
 
     ImGuiMCP::ImVec2 valueTextSize;
     ImGuiMCP::CalcTextSize(&valueTextSize, currentValueText.c_str(), nullptr, false, -1.0f);
 
-    float resetWidth = 0.0f;
-
-    if (hasChanges) {
-
-        std::string resetText = std::format("{}", resetIcon);
-        ImGuiMCP::ImVec2 resetTextSize;
-        ImGuiMCP::CalcTextSize(&resetTextSize, resetText.c_str(), nullptr, false, -1.0f);
-        resetWidth = resetTextSize.x + 4.0f;
-
-    }
-
-    float margin = 10.0f;
+    const float margin = 10.0f;
     float rightEdge = startX + availWidth - margin;
-    float valueStartX = rightEdge - valueTextSize.x;
-    float spacing = 12.0f;
-    float resetStartX = valueStartX - resetWidth - spacing;
 
+    // Value position is FIXED — it never depends on the reset button.
+    const float valueStartX = rightEdge - valueTextSize.x;
     float minX = currentX + 10.0f;
 
-    if (hasChanges && resetStartX < minX) {
-
-        resetStartX = minX;
-        valueStartX = resetStartX + resetWidth + spacing;
-
-        if (valueStartX + valueTextSize.x > rightEdge) {
-
-            valueStartX = rightEdge - valueTextSize.x;
-
-        }
-
-    }
+    float resetStartX = valueStartX; // unused when there's no reset button
 
     if (hasChanges) {
+
+        // Real button width, computed once, up front (no more +4.0f guess).
+        ImGuiMCP::ImGuiStyle* style = ImGuiMCP::GetStyle();
+        ImGuiMCP::ImVec2 resetIconSize;
+        ImGuiMCP::CalcTextSize(&resetIconSize, resetIcon.c_str(), nullptr, false, -1.0f);
+        float resetButtonWidth = resetIconSize.x + style->FramePadding.x * 2.0f;
+
+        float visualGap = std::max(0.0f, k_spaceAfterIcon - style->FramePadding.x);
+
+        resetStartX = valueStartX - resetButtonWidth - visualGap;
+
+        // Only the button gets clamped if the row is too tight —
+        // the value text never moves.
+        if (resetStartX < minX) {
+
+            resetStartX = minX;
+
+        }
 
         std::string resetButtonText = std::format("{}##reset_{}", resetIcon, cardId);
 
@@ -956,10 +999,13 @@ static void DrawSettingCard(const std::string& cardId, CardContent& card) {
         if (ImGuiMCP::IsItemHovered()) {
 
             ImGuiMCP::BeginTooltip();
-            ImGuiMCP::Text("Reset to default value");
+            ImGuiMCP::Text("Reset this card's settings to default values.");
             ImGuiMCP::EndTooltip();
 
         }
+
+        // Use the modified valueStartX
+        ImGuiMCP::SetCursorPosX(valueStartX);
 
     }
 
@@ -970,6 +1016,12 @@ static void DrawSettingCard(const std::string& cardId, CardContent& card) {
 
         ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, *card.checkboxValue ? HexToImVec4(k_hexBrightGreen) : HexToImVec4(k_hexRed));
         ImGuiMCP::Text("%s", *card.checkboxValue ? "Enabled" : "Disabled");
+        ImGuiMCP::PopStyleColor();
+
+    } else if (card.hasIntSlider) {
+
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
+        ImGuiMCP::Text("%s", card.intSliderNames[*card.intSliderValue]);
         ImGuiMCP::PopStyleColor();
 
     } else {
@@ -1006,6 +1058,14 @@ static void DrawSettingCard(const std::string& cardId, CardContent& card) {
             ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
             ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
             ImGuiMCP::Text("Default: %s", card.checkboxDefault ? "Enabled" : "Disabled");
+            ImGuiMCP::PopStyleColor();
+
+        } else if (card.hasIntSlider) {
+
+            ImGuiMCP::Text("Current: %s", card.intSliderNames[*card.intSliderValue]);
+            ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+            ImGuiMCP::Text("Default: %s", card.intSliderNames[card.intSliderDefault]);
             ImGuiMCP::PopStyleColor();
 
         }
@@ -1080,6 +1140,26 @@ static void DrawSettingCard(const std::string& cardId, CardContent& card) {
 
     }
 
+    if (card.hasIntSlider) {
+
+        ImGuiMCP::SetNextItemWidth(-1.0f);
+
+        if (ImGuiMCP::SliderInt("##intSlider", card.intSliderValue, card.intSliderMin, card.intSliderMax, card.intSliderNames[*card.intSliderValue])) {
+
+            *card.intSliderValue = std::clamp(*card.intSliderValue, card.intSliderMin, card.intSliderMax);
+
+            IniParser::Save();
+
+            if (card.onIntSliderChange) {
+
+                card.onIntSliderChange();
+
+            }
+
+        }
+
+    }
+
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
 
     if (card.tooltipText) {
@@ -1119,6 +1199,7 @@ struct ScoreCardData {
     // Help text
     const char* tooltip;                // Description shown in tooltip
     const char* proximityTooltip;       // Description for the proximity bonus
+
 };
 
 // =====================================================================================================================
@@ -1271,12 +1352,16 @@ static void ResetScoreCard(const ScoreCardData& card) {
 
 static void DrawScoreCard(const ScoreCardData& card) {
 
-    // Card container
-    ImGuiMCP::BeginChild(ImGuiMCP::GetID(card.label), ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    // Set X position to match the header
+    ImGuiMCP::SetCursorPosX(k_marginBetweenBordersInMenuHeader);
 
-    // =================================================================================================================
-    //  Header with icon, label, reset button, and total score (all on ONE line, fixed height)
-    // =================================================================================================================
+    // Calculate card width to match header's right margin
+    ImGuiMCP::ImVec2 winSize;
+    ImGuiMCP::GetWindowSize(&winSize);
+    float cardWidth = winSize.x - (k_marginBetweenBordersInMenuHeader * 2);
+
+    // Card container with explicit width
+    ImGuiMCP::BeginChild(ImGuiMCP::GetID(card.label), ImGuiMCP::ImVec2(cardWidth, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     float startY = ImGuiMCP::GetCursorPosY();
     float startX = ImGuiMCP::GetCursorPosX();
@@ -1289,8 +1374,11 @@ static void DrawScoreCard(const ScoreCardData& card) {
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(card.iconColor));
     ImGuiMCP::Text("%s", card.icon);
     ImGuiMCP::PopStyleColor();
+
+    // Same fixed icon-column alignment as DrawSettingCard
     ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" %s", card.label);
+    ImGuiMCP::SetCursorPosX(startX + k_iconColumnWidth + k_spaceAfterIcon);
+    ImGuiMCP::Text("%s", card.label);
 
     float currentX = ImGuiMCP::GetCursorPosX();
 
@@ -1304,36 +1392,34 @@ static void DrawScoreCard(const ScoreCardData& card) {
     ImGuiMCP::ImVec2 scoreTextSize;
     ImGuiMCP::CalcTextSize(&scoreTextSize, scoreText.c_str(), nullptr, false, -1.0f);
 
-    // Reset button width (if visible)
-    float resetWidth = 0.0f;
-
-    if (hasChanges) {
-
-        ImGuiMCP::ImVec2 resetTextSize;
-        ImGuiMCP::CalcTextSize(&resetTextSize, resetIcon.c_str(), nullptr, false, -1.0f);
-        resetWidth = resetTextSize.x + 4.0f;
-
-    }
-
     float margin = 10.0f;
     float rightEdge = startX + availWidth - margin;
 
-    float scoreStartX = rightEdge - scoreTextSize.x;
-
-    float spacing = 12.0f;
-    float resetStartX = scoreStartX - resetWidth - spacing;
-
-    // Ensure we don't overlap the label
+    // Score position is FIXED — it never depends on the reset button.
+    const float scoreStartX = rightEdge - scoreTextSize.x;
     float minX = currentX + 10.0f;
 
-    if (hasChanges && resetStartX < minX) {
+    float resetStartX = scoreStartX; // unused when there's no reset button
 
-        resetStartX = minX;
-        scoreStartX = resetStartX + resetWidth + spacing;
+    if (hasChanges) {
 
-        if (scoreStartX + scoreTextSize.x > rightEdge) {
+        // Real button width, computed once, up front (matches DrawSettingCard).
+        ImGuiMCP::ImGuiStyle* style = ImGuiMCP::GetStyle();
+        ImGuiMCP::ImVec2 resetIconSize;
+        ImGuiMCP::CalcTextSize(&resetIconSize, resetIcon.c_str(), nullptr, false, -1.0f);
+        float resetButtonWidth = resetIconSize.x + style->FramePadding.x * 2.0f;
 
-            scoreStartX = rightEdge - scoreTextSize.x;
+        // Compensate for the button's own FramePadding so the visible gap
+        // matches k_spaceAfterIcon, same as the icon-to-label gap.
+        float visualGap = std::max(0.0f, k_spaceAfterIcon - style->FramePadding.x);
+
+        resetStartX = scoreStartX - resetButtonWidth - visualGap;
+
+        // Only the button gets clamped if the row is too tight —
+        // the score text never moves.
+        if (resetStartX < minX) {
+
+            resetStartX = minX;
 
         }
 
@@ -1543,6 +1629,243 @@ static void DrawCritterScoreCards() {
         DrawScoreCard(card);
 
     }
+
+}
+
+// =====================================================================================================================
+//  Draw a standardized multi-checkbox card (several related toggles sharing one reset button)
+// =====================================================================================================================
+
+// A single checkbox row, with optional nested children shown only while it's enabled
+struct CheckboxItem {
+
+    const char* icon;
+    uint32_t iconColor;
+    bool* value;
+    bool defaultValue;
+    const char* label;
+    std::vector<std::string> tooltipLines;   // description shown in the tooltip
+    std::function<void()> onChange;          // optional callback when toggled
+    std::vector<CheckboxItem> children;      // drawn indented, only while *value is true
+
+};
+
+// Recursively check if any item (or nested child) differs from its default
+static bool HasCheckboxItemsChanged(const std::vector<CheckboxItem>& items) {
+
+    for (const auto& item : items) {
+
+        if (*item.value != item.defaultValue) {
+
+            return true;
+
+        }
+
+        if (HasCheckboxItemsChanged(item.children)) {
+
+            return true;
+
+        }
+
+    }
+
+    return false;
+
+}
+
+// Recursively reset every item (and nested children) to its default
+static void ResetCheckboxItems(std::vector<CheckboxItem>& items) {
+
+    for (auto& item : items) {
+
+        *item.value = item.defaultValue;
+
+        if (item.onChange) {
+
+            item.onChange();
+
+        }
+
+        ResetCheckboxItems(item.children);
+
+    }
+
+}
+
+// Draw a single checkbox row (icon, toggle, label, tooltip), then its children if enabled
+static void DrawCheckboxItem(const CheckboxItem& item, const std::string& idSuffix) {
+
+    // Capture the row's own left edge BEFORE drawing the icon, so the checkbox
+    // (and label after it) can be placed at fixed offsets regardless of how
+    // wide this particular icon glyph is. This also naturally accounts for
+    // Indent()/Unindent() on nested children, since GetCursorPosX() already
+    // reflects the current indent level.
+    float rowStartX = ImGuiMCP::GetCursorPosX();
+
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(item.iconColor));
+    ImGuiMCP::Text("%s", item.icon);
+    ImGuiMCP::PopStyleColor();
+
+    ImGuiMCP::SameLine();
+    ImGuiMCP::SetCursorPosX(rowStartX + k_iconColumnWidth + k_spaceAfterIcon);
+
+    std::string checkboxId = std::format("##checkbox_{}", idSuffix);
+
+    if (ImGuiMCP::Checkbox(checkboxId.c_str(), item.value)) {
+
+        IniParser::Save();
+
+        if (item.onChange) {
+
+            item.onChange();
+
+        }
+
+    }
+
+    // Checkbox width is fixed (ImGui's own frame size), so the label's offset
+    // from here is already consistent — no column needed for this part.
+    ImGuiMCP::SameLine();
+    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 4.0f);
+    ImGuiMCP::Text("%s", item.label);
+
+    if (!item.tooltipLines.empty() && ImGuiMCP::IsItemHovered()) {
+
+        ImGuiMCP::BeginTooltip();
+
+        for (const auto& line : item.tooltipLines) {
+
+            ImGuiMCP::Text("%s", line.c_str());
+
+        }
+
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::Text("Default: %s", item.defaultValue ? "Enabled" : "Disabled");
+        ImGuiMCP::PopStyleColor();
+        ImGuiMCP::EndTooltip();
+
+    }
+
+    if (!item.children.empty() && *item.value) {
+
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
+        ImGuiMCP::Indent(40.0f);
+
+        for (size_t i = 0; i < item.children.size(); ++i) {
+
+            DrawCheckboxItem(item.children[i], idSuffix + "_" + std::to_string(i));
+
+        }
+
+        ImGuiMCP::Unindent(40.0f);
+
+    }
+
+}
+
+// Draw the standardized multi-checkbox card
+static void DrawMultiCheckboxCard(const std::string& cardId, const std::string& title, const char* icon, std::vector<CheckboxItem> items) {
+
+    ImGuiMCP::ImVec2 winSize;
+    ImGuiMCP::GetWindowSize(&winSize);
+    float cardWidth = winSize.x - (k_marginBetweenBordersInMenuHeader * 2);
+
+    ImGuiMCP::SetCursorPosX(k_marginBetweenBordersInMenuHeader);
+    ImGuiMCP::BeginChild(cardId.c_str(), ImGuiMCP::ImVec2(cardWidth, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+
+    float startY = ImGuiMCP::GetCursorPosY();
+    float startX = ImGuiMCP::GetCursorPosX();
+
+    ImGuiMCP::ImVec2 avail;
+    ImGuiMCP::GetContentRegionAvail(&avail);
+    float availWidth = avail.x;
+
+    // Icon + title
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
+    ImGuiMCP::Text("%s", icon);
+    ImGuiMCP::PopStyleColor();
+
+    ImGuiMCP::SameLine();
+    ImGuiMCP::SetCursorPosX(startX + k_iconColumnWidth + k_spaceAfterIcon);
+    ImGuiMCP::Text("%s", title.c_str());
+
+    float currentX = ImGuiMCP::GetCursorPosX();
+
+    const bool hasChanges = HasCheckboxItemsChanged(items);
+
+    const float margin = 10.0f;
+    float rightEdge = startX + availWidth - margin;
+    float minX = currentX + 10.0f;
+
+    // Header row for this card has no fixed value text to its right, so the
+    // reset button is simply pinned to the right edge (same math as DrawUIHeaderWithReset's button).
+    if (hasChanges) {
+
+        ImGuiMCP::ImGuiStyle* style = ImGuiMCP::GetStyle();
+        ImGuiMCP::ImVec2 resetIconSize;
+        ImGuiMCP::CalcTextSize(&resetIconSize, resetIcon.c_str(), nullptr, false, -1.0f);
+        float resetButtonWidth = resetIconSize.x + style->FramePadding.x * 2.0f;
+
+        float resetStartX = rightEdge - resetButtonWidth;
+
+        if (resetStartX < minX) {
+
+            resetStartX = minX;
+
+        }
+
+        ImGuiMCP::SetCursorPosX(resetStartX);
+        ImGuiMCP::SetCursorPosY(startY);
+
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonHovered, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonActive, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_BorderShadow, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
+
+        if (ImGuiMCP::Button(std::format("{}##reset_{}", resetIcon, cardId).c_str())) {
+
+            ResetCheckboxItems(items);
+            IniParser::Save();
+
+        }
+
+        ImGuiMCP::PopStyleColor(6);
+
+        if (ImGuiMCP::IsItemHovered()) {
+
+            ImGuiMCP::BeginTooltip();
+            ImGuiMCP::Text("Reset this card's settings to default values.");
+            ImGuiMCP::EndTooltip();
+
+        }
+
+    }
+
+    float frameHeight = ImGuiMCP::GetFrameHeight();
+    ImGuiMCP::SetCursorPosY(startY + frameHeight + 4.0f);
+
+    ImGuiMCP::Separator();
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
+
+    for (size_t i = 0; i < items.size(); ++i) {
+
+        DrawCheckboxItem(items[i], cardId + "_" + std::to_string(i));
+
+        if (i + 1 < items.size()) {
+
+            ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
+
+        }
+
+    }
+
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
+
+    ImGuiMCP::EndChild();
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
 
 }
 
@@ -2167,7 +2490,7 @@ void UI::CameraPositionSettings() {
 
         .icon = zoomIcon.c_str(),
         .label = "Idle Camera Zoom",
-        .tooltipText = "Zoom (Y-axis offset) of the idle camera relative to the player.",
+        .tooltipText = "Zoom (Y-axis) offset of the idle camera relative to the player.",
         .hasSlider = true,
         .sliderValue = &g_IdleCamOffsetY,
         .sliderMin = -500.0f,
@@ -2499,243 +2822,70 @@ void UI::POISystemMainSettings() {
     //  Enabled POI Types Section
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##poiTypesCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    DrawMultiCheckboxCard("poiTypesCard", "Enabled POI Types", poiTypesIcon.c_str(), {
 
-    // =================================================================================================================
-    //  Header with icon, label, and reset button (fixed height, doesn't shift when button appears)
-    // =================================================================================================================
-
-    float poiTypesStartY = ImGuiMCP::GetCursorPosY();
-    float poiTypesStartX = ImGuiMCP::GetCursorPosX();
-
-    ImGuiMCP::ImVec2 poiTypesAvail;
-    ImGuiMCP::GetContentRegionAvail(&poiTypesAvail);
-    float poiTypesAvailWidth = poiTypesAvail.x;
-
-    // Icon + label
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s", poiTypesIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Enabled POI Types");
-
-    float poiTypesCurrentX = ImGuiMCP::GetCursorPosX();
-
-    // Check if any of these settings differ from their defaults
-    const bool poiTypesHasChanges = HasSettingsChanged(
-        SettingWithDefault(&g_actorPoiEnabled, k_defaultActorPoiEnabled),
-        SettingWithDefault(&g_preventFollowers, k_defaultPreventFollowers),
-        SettingWithDefault(&g_flyingCritterPoiEnabled, k_defaultFlyingCritterPoiEnabled),
-        SettingWithDefault(&g_fishPoiEnabled, k_defaultFishPoiEnabled)
-    );
-
-    // Reset button width (if visible) icon-only, same style as DrawSettingCard
-    float poiTypesResetWidth = 0.0f;
-
-    if (poiTypesHasChanges) {
-
-        ImGuiMCP::ImVec2 resetTextSize;
-        ImGuiMCP::CalcTextSize(&resetTextSize, resetIcon.c_str(), nullptr, false, -1.0f);
-        poiTypesResetWidth = resetTextSize.x + 4.0f;
-
-    }
-
-    float poiTypesMargin = 10.0f;
-    float poiTypesResetStartX = poiTypesStartX + poiTypesAvailWidth - poiTypesMargin - poiTypesResetWidth;
-
-    // Ensure we don't overlap the label
-    float poiTypesMinX = poiTypesCurrentX + 10.0f;
-    if (poiTypesHasChanges && poiTypesResetStartX < poiTypesMinX) {
-        poiTypesResetStartX = poiTypesMinX;
-    }
-
-    // Draw the reset button, pinned to the header row's Y so it never affects
-    // the row height (and therefore never affects the card's AutoResizeY height)
-    if (poiTypesHasChanges) {
-
-        std::string resetButtonText = std::format("{}##reset_poiTypes", resetIcon);
-
-        ImGuiMCP::SetCursorPosX(poiTypesResetStartX);
-        ImGuiMCP::SetCursorPosY(poiTypesStartY);
-
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Button, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonHovered, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ButtonActive, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_BorderShadow, ImGuiMCP::ImVec4{ 0.0f, 0.0f, 0.0f, 0.0f });
-
-        if (ImGuiMCP::Button(resetButtonText.c_str())) {
-
-            ResetSettings("Enabled POI Types",
-                SettingWithDefault(&g_actorPoiEnabled, k_defaultActorPoiEnabled),
-                SettingWithDefault(&g_preventFollowers, k_defaultPreventFollowers),
-                SettingWithDefault(&g_flyingCritterPoiEnabled, k_defaultFlyingCritterPoiEnabled),
-                SettingWithDefault(&g_fishPoiEnabled, k_defaultFishPoiEnabled)
-            );
-
+        {
+            personIcon.c_str(),
+            k_hexGreen,
+            &g_actorPoiEnabled,
+            k_defaultActorPoiEnabled,
+            "Actors (NPCs, creatures)",
+            {
+                "When enabled, the system will detect and track actors (NPCs, creatures)",
+                "as points of interest based on their current action state (combat, moving, etc)."
+            },
+            []() {
+                logger::debug("Actor POI toggle set to: {}", g_actorPoiEnabled);
+            },
+            {
+                {
+                    followerIcon.c_str(),
+                    k_hexGreen,
+                    &g_preventFollowers,
+                    k_defaultPreventFollowers,
+                    "Prevent Followers",
+                    {
+                        "When enabled, followers (NPCs that are in the follower faction)",
+                        "will NOT be targeted by the POI system."
+                    },
+                    []() {
+                        logger::debug("Prevent Followers toggle set to: {}", g_preventFollowers);
+                    },
+                    {}
+                }
+            }
+        },
+        {
+            flyingCritterIcon.c_str(),
+            k_hexCritterPink,
+            &g_flyingCritterPoiEnabled,
+            k_defaultFlyingCritterPoiEnabled,
+            "Flying Critters (butterflies, moths, dragonflies, etc)",
+            {
+                "When enabled, the system will detect and track flying critters",
+                "(butterflies, moths, dragonflies, fireflies, bees, etc)."
+            },
+            []() {
+                logger::debug("Flying Critter POI toggle set to: {}", g_flyingCritterPoiEnabled);
+            },
+            {}
+        },
+        {
+            fishCritterIcon.c_str(),
+            k_hexFishCyan,
+            &g_fishPoiEnabled,
+            k_defaultFishPoiEnabled,
+            "Fish Critters (perches, salmon, pond fish, etc)",
+            {
+                "When enabled, the system will detect and track fish critters",
+                "(perches, salmon, pond fish, and other aquatic critters)."
+            },
+            []() {
+                logger::debug("Fish Critter POI toggle set to: {}", g_fishPoiEnabled);
+            },
+            {}
         }
-
-        ImGuiMCP::PopStyleColor(6);
-
-        if (ImGuiMCP::IsItemHovered()) {
-
-            ImGuiMCP::BeginTooltip();
-            ImGuiMCP::Text("Reset to default value");
-            ImGuiMCP::EndTooltip();
-
-        }
-
-    }
-
-    // Always advance by the same fixed amount regardless of whether the button was drawn
-    float poiTypesFrameHeight = ImGuiMCP::GetFrameHeight();
-    ImGuiMCP::SetCursorPosY(poiTypesStartY + poiTypesFrameHeight + 4.0f);
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));  // Small padding after separator
-
-    // Actor POI toggle
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGreen));
-    ImGuiMCP::Text("%s", personIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 4.0f);
-
-    if (ImGuiMCP::Checkbox("##actorPoiToggle", &g_actorPoiEnabled)) {
-
-        IniParser::Save();
-        logger::debug("Actor POI toggle set to: {}", g_actorPoiEnabled);
-
-    }
-
-    ImGuiMCP::SameLine();
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 4.0f);
-    ImGuiMCP::Text("Actors (NPCs, creatures)");
-
-    if (ImGuiMCP::IsItemHovered()) {
-
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("When enabled, the system will detect and track actors (NPCs, creatures)");
-        ImGuiMCP::Text("as points of interest based on their current action state (combat, moving, etc).");
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default: %s", k_defaultActorPoiEnabled ? "Enabled" : "Disabled");
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    // Prevent Followers (nested under Actor POI)
-    if (g_actorPoiEnabled) {
-
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));  // Small spacing before nested
-        ImGuiMCP::Indent(40.0f);
-
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGreen));
-        ImGuiMCP::Text("%s", followerIcon.c_str());
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::SameLine();
-        ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 4.0f);
-
-        if (ImGuiMCP::Checkbox("##preventFollowers", &g_preventFollowers)) {
-
-            IniParser::Save();
-            logger::debug("Prevent Followers toggle set to: {}", g_preventFollowers);
-
-        }
-
-        ImGuiMCP::SameLine();
-        ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 4.0f);
-        ImGuiMCP::Text("Prevent Followers");
-
-        if (ImGuiMCP::IsItemHovered()) {
-
-            ImGuiMCP::BeginTooltip();
-            ImGuiMCP::Text("When enabled, followers (NPCs that are in the follower faction)");
-            ImGuiMCP::Text("will NOT be targeted by the POI system.");
-            ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-            ImGuiMCP::Text("Default: %s", k_defaultPreventFollowers ? "Enabled" : "Disabled");
-            ImGuiMCP::PopStyleColor();
-            ImGuiMCP::EndTooltip();
-
-        }
-
-        ImGuiMCP::Unindent(40.0f);
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));  // ← SPACING BETWEEN ITEMS
-
-    // Flying Critter POI toggle
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexCritterPink));
-    ImGuiMCP::Text("%s", flyingCritterIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 4.0f);
-
-    if (ImGuiMCP::Checkbox("##flyingCritterPoiToggle", &g_flyingCritterPoiEnabled)) {
-
-        IniParser::Save();
-        logger::debug("Flying Critter POI toggle set to: {}", g_flyingCritterPoiEnabled);
-
-    }
-
-    ImGuiMCP::SameLine();
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 4.0f);
-    ImGuiMCP::Text("Flying Critters (butterflies, moths, dragonflies, etc)");
-
-    if (ImGuiMCP::IsItemHovered()) {
-
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("When enabled, the system will detect and track flying critters");
-        ImGuiMCP::Text("(butterflies, moths, dragonflies, fireflies, bees, etc).");
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default: %s", k_defaultFlyingCritterPoiEnabled ? "Enabled" : "Disabled");
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));  // ← SPACING BETWEEN ITEMS
-
-    // Fish Critter POI toggle
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexFishCyan));
-    ImGuiMCP::Text("%s", fishCritterIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 4.0f);
-
-    if (ImGuiMCP::Checkbox("##fishPoiToggle", &g_fishPoiEnabled)) {
-
-        IniParser::Save();
-        logger::debug("Fish Critter POI toggle set to: {}", g_fishPoiEnabled);
-
-    }
-
-    ImGuiMCP::SameLine();
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 4.0f);
-    ImGuiMCP::Text("Fish Critters (perches, salmon, pond fish, etc)");
-
-    if (ImGuiMCP::IsItemHovered()) {
-
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("When enabled, the system will detect and track fish critters");
-        ImGuiMCP::Text("(perches, salmon, pond fish, and other aquatic critters).");
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default: %s", k_defaultFishPoiEnabled ? "Enabled" : "Disabled");
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));  // Bottom padding
-
-    ImGuiMCP::EndChild();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+    });
 
     // =====================================================================================================================
     //  Maximum Detection Radius Card
@@ -2762,9 +2912,6 @@ void UI::POISystemMainSettings() {
     };
 
     DrawSettingCard("poiRadiusCard", radiusCard);
-
-    ImGuiMCP::EndChild();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
 
     // =====================================================================================================================
     //  Minimum Lock Duration Card
@@ -2822,14 +2969,19 @@ void UI::POISystemExclusionListSettings() {
     //  Card 1: Add Actor to Exclusion List
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##addActorCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    ImGuiMCP::ImVec2 winSize;
+    ImGuiMCP::GetWindowSize(&winSize);
+    float cardWidth = winSize.x - (k_marginBetweenBordersInMenuHeader * 2);
+
+    ImGuiMCP::SetCursorPosX(k_marginBetweenBordersInMenuHeader);
+    ImGuiMCP::BeginChild("##addActorCard", ImGuiMCP::ImVec2(cardWidth, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
     ImGuiMCP::Text("%s", addIcon.c_str());
     ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Add Actor to Exclusion List");
+    ImGuiMCP::SameLine(0.0f, k_spaceAfterIcon);
+    ImGuiMCP::Text("Add Actor to Exclusion List");
 
     ImGuiMCP::Separator();
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
@@ -2906,8 +3058,7 @@ void UI::POISystemExclusionListSettings() {
 
         }
 
-    }
-    else if (isNotActor) {
+    } else if (isNotActor) {
 
         // Selected object is not an actor
         ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexRed));
@@ -3017,14 +3168,15 @@ void UI::POISystemExclusionListSettings() {
     //  Card 2: Excluded Actors List
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##excludedListCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    ImGuiMCP::SetCursorPosX(k_marginBetweenBordersInMenuHeader);
+    ImGuiMCP::BeginChild("##excludedListCard", ImGuiMCP::ImVec2(cardWidth, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
 
     // Header with icon and count
     ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGreen));
     ImGuiMCP::Text("%s", personIcon.c_str());
     ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Excluded Actors (%zu)", g_actorExclusionList.size());
+    ImGuiMCP::SameLine(0.0f, k_spaceAfterIcon);
+    ImGuiMCP::Text("Excluded Actors (%zu)", g_actorExclusionList.size());
 
     ImGuiMCP::Separator();
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
@@ -3053,13 +3205,14 @@ void UI::POISystemExclusionListSettings() {
     std::vector<ActorExclusionEntry> sortedList = g_actorExclusionList;
 
     std::sort(sortedList.begin(), sortedList.end(), [](const ActorExclusionEntry& a, const ActorExclusionEntry& b) {
+
         std::string aName = GetActorNameFromFormID(a.formID);
         std::string bName = GetActorNameFromFormID(b.formID);
         std::transform(aName.begin(), aName.end(), aName.begin(), ::tolower);
         std::transform(bName.begin(), bName.end(), bName.begin(), ::tolower);
         return aName < bName;
-        }
-    );
+
+    });
 
     // Find the selected actor in the sorted list
     size_t selectedIndex = SIZE_MAX;
@@ -3404,75 +3557,49 @@ void UI::DebugSettings() {
     //  Logging Level Card
     // =====================================================================================================================
 
-    ImGuiMCP::BeginChild("##loggingCard", ImGuiMCP::ImVec2(0.0f, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
+    CardContent loggingCard = {
 
-    // Header with icon and current value
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexGoldLight));
-    ImGuiMCP::Text("%s", loggingIcon.c_str());
-    ImGuiMCP::PopStyleColor();
-    ImGuiMCP::SameLine();
-    ImGuiMCP::Text(" Logging Level");
+        .icon = loggingIcon.c_str(),
+        .label = "Logging Level",
+        .tooltipText =
+            "Controls how much detail is written to the log file:\n"
+            "\n"
+            "Quiet - only critical errors that prevent the mod from working.\n"
+            "\n"
+            "Warnings - critical errors plus non-fatal issues worth noticing.\n"
+            "\n"
+            "Info - warnings plus general status messages.\n"
+            "\n"
+            "Debug - everything, including detailed internal values for troubleshooting.",
+        .hasSlider = false,
+        .sliderValue = nullptr,
+        .sliderMin = 0.0f,
+        .sliderMax = 0.0f,
+        .sliderFormat = "",
+        .sliderDefault = 0.0f,
+        .hasCheckbox = false,
+        .checkboxValue = nullptr,
+        .checkboxDefault = false,
+        .onSliderChange = nullptr,
+        .onCheckboxChange = nullptr,
+        .hasIntSlider = true,
+        .intSliderValue = &g_loggingLevel,
+        .intSliderMin = 0,
+        .intSliderMax = k_loggingLevelCount - 1,
+        .intSliderDefault = k_defaultLoggingLevel,
+        .intSliderNames = k_loggingLevelNames,
+        .onIntSliderChange = []() {
 
-    // Get the current value text
-    ImGuiMCP::SameLine();
-    ImGuiMCP::ImVec2 avail;
-    ImGuiMCP::GetContentRegionAvail(&avail);
-    std::string valueText = k_loggingLevelNames[g_loggingLevel];
-    ImGuiMCP::ImVec2 statusTextSize;
-    ImGuiMCP::CalcTextSize(&statusTextSize, valueText.c_str(), nullptr, false, -1.0f);
-    ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + avail.x - statusTextSize.x);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 1.0f, 0.85f, 0.4f, 1.0f });
-    ImGuiMCP::Text("%s", valueText.c_str());
-    ImGuiMCP::PopStyleColor();
+            auto lvl = LoggingLevelToSpdlog(g_loggingLevel);
+            spdlog::set_level(lvl);
+            spdlog::flush_on(lvl);
+            logger::info("Logging level manually set to '{}'", k_loggingLevelNames[g_loggingLevel]);
 
-    if (ImGuiMCP::IsItemHovered()) {
+        }
 
-        ImGuiMCP::BeginTooltip();
-        ImGuiMCP::Text("Current Logging Level: %s", k_loggingLevelNames[g_loggingLevel]);
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexBlue));
-        ImGuiMCP::Text("Default value: %s", k_loggingLevelNames[k_defaultLoggingLevel]);
-        ImGuiMCP::PopStyleColor();
-        ImGuiMCP::EndTooltip();
+    };
 
-    }
-
-    ImGuiMCP::Separator();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
-
-    // Slider
-    ImGuiMCP::SetNextItemWidth(-1.0f);
-
-    if (ImGuiMCP::SliderInt("##loggingLevel", &g_loggingLevel, 0, k_loggingLevelCount - 1, k_loggingLevelNames[g_loggingLevel])) {
-
-        g_loggingLevel = std::clamp(g_loggingLevel, 0, k_loggingLevelCount - 1);
-
-        auto lvl = LoggingLevelToSpdlog(g_loggingLevel);
-        spdlog::set_level(lvl);
-        spdlog::flush_on(lvl);
-        logger::info("Logging level manually set to '{}'", k_loggingLevelNames[g_loggingLevel]);
-        IniParser::Save();
-
-    }
-
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
-
-    // Helper text
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, ImGuiMCP::ImVec4{ 0.6f, 0.6f, 0.7f, 1.0f });
-    ImGuiMCP::Text(
-        "Controls how much detail is written to the log file:\n"
-        "\n"
-        "Quiet - only critical errors that prevent the mod from working.\n"
-        "\n"
-        "Warnings - critical errors plus non-fatal issues worth noticing.\n"
-        "\n"
-        "Info - warnings plus general status messages.\n"
-        "\n"
-        "Debug - everything, including detailed internal values for troubleshooting."
-    );
-    ImGuiMCP::PopStyleColor();
-
-    ImGuiMCP::EndChild();
+    DrawSettingCard("loggingCard", loggingCard);
 
     // Pop styling
     ImGuiMCP::PopStyleColor(2);
