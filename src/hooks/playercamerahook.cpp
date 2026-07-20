@@ -714,7 +714,7 @@ namespace Hooks {
                         modelStr.find("salmon") != std::string::npos ||
                         modelStr.find("perch") != std::string::npos) {
 
-                        return UI::g_fishPoiEnabled;
+                        return UI::g_fishCritterPoiEnabled;
 
                     }
 
@@ -810,7 +810,7 @@ namespace Hooks {
                 //       mod doesn't follow the EditorID convention.
                 // ============================================================================================================
 
-                if (!UI::g_flyingCritterPoiEnabled && !UI::g_fishPoiEnabled) {
+                if (!UI::g_flyingCritterPoiEnabled && !UI::g_fishCritterPoiEnabled) {
 
                     return RE::BSContainer::ForEachResult::kContinue;
 
@@ -951,7 +951,7 @@ namespace Hooks {
                                 modelStr.find("salmon") != std::string::npos ||
                                 modelStr.find("perch") != std::string::npos) {
 
-                                if (!UI::g_fishPoiEnabled) {
+                                if (!UI::g_fishCritterPoiEnabled) {
 
                                     logger::debug("{} rejected: fish POIs disabled", ref->GetName());
                                     return RE::BSContainer::ForEachResult::kContinue;
@@ -978,11 +978,11 @@ namespace Hooks {
 
                                 // It's a pond fish
                                 logger::debug("{} accepted as fish critter", ref->GetName());
-                                score = UI::g_pondFishScore;
+                                score = UI::g_fishCritterScore;
 
-                                if (UI::g_pondFishProximityEnabled) {
+                                if (UI::g_fishCritterProximityEnabled) {
 
-                                    score += proximityFactor * UI::g_pondFishProximityFactor;
+                                    score += proximityFactor * UI::g_fishCritterProximityFactor;
 
                                 }
 

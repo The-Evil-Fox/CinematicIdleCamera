@@ -138,10 +138,10 @@ void IniParser::Load() {
             UI::g_flyingCritterPoiEnabled = (value == "1" || value == "true");
             logger::debug("Loaded flyingCritterPoiEnabled: {}", UI::g_flyingCritterPoiEnabled);
 
-        } else if (key == "fishPoiEnabled") {
+        } else if (key == "fishCritterPoiEnabled") {
 
-            UI::g_fishPoiEnabled = (value == "1" || value == "true");
-            logger::debug("Loaded fishPoiEnabled: {}", UI::g_fishPoiEnabled);
+            UI::g_fishCritterPoiEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded fishCritterPoiEnabled: {}", UI::g_fishCritterPoiEnabled);
 
         } else if (key == "poiDetectionRadius") {
 
@@ -260,20 +260,20 @@ void IniParser::Load() {
             UI::g_flyingCritterProximityFactor = std::stof(value);
             logger::debug("Loaded actorFlyingCritterProximityFactor: {}", UI::g_flyingCritterProximityFactor);
 
-        } else if (key == "pondFishScore") {
+        } else if (key == "fishCritterScore") {
 
-            UI::g_pondFishScore = std::stof(value);
-            logger::debug("Loaded pondFishScore: {}", UI::g_pondFishScore);
+            UI::g_fishCritterScore = std::stof(value);
+            logger::debug("Loaded fishCritterScore: {}", UI::g_fishCritterScore);
 
-        } else if (key == "pondFishProximityEnabled") {
+        } else if (key == "fishCritterProximityEnabled") {
 
-            UI::g_pondFishProximityEnabled = (value == "1" || value == "true");
-            logger::debug("Loaded pondFishProximityEnabled: {}", UI::g_pondFishProximityEnabled);
+            UI::g_fishCritterProximityEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded pondFishProximityEnabled: {}", UI::g_fishCritterProximityEnabled);
 
-        } else if (key == "pondFishProximityFactor") {
+        } else if (key == "fishCritterProximityFactor") {
 
-            UI::g_pondFishProximityFactor = std::stof(value);
-            logger::debug("Loaded pondFishProximityFactor: {}", UI::g_pondFishProximityFactor);
+            UI::g_fishCritterProximityFactor = std::stof(value);
+            logger::debug("Loaded fishCritterProximityFactor: {}", UI::g_fishCritterProximityFactor);
 
         } else if (key == "debugRaycasts") {
 
@@ -313,7 +313,7 @@ void IniParser::Save() {
 
     }
 
-    file << ";=====================CAMERA SETTINGS============================\n";
+    file << ";=================================CAMERA MAIN SETTINGS=================================\n";
     file << "\n";
     file << "; Camera Idle Timer (seconds without any player input before vanity mode activates)\n";
     file << "fIdleTimer=" << UI::g_idleTimer << "\n";
@@ -327,6 +327,8 @@ void IniParser::Save() {
     file << "; Black Bars Sound Effects Enabled (0 = off, 1 = on)\n";
     file << "blackBarsSoundEnabled=" << (UI::g_blackBarsSoundEnabled ? "1" : "0") << "\n";
     file << "\n";
+    file << ";===============================CAMERA POSITION SETTINGS===============================\n";
+    file << "\n";
     file << "; Idle Camera Offsets (Skyrim units, ~70 units per meter)\n";
     file << "idleCameraOffsetX=" << UI::g_IdleCamOffsetX << "\n";
     file << "idleCameraOffsetY=" << UI::g_IdleCamOffsetY << "\n";
@@ -334,6 +336,8 @@ void IniParser::Save() {
     file << "\n";
     file << "; Camera Blend Duration (seconds for a POI-switch / entry / exit blend)\n";
     file << "blendDuration=" << UI::g_blendDuration << "\n";
+    file << "\n";
+    file << ";=============================CAMERA ZOOM/DEZOOM SETTINGS==============================\n";
     file << "\n";
     file << "; Dynamic Dezoom: pulls the camera back when a POI is both close to the player and well above them, since this system only rotates yaw and can't tilt to keep it in frame.\n";
     file << "\n";
@@ -349,12 +353,12 @@ void IniParser::Save() {
     file << "; How quickly the dezoom fades in and out as a POI enters or leaves the trigger zone.\n";
     file << "dezoomBlendSpeed=" << UI::g_dezoomBlendSpeed << "\n";
     file << "\n";
-    file << ";=====================HEAD TRACKING SETTINGS=====================\n";
+    file << ";===============================HEAD TRACKING SETTINGS=================================\n";
     file << "\n";
     file << "; Head-Track Fade Speed (units/sec)\n";
     file << "headTrackFadeSpeed=" << UI::g_headTrackFadeSpeed << "\n";
     file << "\n";
-    file << ";=====================POI SYSTEM SETTINGS========================\n";
+    file << ";===============================POI SYSTEM SETTINGS====================================\n";
     file << "\n";
     file << "; POI System master toggle (0 = off, 1 = on)\n";
     file << "poiSystemEnabled=" << (UI::g_poiSystemEnabled ? "1" : "0") << "\n";
@@ -362,7 +366,7 @@ void IniParser::Save() {
     file << "; POI type toggles (0 = off, 1 = on)\n";
     file << "actorPoiEnabled=" << (UI::g_actorPoiEnabled ? "1" : "0") << "\n";
     file << "flyingCritterPoiEnabled=" << (UI::g_flyingCritterPoiEnabled ? "1" : "0") << "\n";
-    file << "fishPoiEnabled=" << (UI::g_fishPoiEnabled ? "1" : "0") << "\n";
+    file << "fishCritterPoiEnabled=" << (UI::g_fishCritterPoiEnabled ? "1" : "0") << "\n";
     file << "\n";
     file << "; Prevent Followers from being targeted (0 = off, 1 = on)\n";
     file << "preventFollowers=" << (UI::g_preventFollowers ? "1" : "0") << "\n";
@@ -373,9 +377,11 @@ void IniParser::Save() {
     file << "; POI Lock Duration (seconds the camera must stay on a POI before it can switch)\n";
     file << "lockDuration=" << UI::g_lockDuration << "\n";
     file << "\n";
-    file << "; Exclusion list (by Base Form ID)\n";
-    file << "; Format: BaseFormID\n";
+    file << ";==================================EXCLUSION LIST======================================\n";
+    file << "\n";
     file << "; Add actors here to prevent them from being detected as POIs\n";
+    file << "; Format: BaseFormID\n";
+    file << "; (1 actor = 1 line)\n";
 
     if (UI::g_actorExclusionList.empty()) {
 
@@ -390,7 +396,8 @@ void IniParser::Save() {
         }
 
     }
-
+    file << "\n";
+    file << ";===============================ACTOR SCORE SETTINGS===================================\n";
     file << "\n";
     file << "; Base score awarded to an actor per action state, plus an optional proximity bonus\n";
     file << "; (added on top of the initial score, and then scaled by how close the POI is relative to the player)\n";
@@ -416,19 +423,19 @@ void IniParser::Save() {
     file << "actorIdleProximityEnabled=" << (UI::g_actorIdleProximityEnabled ? "1" : "0") << "\n";
     file << "actorIdleProximityFactor=" << UI::g_actorIdleProximityFactor << "\n";
     file << "\n";
-    file << "; Flying critters (butterflies, moths, dragonflies, etc) use their own score, since they\n";
-    file << "; aren't actors and don't have an action state.\n";
+    file << ";===============================CRITTER SCORE SETTINGS=================================\n";
+    file << "\n";
+    file << "; Flying critters (butterflies, moths, dragonflies, etc)\n";
     file << "flyingCritterScore=" << UI::g_flyingCritterScore << "\n";
     file << "flyingCritterProximityEnabled=" << (UI::g_flyingCritterProximityEnabled ? "1" : "0") << "\n";
     file << "flyingCritterProximityFactor=" << UI::g_flyingCritterProximityFactor << "\n";
     file << "\n";
-    file << "; fishs (perches, salmon, etc) use their own score, since they\n";
-    file << "; aren't actors either and don't have an action state.\n";
-    file << "pondFishScore=" << UI::g_pondFishScore << "\n";
-    file << "pondFishProximityEnabled=" << (UI::g_pondFishProximityEnabled ? "1" : "0") << "\n";
-    file << "pondFishProximityFactor=" << UI::g_pondFishProximityFactor << "\n";
+    file << "; Fish critters (perches, salmon, etc)\n";
+    file << "fishCritterScore=" << UI::g_fishCritterScore << "\n";
+    file << "fishCritterProximityEnabled=" << (UI::g_fishCritterProximityEnabled ? "1" : "0") << "\n";
+    file << "fishCritterProximityFactor=" << UI::g_fishCritterProximityFactor << "\n";
     file << "\n";
-    file << ";=====================DEBUG SETTINGS=============================\n";
+    file << ";==================================DEBUG SETTINGS======================================\n";
     file << "\n";
     file << "; Debug Raycast Visualization (0 = off, 1 = on)\n";
     file << "debugRaycasts=" << (UI::g_debugRaycasts ? "1" : "0") << "\n";

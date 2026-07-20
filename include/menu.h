@@ -50,11 +50,11 @@ namespace UI {
     extern bool         g_actorPoiEnabled;
     extern bool         g_preventFollowers;
     extern bool         g_flyingCritterPoiEnabled;
-    extern bool         g_fishPoiEnabled;
+    extern bool         g_fishCritterPoiEnabled;
     extern float        g_poiDetectionRadius;
     extern float        g_lockDuration;
 
-    // Actors
+    // Actors scores
 
     extern float        g_dragonScore;
     extern bool         g_dragonProximityEnabled;
@@ -76,17 +76,17 @@ namespace UI {
     extern bool         g_actorIdleProximityEnabled;
     extern float        g_actorIdleProximityFactor;
 
-    // Flying critters
+    // Flying critters scores
 
     extern float        g_flyingCritterScore;
     extern bool         g_flyingCritterProximityEnabled;
     extern float        g_flyingCritterProximityFactor;
 
-    // Fish critters
+    // Fish critters scores
 
-    extern float        g_pondFishScore;
-    extern bool         g_pondFishProximityEnabled;
-    extern float        g_pondFishProximityFactor;
+    extern float        g_fishCritterScore;
+    extern bool         g_fishCritterProximityEnabled;
+    extern float        g_fishCritterProximityFactor;
 
     // Exclusion list
     struct ActorExclusionEntry {

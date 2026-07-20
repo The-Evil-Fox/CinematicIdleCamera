@@ -67,7 +67,7 @@ static constexpr bool               k_defaultPoiSystemEnabled                   
 static constexpr bool               k_defaultActorPoiEnabled                                    = true;
 static constexpr bool               k_defaultPreventFollowers                                   = true;
 static constexpr bool               k_defaultFlyingCritterPoiEnabled                            = true;
-static constexpr bool               k_defaultFishPoiEnabled                                     = true;
+static constexpr bool               k_defaultFishCritterPoiEnabled                              = true;
 static constexpr float              k_defaultPoiDetectionRadius                                 = 1050.0f;
 static constexpr float              k_defaultLockDuration                                       = 5.0f;
 
@@ -101,9 +101,9 @@ static constexpr float              k_defaultFlyingCritterProximityFactor       
 
 // Fish critters score system
 
-static constexpr float              k_defaultFishScore                                          = 300.0f;
-static constexpr bool               k_defaultFishProximityEnabled                               = true;
-static constexpr float              k_defaultFishProximityFactor                                = 150.0f;
+static constexpr float              k_defaultFishCritterScore                                          = 300.0f;
+static constexpr bool               k_defaultFishCritterProximityEnabled                               = true;
+static constexpr float              k_defaultFishCritterProximityFactor                                = 150.0f;
 
 // =====================================================================================================================
 //  Debug
@@ -157,11 +157,11 @@ bool                                UI::g_poiSystemEnabled                      
 bool                                UI::g_actorPoiEnabled                                       = k_defaultActorPoiEnabled;
 bool                                UI::g_preventFollowers                                      = k_defaultPreventFollowers;
 bool                                UI::g_flyingCritterPoiEnabled                               = k_defaultFlyingCritterPoiEnabled;
-bool                                UI::g_fishPoiEnabled                                        = k_defaultFishPoiEnabled;
+bool                                UI::g_fishCritterPoiEnabled                                 = k_defaultFishCritterPoiEnabled;
 float                               UI::g_poiDetectionRadius                                    = k_defaultPoiDetectionRadius;
 float                               UI::g_lockDuration                                          = k_defaultLockDuration;
 
-// Actors
+// Actors scores
 
 float                               UI::g_dragonScore                                           = k_defaultDragonScore;
 bool                                UI::g_dragonProximityEnabled                                = k_defaultDragonProximityEnabled;
@@ -183,17 +183,17 @@ float                               UI::g_actorIdleScore                        
 bool                                UI::g_actorIdleProximityEnabled                             = k_defaultActorIdleProximityEnabled;
 float                               UI::g_actorIdleProximityFactor                              = k_defaultActorIdleProximityFactor;
 
-// Flying critters
+// Flying critters scores
 
 float                               UI::g_flyingCritterScore                                    = k_defaultFlyingCritterScore;
 bool                                UI::g_flyingCritterProximityEnabled                         = k_defaultFlyingCritterProximityEnabled;
 float                               UI::g_flyingCritterProximityFactor                          = k_defaultFlyingCritterProximityFactor;
 
-// Fish critters
+// Fish critters scores
 
-float                               UI::g_pondFishScore                                         = k_defaultFishScore;
-bool                                UI::g_pondFishProximityEnabled                              = k_defaultFishProximityEnabled;
-float                               UI::g_pondFishProximityFactor                               = k_defaultFishProximityFactor;
+float                               UI::g_fishCritterScore                                      = k_defaultFishCritterScore;
+bool                                UI::g_fishCritterProximityEnabled                           = k_defaultFishCritterProximityEnabled;
+float                               UI::g_fishCritterProximityFactor                            = k_defaultFishCritterProximityFactor;
 
 // Exclusion list
 
@@ -1310,14 +1310,14 @@ static const std::vector<ScoreCardData> critterCards = {
     {
 
         fishCritterIcon.c_str(),
-        "Pond Fish",
+        "Fish Critter",
         k_hexFishCyan,
-        &UI::g_pondFishScore,
-        k_defaultFishScore,
-        &UI::g_pondFishProximityEnabled,
-        k_defaultFishProximityEnabled,
-        &UI::g_pondFishProximityFactor,
-        k_defaultFishProximityFactor,
+        &UI::g_fishCritterScore,
+        k_defaultFishCritterScore,
+        &UI::g_fishCritterProximityEnabled,
+        k_defaultFishCritterProximityEnabled,
+        &UI::g_fishCritterProximityFactor,
+        k_defaultFishCritterProximityFactor,
         "Base score awarded to a fish critter (perches, salmon, pond fish, and other aquatic critters).",
         "Bonus increases as critter gets closer."
 
@@ -2220,9 +2220,8 @@ void UI::DrawCinematicBars() {
 
     const bool inVanity = playerCamera->currentState->id == RE::CameraState::kAutoVanity;
 
-    static bool s_wasInVanity = false;              // Track previous vanity state
-    static bool s_soundPlayedForAppear = false;     // Prevent duplicate enter sounds
-    static bool s_soundPlayedForDisappear = false;  // Prevent duplicate exit sounds
+    // Track previous vanity state
+    static bool s_wasInVanity = false;
     static float s_progress = 0.0f;
 
     auto* io = ImGuiMCP::GetIO();
@@ -2766,7 +2765,7 @@ void UI::POISystemMainSettings() {
         SettingWithDefault(&g_actorPoiEnabled, k_defaultActorPoiEnabled),
         SettingWithDefault(&g_preventFollowers, k_defaultPreventFollowers),
         SettingWithDefault(&g_flyingCritterPoiEnabled, k_defaultFlyingCritterPoiEnabled),
-        SettingWithDefault(&g_fishPoiEnabled, k_defaultFishPoiEnabled),
+        SettingWithDefault(&g_fishCritterPoiEnabled, k_defaultFishCritterPoiEnabled),
         SettingWithDefault(&g_poiDetectionRadius, k_defaultPoiDetectionRadius),
         SettingWithDefault(&g_lockDuration, k_defaultLockDuration)
     );
@@ -2873,15 +2872,15 @@ void UI::POISystemMainSettings() {
         {
             fishCritterIcon.c_str(),
             k_hexFishCyan,
-            &g_fishPoiEnabled,
-            k_defaultFishPoiEnabled,
+            &g_fishCritterPoiEnabled,
+            k_defaultFishCritterPoiEnabled,
             "Fish Critters (perches, salmon, pond fish, etc)",
             {
                 "When enabled, the system will detect and track fish critters",
                 "(perches, salmon, pond fish, and other aquatic critters)."
             },
             []() {
-                logger::debug("Fish Critter POI toggle set to: {}", g_fishPoiEnabled);
+                logger::debug("Fish Critter POI toggle set to: {}", g_fishCritterPoiEnabled);
             },
             {}
         }
@@ -3479,9 +3478,9 @@ void UI::POISystemCritterScores() {
         SettingWithDefault(&g_flyingCritterScore, k_defaultFlyingCritterScore),
         SettingWithDefault(&g_flyingCritterProximityEnabled, k_defaultFlyingCritterProximityEnabled),
         SettingWithDefault(&g_flyingCritterProximityFactor, k_defaultFlyingCritterProximityFactor),
-        SettingWithDefault(&g_pondFishScore, k_defaultFishScore),
-        SettingWithDefault(&g_pondFishProximityEnabled, k_defaultFishProximityEnabled),
-        SettingWithDefault(&g_pondFishProximityFactor, k_defaultFishProximityFactor)
+        SettingWithDefault(&g_fishCritterScore, k_defaultFishCritterScore),
+        SettingWithDefault(&g_fishCritterProximityEnabled, k_defaultFishCritterProximityEnabled),
+        SettingWithDefault(&g_fishCritterProximityFactor, k_defaultFishCritterProximityFactor)
     );
 
     ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildRounding, 8.0f);
