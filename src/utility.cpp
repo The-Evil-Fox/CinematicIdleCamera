@@ -72,11 +72,6 @@ void IniParser::Load() {
             UI::g_blackBarsSpeed = std::stof(value);
             logger::debug("Loaded black bars slide speed: {}", UI::g_blackBarsSpeed);
 
-        } else if (key == "blendDuration") {
-
-            UI::g_blendDuration = std::stof(value);
-            logger::debug("Loaded blendDuration: {}", UI::g_blendDuration);
-
         } else if (key == "idleCameraOffsetX") {
 
             UI::g_IdleCamOffsetX = std::stof(value);
@@ -91,6 +86,16 @@ void IniParser::Load() {
 
             UI::g_IdleCamOffsetZ = std::stof(value);
             logger::debug("Loaded idleCameraOffsetZ: {}", UI::g_IdleCamOffsetZ);
+
+        } else if (key == "vanityCameraCollisionEnabled") {
+
+            UI::g_vanityCameraCollisionEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded vanityCameraCollisionEnabled: {}", UI::g_vanityCameraCollisionEnabled);
+
+        } else if (key == "blendDuration") {
+
+            UI::g_blendDuration = std::stof(value);
+            logger::debug("Loaded blendDuration: {}", UI::g_blendDuration);
 
         } else if (key == "dezoomTriggerRadius") {
 
@@ -327,6 +332,7 @@ void IniParser::Save() {
     file << "; Black Bars Sound Effects Enabled (0 = off, 1 = on)\n";
     file << "blackBarsSoundEnabled=" << (UI::g_blackBarsSoundEnabled ? "1" : "0") << "\n";
     file << "\n";
+    file << "\n";
     file << ";===============================CAMERA POSITION SETTINGS===============================\n";
     file << "\n";
     file << "; Idle Camera Offsets (Skyrim units, ~70 units per meter)\n";
@@ -334,8 +340,12 @@ void IniParser::Save() {
     file << "idleCameraOffsetY=" << UI::g_IdleCamOffsetY << "\n";
     file << "idleCameraOffsetZ=" << UI::g_IdleCamOffsetZ << "\n";
     file << "\n";
+    file << "; Vanity Camera World Collision (0 = off, 1 = on)\n";
+    file << "vanityCameraCollisionEnabled=" << (UI::g_vanityCameraCollisionEnabled ? "1" : "0") << "\n";
+    file << "\n";
     file << "; Camera Blend Duration (seconds for a POI-switch / entry / exit blend)\n";
     file << "blendDuration=" << UI::g_blendDuration << "\n";
+    file << "\n";
     file << "\n";
     file << ";=============================CAMERA ZOOM/DEZOOM SETTINGS==============================\n";
     file << "\n";
@@ -353,10 +363,12 @@ void IniParser::Save() {
     file << "; How quickly the dezoom fades in and out as a POI enters or leaves the trigger zone.\n";
     file << "dezoomBlendSpeed=" << UI::g_dezoomBlendSpeed << "\n";
     file << "\n";
+    file << "\n";
     file << ";===============================HEAD TRACKING SETTINGS=================================\n";
     file << "\n";
     file << "; Head-Track Fade Speed (units/sec)\n";
     file << "headTrackFadeSpeed=" << UI::g_headTrackFadeSpeed << "\n";
+    file << "\n";
     file << "\n";
     file << ";===============================POI SYSTEM SETTINGS====================================\n";
     file << "\n";
@@ -377,10 +389,12 @@ void IniParser::Save() {
     file << "; POI Lock Duration (seconds the camera must stay on a POI before it can switch)\n";
     file << "lockDuration=" << UI::g_lockDuration << "\n";
     file << "\n";
+    file << "\n";
     file << ";==================================EXCLUSION LIST======================================\n";
     file << "\n";
     file << "; Add actors here to prevent them from being detected as POIs\n";
-    file << "; Format: BaseFormID\n";
+    file << "; Format: exclusionList=BaseFormID\n";
+    file << "; Example: exclusionList=000132A5\n";
     file << "; (1 actor = 1 line)\n";
 
     if (UI::g_actorExclusionList.empty()) {
@@ -396,6 +410,7 @@ void IniParser::Save() {
         }
 
     }
+    file << "\n";
     file << "\n";
     file << ";===============================ACTOR SCORE SETTINGS===================================\n";
     file << "\n";
@@ -423,6 +438,7 @@ void IniParser::Save() {
     file << "actorIdleProximityEnabled=" << (UI::g_actorIdleProximityEnabled ? "1" : "0") << "\n";
     file << "actorIdleProximityFactor=" << UI::g_actorIdleProximityFactor << "\n";
     file << "\n";
+    file << "\n";
     file << ";===============================CRITTER SCORE SETTINGS=================================\n";
     file << "\n";
     file << "; Flying critters (butterflies, moths, dragonflies, etc)\n";
@@ -434,6 +450,7 @@ void IniParser::Save() {
     file << "fishCritterScore=" << UI::g_fishCritterScore << "\n";
     file << "fishCritterProximityEnabled=" << (UI::g_fishCritterProximityEnabled ? "1" : "0") << "\n";
     file << "fishCritterProximityFactor=" << UI::g_fishCritterProximityFactor << "\n";
+    file << "\n";
     file << "\n";
     file << ";==================================DEBUG SETTINGS======================================\n";
     file << "\n";

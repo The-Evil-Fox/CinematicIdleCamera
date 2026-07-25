@@ -4,7 +4,6 @@
 
 namespace UI {
 
-
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
     //  UI Settings
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -25,6 +24,7 @@ namespace UI {
     extern float        g_IdleCamOffsetX;
     extern float        g_IdleCamOffsetY;
     extern float        g_IdleCamOffsetZ;
+    extern bool         g_vanityCameraCollisionEnabled;
     extern float        g_blendDuration;
 
     // Zoom/Dezoom

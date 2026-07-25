@@ -1,4 +1,4 @@
-﻿#include "hooks/PlayerCameraHook.h"
+﻿#include "hooks/playercamerahook.h"
 #include "menu.h"
 #include <DrawDebug.hpp>
 
@@ -97,6 +97,7 @@ namespace Hooks {
 
     static const RE::NiColorA kBlue{ 0.0f, 0.4f, 1.0f, 1.0f };
     static const RE::NiColorA kGreen{ 0.0f, 1.0f, 0.0f, 1.0f };
+    static const RE::NiColorA kRed{ 1.0f, 0.0f, 0.0f, 1.0f };
 
     // ==================================================================================================================================================================================
     //  Line-of-sight raycasting
@@ -1385,6 +1386,119 @@ namespace Hooks {
     }
 
     // ==================================================================================================================================================================================
+    //  Disable collisions on the Vanity Camera
+    // ==================================================================================================================================================================================
+
+    static std::uint64_t                    s_originalCameraMask                = 0;
+    static bool                             s_maskCaptured                      = false;
+
+    void SetVanityCameraWorldCollisionEnabled(bool isEnabled) {
+
+        auto* filter = RE::bhkCollisionFilter::GetSingleton();
+
+        if (!filter) {
+
+            return;
+
+        }
+
+        constexpr std::uint32_t kCameraLayerIndex = 39; // COL_LAYER::kCamera = 39
+
+        auto& mask = filter->layerBitfields[kCameraLayerIndex];
+
+        if (!s_maskCaptured) {
+
+            s_originalCameraMask = mask;
+            s_maskCaptured = true;
+            logger::info("Captured original L_CAMERA collision mask = {:x}", s_originalCameraMask);
+
+        }
+
+        // Enable collision with ALL layers that have models
+        // Using the actual enum values from your COL_LAYER definition
+        constexpr std::uint64_t                 kStaticBit                  = (1ull << 1);          // kStatic = 1
+        constexpr std::uint64_t                 kAnimStaticBit              = (1ull << 2);          // kAnimStatic = 2
+        constexpr std::uint64_t                 kTransparentBit             = (1ull << 3);          // kTransparent = 3
+        constexpr std::uint64_t                 kClutterBit                 = (1ull << 4);          // kClutter = 4
+        constexpr std::uint64_t                 kWeaponBit                  = (1ull << 5);          // kWeapon = 5
+        constexpr std::uint64_t                 kProjectileBit              = (1ull << 6);          // kProjectile = 6
+        constexpr std::uint64_t                 kSpellBit                   = (1ull << 7);          // kSpell = 7
+        constexpr std::uint64_t                 kBipedBit                   = (1ull << 8);          // kBiped = 8
+        constexpr std::uint64_t                 kTreesBit                   = (1ull << 9);          // kTrees = 9
+        constexpr std::uint64_t                 kPropsBit                   = (1ull << 10);         // kProps = 10
+        constexpr std::uint64_t                 kTerrainBit                 = (1ull << 13);         // kTerrain = 13
+        constexpr std::uint64_t                 kGroundBit                  = (1ull << 17);         // kGround = 17
+        constexpr std::uint64_t                 kDebrisSmallBit             = (1ull << 19);         // kDebrisSmall = 19
+        constexpr std::uint64_t                 kDebrisLargeBit             = (1ull << 20);         // kDebrisLarge = 20
+        constexpr std::uint64_t                 kTransparentWallBit         = (1ull << 26);         // kTransparentWall = 26
+        constexpr std::uint64_t                 kInvisibleWallBit           = (1ull << 27);         // kInvisibleWall = 27
+        constexpr std::uint64_t                 kTransparentSmallAnimBit    = (1ull << 28);         // kTransparentSmallAnim = 28
+        constexpr std::uint64_t                 kClutterLargeBit            = (1ull << 29);         // kClutterLarge = 29
+        constexpr std::uint64_t                 kDeadBipBit                 = (1ull << 32);         // kDeadBip = 32
+        constexpr std::uint64_t                 kBipedNoCCBit               = (1ull << 33);         // kBipedNoCC = 33
+
+        // Combine all model layers
+        constexpr std::uint64_t kAllModelLayers =
+            kStaticBit |
+            kAnimStaticBit |
+            kTransparentBit |
+            kClutterBit |
+            kWeaponBit |
+            kProjectileBit |
+            kSpellBit |
+            kBipedBit |
+            kTreesBit |
+            kPropsBit |
+            kTerrainBit |
+            kGroundBit |
+            kDebrisSmallBit |
+            kDebrisLargeBit |
+            kTransparentWallBit |
+            kInvisibleWallBit |
+            kTransparentSmallAnimBit |
+            kClutterLargeBit |
+            kDeadBipBit |
+            kBipedNoCCBit;
+
+        if (isEnabled) {
+
+            // Add all model layers to the camera mask -> Vanity Camera collisions enabled
+            mask |= kAllModelLayers;
+            logger::debug("Added all model layers to camera collision mask");
+
+        } else {
+
+            // Remove all model layers from the camera mask -> Vanity Camera collisions disabled
+            mask &= ~kAllModelLayers;
+            logger::debug("Removed all model layers from camera collision mask");
+
+        }
+
+    }
+
+    void RestoreVanityCameraWorldCollisionMask() {
+
+        if (!s_maskCaptured) {
+
+            return;
+
+        }
+
+        auto* filter = RE::bhkCollisionFilter::GetSingleton();
+
+        if (!filter) {
+
+            return;
+
+        }
+
+        constexpr std::uint32_t kCameraLayerIndex = 39; // COL_LAYER::kCamera = 39
+        filter->layerBitfields[kCameraLayerIndex] = s_originalCameraMask;
+        logger::debug("Restored original camera collision mask = {:x}", s_originalCameraMask);
+
+    }
+
+    // ==================================================================================================================================================================================
     //  Vanity mode begins here
     // ==================================================================================================================================================================================
 
@@ -1427,6 +1541,8 @@ namespace Hooks {
             BeginBlend(capturedCameraYaw, baseRot);
 
         }
+
+        SetVanityCameraWorldCollisionEnabled(UI::g_vanityCameraCollisionEnabled);
 
         if (UI::g_debugRaycasts) {
 
@@ -1742,6 +1858,8 @@ namespace Hooks {
 
         logger::debug("AutoVanity EndState hook fired");
         _EndState(a_this);
+
+        RestoreVanityCameraWorldCollisionMask();
 
         // ===================================================================================
         //  Wipe all debug lines when vanity mode ends

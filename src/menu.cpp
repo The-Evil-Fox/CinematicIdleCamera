@@ -1,6 +1,6 @@
 #include "Menu.h"
 #include <format>
-#include "hooks/PlayerCameraHook.h"
+#include "hooks/playercameraHook.h"
 #include "utility.h"
 #include <Windows.h>
 #include <mmsystem.h>
@@ -42,6 +42,7 @@ static constexpr bool               k_defaultBlackBarsSoundEnabled              
 static constexpr float              k_defaultVanityCamOffsetX                                   = 75.0f;
 static constexpr float              k_defaultVanityCamOffsetY                                   = 130.0f;
 static constexpr float              k_defaultVanityCamOffsetZ                                   = 0.0f;
+static constexpr bool               k_defaultVanityCameraCollisionEnabled                       = true;
 static constexpr float              k_defaultBlendDuration                                      = 5.0f;
 
 // Zoom/Dezoom
@@ -101,9 +102,9 @@ static constexpr float              k_defaultFlyingCritterProximityFactor       
 
 // Fish critters score system
 
-static constexpr float              k_defaultFishCritterScore                                          = 300.0f;
-static constexpr bool               k_defaultFishCritterProximityEnabled                               = true;
-static constexpr float              k_defaultFishCritterProximityFactor                                = 150.0f;
+static constexpr float              k_defaultFishCritterScore                                   = 300.0f;
+static constexpr bool               k_defaultFishCritterProximityEnabled                        = true;
+static constexpr float              k_defaultFishCritterProximityFactor                         = 150.0f;
 
 // =====================================================================================================================
 //  Debug
@@ -132,6 +133,7 @@ bool                                UI::g_blackBarsSoundEnabled                 
 float                               UI::g_IdleCamOffsetX                                        = k_defaultVanityCamOffsetX;
 float                               UI::g_IdleCamOffsetY                                        = k_defaultVanityCamOffsetY;
 float                               UI::g_IdleCamOffsetZ                                        = k_defaultVanityCamOffsetZ;
+bool                                UI::g_vanityCameraCollisionEnabled                          = k_defaultVanityCameraCollisionEnabled;
 float                               UI::g_blendDuration                                         = k_defaultBlendDuration;
 
 // Zoom/Dezoom
@@ -280,79 +282,80 @@ static void ApplyIdleTimerToIniSettings(std::string settingName, float value) {
 //  Section Icons (Headers)
 // =====================================================================================================================
 
-auto cameraIcon = FontAwesome::UnicodeToUtf8(0xf03d);
-auto headTrackIcon = FontAwesome::UnicodeToUtf8(0xf06e);
-auto poiSystemIcon = FontAwesome::UnicodeToUtf8(0xf3c5);
-auto debugIcon = FontAwesome::UnicodeToUtf8(0xf7d9);
+auto                                cameraIcon                          = FontAwesome::UnicodeToUtf8(0xf03d);
+auto                                headTrackIcon                       = FontAwesome::UnicodeToUtf8(0xf06e);
+auto                                poiSystemIcon                       = FontAwesome::UnicodeToUtf8(0xf3c5);
+auto                                debugIcon                           = FontAwesome::UnicodeToUtf8(0xf7d9);
 
 // =====================================================================================================================
 //  Arrows & Direction Icons
 // =====================================================================================================================
 
-auto arrowUpIcon = FontAwesome::UnicodeToUtf8(0xf062);
-auto anglesRightIcon = FontAwesome::UnicodeToUtf8(0xf101);
-auto arrowLeftAndRightIcon = FontAwesome::UnicodeToUtf8(0xf07e);
-auto arrowUpAndDownIcon = FontAwesome::UnicodeToUtf8(0xf07d);
-auto zoomIcon = FontAwesome::UnicodeToUtf8(0xf002);
+auto                                arrowUpIcon                         = FontAwesome::UnicodeToUtf8(0xf062);
+auto                                anglesRightIcon                     = FontAwesome::UnicodeToUtf8(0xf101);
+auto                                arrowLeftAndRightIcon               = FontAwesome::UnicodeToUtf8(0xf07e);
+auto                                arrowUpAndDownIcon                  = FontAwesome::UnicodeToUtf8(0xf07d);
+auto                                zoomIcon                            = FontAwesome::UnicodeToUtf8(0xf002);
 
 // =====================================================================================================================
 //  Camera Settings Icons
 // =====================================================================================================================
 
-auto clockIcon = FontAwesome::UnicodeToUtf8(0xf017);
-auto filmIcon = FontAwesome::UnicodeToUtf8(0xf008);
-auto speedIcon = FontAwesome::UnicodeToUtf8(0xf625);
-auto soundIcon = FontAwesome::UnicodeToUtf8(0xf028);
-auto radiusIcon = FontAwesome::UnicodeToUtf8(0xf192);
+auto                                clockIcon                           = FontAwesome::UnicodeToUtf8(0xf017);
+auto                                filmIcon                            = FontAwesome::UnicodeToUtf8(0xf008);
+auto                                speedIcon                           = FontAwesome::UnicodeToUtf8(0xf625);
+auto                                soundIcon                           = FontAwesome::UnicodeToUtf8(0xf028);
+auto                                radiusIcon                          = FontAwesome::UnicodeToUtf8(0xf192);
+auto                                collisionIcon                       = FontAwesome::UnicodeToUtf8(0xf1b2);
 
 // =====================================================================================================================
 //  POI System Icons
 // =====================================================================================================================
 
-auto poiTypesIcon = FontAwesome::UnicodeToUtf8(0xf5fd);
-auto ExcludeListIcon = FontAwesome::UnicodeToUtf8(0xf023);
-auto poiLockIcon = FontAwesome::UnicodeToUtf8(0xe51f);
-auto followerIcon = FontAwesome::UnicodeToUtf8(0xe535);
+auto                                poiTypesIcon                        = FontAwesome::UnicodeToUtf8(0xf5fd);
+auto                                ExcludeListIcon                     = FontAwesome::UnicodeToUtf8(0xf023);
+auto                                poiLockIcon                         = FontAwesome::UnicodeToUtf8(0xe51f);
+auto                                followerIcon                        = FontAwesome::UnicodeToUtf8(0xe535);
 
 // =====================================================================================================================
 //  Actor POI Icons
 // =====================================================================================================================
 
-auto dragonScoreIcon = FontAwesome::UnicodeToUtf8(0xf6d5);
-auto inCombatScoreIcon = FontAwesome::UnicodeToUtf8(0xf0e3);
-auto movingScoreIcon = FontAwesome::UnicodeToUtf8(0xf554);
-auto inSceneScoreIcon = FontAwesome::UnicodeToUtf8(0xf630);
-auto personIcon = FontAwesome::UnicodeToUtf8(0xf183);
+auto                                dragonScoreIcon                     = FontAwesome::UnicodeToUtf8(0xf6d5);
+auto                                inCombatScoreIcon                   = FontAwesome::UnicodeToUtf8(0xf0e3);
+auto                                movingScoreIcon                     = FontAwesome::UnicodeToUtf8(0xf554);
+auto                                inSceneScoreIcon                    = FontAwesome::UnicodeToUtf8(0xf630);
+auto                                personIcon                          = FontAwesome::UnicodeToUtf8(0xf183);
 
 // =====================================================================================================================
 //  Critter POI Icons
 // =====================================================================================================================
 
-auto flyingCritterIcon = FontAwesome::UnicodeToUtf8(0xf4ba);
-auto fishCritterIcon = FontAwesome::UnicodeToUtf8(0xf578);
+auto                                flyingCritterIcon                   = FontAwesome::UnicodeToUtf8(0xf4ba);
+auto                                fishCritterIcon                     = FontAwesome::UnicodeToUtf8(0xf578);
 
 // =====================================================================================================================
 //  Exclusion List Icons
 // =====================================================================================================================
 
-auto trashIcon = FontAwesome::UnicodeToUtf8(0xf2ed);
-auto addIcon = FontAwesome::UnicodeToUtf8(0xf067);
-auto infoIcon = FontAwesome::UnicodeToUtf8(0xf05a);
+auto                                trashIcon                           = FontAwesome::UnicodeToUtf8(0xf2ed);
+auto                                addIcon                             = FontAwesome::UnicodeToUtf8(0xf067);
+auto                                infoIcon                            = FontAwesome::UnicodeToUtf8(0xf05a);
 
 // =====================================================================================================================
 //  Debug Icons
 // =====================================================================================================================
 
-auto raycastIcon = FontAwesome::UnicodeToUtf8(0xf05b);
-auto loggingIcon = FontAwesome::UnicodeToUtf8(0xf120);
+auto                                raycastIcon                         = FontAwesome::UnicodeToUtf8(0xf05b);
+auto                                loggingIcon                         = FontAwesome::UnicodeToUtf8(0xf120);
 
 // =====================================================================================================================
 //  General UI Icons
 // =====================================================================================================================
 
-auto resetIcon = FontAwesome::UnicodeToUtf8(0xf2ea);
-auto deniedIcon = FontAwesome::UnicodeToUtf8(0xf05e);
-auto folderOpenIcon = FontAwesome::UnicodeToUtf8(0xf07c);
+auto                                resetIcon                           = FontAwesome::UnicodeToUtf8(0xf2ea);
+auto                                deniedIcon                          = FontAwesome::UnicodeToUtf8(0xf05e);
+auto                                folderOpenIcon                      = FontAwesome::UnicodeToUtf8(0xf07c);
 
 // =====================================================================================================================
 //  Hexadecimal colors
@@ -2442,7 +2445,8 @@ void UI::CameraPositionSettings() {
         SettingWithDefault(&g_IdleCamOffsetX, k_defaultVanityCamOffsetX),
         SettingWithDefault(&g_IdleCamOffsetY, k_defaultVanityCamOffsetY),
         SettingWithDefault(&g_IdleCamOffsetZ, k_defaultVanityCamOffsetZ),
-        SettingWithDefault(&g_blendDuration, k_defaultBlendDuration)
+        SettingWithDefault(&g_blendDuration, k_defaultBlendDuration),
+        SettingWithDefault(&g_vanityCameraCollisionEnabled, k_defaultVanityCameraCollisionEnabled)
     );
 
     // =====================================================================================================================
@@ -2534,6 +2538,33 @@ void UI::CameraPositionSettings() {
     };
 
     DrawSettingCard("offsetZCard", offsetZCard);
+
+    // =====================================================================================================================
+    //  Vanity Camera World Collision Card
+    // =====================================================================================================================
+
+    CardContent collisionCard = {
+
+        .icon = collisionIcon.c_str(),
+        .label = "Vanity Camera World Collision",
+        .tooltipText = "When enabled, the vanity camera will collide with world geometry (walls, terrain, objects) instead of clipping through it.",
+        .hasSlider = false,
+        .sliderValue = nullptr,
+        .sliderMin = 0.0f,
+        .sliderMax = 0.0f,
+        .sliderFormat = "",
+        .sliderDefault = 0.0f,
+        .hasCheckbox = true,
+        .checkboxValue = &g_vanityCameraCollisionEnabled,
+        .checkboxDefault = k_defaultVanityCameraCollisionEnabled,
+        .onSliderChange = nullptr,
+        .onCheckboxChange = []() {
+            logger::debug("Vanity Camera World Collision toggle set to: {}", g_vanityCameraCollisionEnabled);
+        }
+
+    };
+
+    DrawSettingCard("collisionCard", collisionCard);
 
     // =====================================================================================================================
     //  Blend Duration Card
