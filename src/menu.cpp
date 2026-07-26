@@ -370,9 +370,11 @@ static const uint32_t               k_hexDarkerRed                      = 0x922b
 static const uint32_t               k_hexBrightGreen                    = 0x2ecc71;
 static const uint32_t               k_hexDarkGreen                      = 0x27ae60;
 static const uint32_t               k_hexDarkerGreen                    = 0x1e8449;
-static const uint32_t               k_hexWarning                        = 0xf39c12;
-static const uint32_t               k_hexCritterPink                    = 0xf566dd;
-static const uint32_t               k_hexFishCyan                       = 0x1ff0ff;
+static const uint32_t               k_hexOrange                         = 0xf39c12;
+static const uint32_t               k_hexPink                           = 0xf566dd;
+static const uint32_t               k_hexCyan                           = 0x1ff0ff;
+static const uint32_t               k_hexDarkGray                       = 0x26262E;
+static const uint32_t               k_hexGray                           = 0x40404D;
 
 // ==================================================================================================================================================================================
 //  UI Helper function to convert hex color values to ImVec4
@@ -389,6 +391,75 @@ inline ImGuiMCP::ImVec4 HexToImVec4(uint32_t hex) {
     return ImGuiMCP::ImVec4{ r, g, b, 1.0f };
 
 }
+
+// =====================================================================================================================
+//  Pop the Mini-Card Styling at the end of every setting menu
+// =====================================================================================================================
+
+static inline void PopMiniCardStyling() {
+
+    ImGuiMCP::PopStyleColor(2);
+    ImGuiMCP::PopStyleVar(2);
+
+}
+
+// =====================================================================================================================
+//  RAII guard for the Mini-Card Styling pushed by DrawUIHeaderWithReset.
+//  Holding one of these means "the 2 style vars + 2 style colors are currently pushed."
+//  Its destructor pops them automatically — on a normal return, an early return,
+//  or any other scope exit — so a mismatched push/pop pair like the ActorScores
+//  bug becomes impossible to reintroduce by accident.
+// =====================================================================================================================
+
+class MiniCardStyleGuard {
+
+public:
+
+    MiniCardStyleGuard() = default;
+
+    ~MiniCardStyleGuard() {
+
+        if (m_active) {
+
+            PopMiniCardStyling();
+
+        }
+
+    }
+
+    MiniCardStyleGuard(const MiniCardStyleGuard&) = delete;
+    MiniCardStyleGuard& operator=(const MiniCardStyleGuard&) = delete;
+
+    MiniCardStyleGuard(MiniCardStyleGuard&& other) noexcept : m_active(other.m_active) {
+
+        other.m_active = false;
+
+    }
+
+    MiniCardStyleGuard& operator=(MiniCardStyleGuard&& other) noexcept {
+
+        if (this != &other) {
+
+            if (m_active) {
+
+                PopMiniCardStyling();
+
+            }
+
+            m_active = other.m_active;
+            other.m_active = false;
+
+        }
+
+        return *this;
+
+    }
+
+private:
+
+    bool m_active = true;
+
+};
 
 // ==================================================================================================================================================================================
 //  Reset Button Helper with separator and spacing
@@ -626,7 +697,7 @@ static inline void DrawResetButtonWithSeparator(const std::string& sectionName, 
 
 template<typename... Args>
 
-static void DrawUIHeaderWithReset(const std::string& title, const std::string& icon, const std::string& sectionName, const std::string& buttonId, const Args&... settings) {
+static MiniCardStyleGuard DrawUIHeaderWithReset(const std::string& title, const std::string& icon, const std::string& sectionName, const std::string& buttonId, const Args&... settings) {
 
     // Add top padding
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
@@ -701,10 +772,21 @@ static void DrawUIHeaderWithReset(const std::string& title, const std::string& i
     ImGuiMCP::Separator();
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
 
+    // =====================================================================================================================
+    //  Mini-Card Styling
+    // =====================================================================================================================
+
+    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildRounding, 8.0f);
+    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildBorderSize, 1.0f);
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ChildBg, HexToImVec4(k_hexDarkGray));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, HexToImVec4(k_hexGray));
+
+    return MiniCardStyleGuard{};
+
 }
 
 // Overload for ExclusionListReset
-static void DrawUIHeaderWithReset(const std::string& title, const std::string& icon, const std::string& sectionName, const std::string& buttonId, const ExclusionListReset& exclusionSettings) {
+static MiniCardStyleGuard DrawUIHeaderWithReset(const std::string& title, const std::string& icon, const std::string& sectionName, const std::string& buttonId, const ExclusionListReset& exclusionSettings) {
 
     // Add top padding
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
@@ -780,6 +862,17 @@ static void DrawUIHeaderWithReset(const std::string& title, const std::string& i
     ImGuiMCP::SetCursorPosY(cursorY + frameHeight + 5.0f);
     ImGuiMCP::Separator();
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+
+    // =====================================================================================================================
+    //  Mini-Card Styling
+    // =====================================================================================================================
+
+    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildRounding, 8.0f);
+    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildBorderSize, 1.0f);
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ChildBg, HexToImVec4(k_hexDarkGray));
+    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, HexToImVec4(k_hexGray));
+
+    return MiniCardStyleGuard{};
 
 }
 
@@ -1299,7 +1392,7 @@ static const std::vector<ScoreCardData> critterCards = {
 
         flyingCritterIcon.c_str(),
         "Flying Critter",
-        k_hexCritterPink,
+        k_hexPink,
         &UI::g_flyingCritterScore,
         k_defaultFlyingCritterScore,
         &UI::g_flyingCritterProximityEnabled,
@@ -1314,7 +1407,7 @@ static const std::vector<ScoreCardData> critterCards = {
 
         fishCritterIcon.c_str(),
         "Fish Critter",
-        k_hexFishCyan,
+        k_hexCyan,
         &UI::g_fishCritterScore,
         k_defaultFishCritterScore,
         &UI::g_fishCritterProximityEnabled,
@@ -1361,7 +1454,7 @@ static void DrawScoreCard(const ScoreCardData& card) {
     // Calculate card width to match header's right margin
     ImGuiMCP::ImVec2 winSize;
     ImGuiMCP::GetWindowSize(&winSize);
-    float cardWidth = winSize.x - (k_marginBetweenBordersInMenuHeader * 2);
+    float cardWidth = winSize.x - (k_marginBetweenBordersInMenuHeader);
 
     // Card container with explicit width
     ImGuiMCP::BeginChild(ImGuiMCP::GetID(card.label), ImGuiMCP::ImVec2(cardWidth, 0.0f), ImGuiMCP::ImGuiChildFlags_Border | ImGuiMCP::ImGuiChildFlags_AutoResizeY);
@@ -2302,7 +2395,7 @@ void UI::CameraMainSettings() {
 
     FontAwesome::PushSolid();
 
-    DrawUIHeaderWithReset("Camera Settings - Main Settings", cameraIcon, "Camera Main Settings", "resetCameraMain",
+    auto cardStyle = DrawUIHeaderWithReset("Camera Settings - Main Settings", cameraIcon, "Camera Main Settings", "resetCameraMain",
         SettingWithDefault(&g_idleTimer, k_defaultIdleTimer, []() {
 
             ApplyIdleTimerToIniSettings("fAutoVanityModeDelay:Camera", g_idleTimer);
@@ -2312,15 +2405,6 @@ void UI::CameraMainSettings() {
         SettingWithDefault(&g_blackBarsSpeed, k_defaultBlackBarsSpeed),
         SettingWithDefault(&g_blackBarsSoundEnabled, k_defaultBlackBarsSoundEnabled)
     );
-
-    // =====================================================================================================================
-    //  Mini-Card Styling
-    // =====================================================================================================================
-
-    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildRounding, 8.0f);
-    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildBorderSize, 1.0f);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ChildBg, ImGuiMCP::ImVec4{ 0.15f, 0.15f, 0.18f, 1.0f });
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.25f, 0.25f, 0.30f, 1.0f });
 
     // =====================================================================================================================
     //  Idle Timer Card
@@ -2428,8 +2512,8 @@ void UI::CameraMainSettings() {
 
     }
 
-    ImGuiMCP::PopStyleColor(2);
-    ImGuiMCP::PopStyleVar(2);
+    // Pop styling
+    PopMiniCardStyling();
 
 }
 
@@ -2441,22 +2525,13 @@ void UI::CameraPositionSettings() {
 
     FontAwesome::PushSolid();
 
-    DrawUIHeaderWithReset("Camera Settings - Position", cameraIcon, "Camera Position", "resetCameraPosition",
+    auto cardStyle = DrawUIHeaderWithReset("Camera Settings - Position", cameraIcon, "Camera Position", "resetCameraPosition",
         SettingWithDefault(&g_IdleCamOffsetX, k_defaultVanityCamOffsetX),
         SettingWithDefault(&g_IdleCamOffsetY, k_defaultVanityCamOffsetY),
         SettingWithDefault(&g_IdleCamOffsetZ, k_defaultVanityCamOffsetZ),
         SettingWithDefault(&g_blendDuration, k_defaultBlendDuration),
         SettingWithDefault(&g_vanityCameraCollisionEnabled, k_defaultVanityCameraCollisionEnabled)
     );
-
-    // =====================================================================================================================
-    //  Mini-Card Styling
-    // =====================================================================================================================
-
-    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildRounding, 8.0f);
-    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildBorderSize, 1.0f);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ChildBg, ImGuiMCP::ImVec4{ 0.15f, 0.15f, 0.18f, 1.0f });
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.25f, 0.25f, 0.30f, 1.0f });
 
     // =====================================================================================================================
     //  Idle Camera Offset X Card
@@ -2592,8 +2667,7 @@ void UI::CameraPositionSettings() {
     DrawSettingCard("blendCard", blendCard);
 
     // Pop styling
-    ImGuiMCP::PopStyleColor(2);
-    ImGuiMCP::PopStyleVar(2);
+    PopMiniCardStyling();
 
 }
 
@@ -2605,21 +2679,12 @@ void UI::CameraZoomSettings() {
 
     FontAwesome::PushSolid();
 
-    DrawUIHeaderWithReset("Camera Settings - Zoom/Dezoom", cameraIcon, "Zoom/Dezoom", "resetCameraZoom",
+    auto cardStyle = DrawUIHeaderWithReset("Camera Settings - Zoom/Dezoom", cameraIcon, "Zoom/Dezoom", "resetCameraZoom",
         SettingWithDefault(&g_dezoomTriggerRadius, k_defaultDezoomTriggerRadius),
         SettingWithDefault(&g_dezoomTriggerHeight, k_defaultDezoomTriggerHeight),
         SettingWithDefault(&g_dezoomAmount, k_defaultDezoomAmount),
         SettingWithDefault(&g_dezoomBlendSpeed, k_defaultDezoomBlendSpeed)
     );
-
-    // =====================================================================================================================
-    //  Mini-Card Styling
-    // =====================================================================================================================
-
-    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildRounding, 8.0f);
-    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildBorderSize, 1.0f);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ChildBg, ImGuiMCP::ImVec4{ 0.15f, 0.15f, 0.18f, 1.0f });
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.25f, 0.25f, 0.30f, 1.0f });
 
     // =====================================================================================================================
     //  Dezoom Trigger Radius Card
@@ -2739,18 +2804,9 @@ void UI::HeadTrackingSettings() {
 
     FontAwesome::PushSolid();
 
-    DrawUIHeaderWithReset("Head Tracking Settings", headTrackIcon, "Head Tracking", "resetHeadTracking",
+    auto cardStyle = DrawUIHeaderWithReset("Head Tracking Settings", headTrackIcon, "Head Tracking", "resetHeadTracking",
         SettingWithDefault(&g_headTrackFadeSpeed, k_defaultHeadTrackFadeSpeed)
     );
-
-    // =====================================================================================================================
-    //  Mini-Card Styling
-    // =====================================================================================================================
-
-    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildRounding, 8.0f);
-    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildBorderSize, 1.0f);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ChildBg, ImGuiMCP::ImVec4{ 0.15f, 0.15f, 0.18f, 1.0f });
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.25f, 0.25f, 0.30f, 1.0f });
 
     // =====================================================================================================================
     //  Head Tracking Fade Speed Card
@@ -2778,8 +2834,7 @@ void UI::HeadTrackingSettings() {
     DrawSettingCard("fadeSpeedCard", fadeSpeedCard);
 
     // Pop styling
-    ImGuiMCP::PopStyleColor(2);
-    ImGuiMCP::PopStyleVar(2);
+    PopMiniCardStyling();
 
 }
 
@@ -2791,7 +2846,7 @@ void UI::POISystemMainSettings() {
 
     FontAwesome::PushSolid();
 
-    DrawUIHeaderWithReset("POI System - Main Settings", poiSystemIcon, "POI System Main Settings", "resetPoiGeneral",
+    auto cardStyle = DrawUIHeaderWithReset("POI System - Main Settings", poiSystemIcon, "POI System Main Settings", "resetPoiGeneral",
         SettingWithDefault(&g_poiSystemEnabled, k_defaultPoiSystemEnabled),
         SettingWithDefault(&g_actorPoiEnabled, k_defaultActorPoiEnabled),
         SettingWithDefault(&g_preventFollowers, k_defaultPreventFollowers),
@@ -2800,15 +2855,6 @@ void UI::POISystemMainSettings() {
         SettingWithDefault(&g_poiDetectionRadius, k_defaultPoiDetectionRadius),
         SettingWithDefault(&g_lockDuration, k_defaultLockDuration)
     );
-
-    // =====================================================================================================================
-    //  Mini-Card Styling
-    // =====================================================================================================================
-
-    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildRounding, 8.0f);
-    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildBorderSize, 1.0f);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ChildBg, ImGuiMCP::ImVec4{ 0.15f, 0.15f, 0.18f, 1.0f });
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.25f, 0.25f, 0.30f, 1.0f });
 
     // =====================================================================================================================
     //  POI System Master Toggle Card
@@ -2842,8 +2888,7 @@ void UI::POISystemMainSettings() {
     if (!g_poiSystemEnabled) {
 
         // Pop styling
-        ImGuiMCP::PopStyleColor(2);
-        ImGuiMCP::PopStyleVar(2);
+        PopMiniCardStyling();
         return;
 
     }
@@ -2887,7 +2932,7 @@ void UI::POISystemMainSettings() {
         },
         {
             flyingCritterIcon.c_str(),
-            k_hexCritterPink,
+            k_hexPink,
             &g_flyingCritterPoiEnabled,
             k_defaultFlyingCritterPoiEnabled,
             "Flying Critters (butterflies, moths, dragonflies, etc)",
@@ -2902,7 +2947,7 @@ void UI::POISystemMainSettings() {
         },
         {
             fishCritterIcon.c_str(),
-            k_hexFishCyan,
+            k_hexCyan,
             &g_fishCritterPoiEnabled,
             k_defaultFishCritterPoiEnabled,
             "Fish Critters (perches, salmon, pond fish, etc)",
@@ -2969,8 +3014,7 @@ void UI::POISystemMainSettings() {
     DrawSettingCard("lockCard", lockCard);
 
     // Pop styling
-    ImGuiMCP::PopStyleColor(2);
-    ImGuiMCP::PopStyleVar(2);
+    PopMiniCardStyling();
 
 }
 
@@ -2982,18 +3026,9 @@ void UI::POISystemExclusionListSettings() {
 
     FontAwesome::PushSolid();
 
-    DrawUIHeaderWithReset("POI System - Exclusion List", ExcludeListIcon, "Exclusion List", "resetPoiExclusion",
+    auto cardStyle = DrawUIHeaderWithReset("POI System - Exclusion List", ExcludeListIcon, "Exclusion List", "resetPoiExclusion",
         ExclusionListReset(&g_actorExclusionList)
     );
-
-    // =====================================================================================================================
-    //  Card Styling
-    // =====================================================================================================================
-
-    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildRounding, 8.0f);
-    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildBorderSize, 1.0f);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ChildBg, ImGuiMCP::ImVec4{ 0.15f, 0.15f, 0.18f, 1.0f });
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.25f, 0.25f, 0.30f, 1.0f });
 
     // =====================================================================================================================
     //  Card 1: Add Actor to Exclusion List
@@ -3139,7 +3174,7 @@ void UI::POISystemExclusionListSettings() {
     } else if (isExcluded) {
 
         // Already excluded - show warning message and gray button
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexWarning));
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4(k_hexOrange));
         ImGuiMCP::Text("%s Already Excluded: %s", deniedIcon.c_str(), selectedActor->GetName() ? selectedActor->GetName() : "Unnamed");
         ImGuiMCP::PopStyleColor();
 
@@ -3222,8 +3257,7 @@ void UI::POISystemExclusionListSettings() {
         ImGuiMCP::PopStyleColor();
 
         ImGuiMCP::EndChild();
-        ImGuiMCP::PopStyleColor(2);
-        ImGuiMCP::PopStyleVar(2);
+        PopMiniCardStyling();
         return;
 
     }
@@ -3375,8 +3409,7 @@ void UI::POISystemExclusionListSettings() {
                 }
 
                 ImGuiMCP::EndChild();
-                ImGuiMCP::PopStyleColor(2);
-                ImGuiMCP::PopStyleVar(2);
+                PopMiniCardStyling();
                 return;
 
             }
@@ -3465,7 +3498,7 @@ void UI::POISystemActorScores() {
 
     FontAwesome::PushSolid();
 
-    DrawUIHeaderWithReset("POI System - Actor Scores", poiTypesIcon, "Actor Score Settings", "resetPoiActor",
+    auto cardStyle = DrawUIHeaderWithReset("POI System - Actor Scores", poiTypesIcon, "Actor Score Settings", "resetPoiActor",
         SettingWithDefault(&g_dragonScore, k_defaultDragonScore),
         SettingWithDefault(&g_dragonProximityEnabled, k_defaultDragonProximityEnabled),
         SettingWithDefault(&g_dragonProximityFactor, k_defaultDragonProximityFactor),
@@ -3483,17 +3516,12 @@ void UI::POISystemActorScores() {
         SettingWithDefault(&g_actorIdleProximityFactor, k_defaultActorIdleProximityFactor)
     );
 
-    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildRounding, 8.0f);
-    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildBorderSize, 1.0f);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ChildBg, ImGuiMCP::ImVec4{ 0.15f, 0.15f, 0.18f, 1.0f });
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.25f, 0.25f, 0.30f, 1.0f });
-
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.5f));
 
     DrawActorScoreCards();
 
-    ImGuiMCP::PopStyleColor(2);
-    ImGuiMCP::PopStyleVar(2);
+    // Pop styling
+    PopMiniCardStyling();
 
 }
 
@@ -3505,7 +3533,7 @@ void UI::POISystemCritterScores() {
 
     FontAwesome::PushSolid();
 
-    DrawUIHeaderWithReset("POI System - Critter Scores", poiTypesIcon, "Critter Score Settings", "resetPoiCritter",
+    auto cardStyle = DrawUIHeaderWithReset("POI System - Critter Scores", poiTypesIcon, "Critter Score Settings", "resetPoiCritter",
         SettingWithDefault(&g_flyingCritterScore, k_defaultFlyingCritterScore),
         SettingWithDefault(&g_flyingCritterProximityEnabled, k_defaultFlyingCritterProximityEnabled),
         SettingWithDefault(&g_flyingCritterProximityFactor, k_defaultFlyingCritterProximityFactor),
@@ -3514,17 +3542,12 @@ void UI::POISystemCritterScores() {
         SettingWithDefault(&g_fishCritterProximityFactor, k_defaultFishCritterProximityFactor)
     );
 
-    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildRounding, 8.0f);
-    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildBorderSize, 1.0f);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ChildBg, ImGuiMCP::ImVec4{ 0.15f, 0.15f, 0.18f, 1.0f });
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.25f, 0.25f, 0.30f, 1.0f });
-
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.5f));
 
     DrawCritterScoreCards();
 
-    ImGuiMCP::PopStyleColor(2);
-    ImGuiMCP::PopStyleVar(2);
+    // Pop styling
+    PopMiniCardStyling();
 
 }
 
@@ -3536,7 +3559,7 @@ void UI::DebugSettings() {
 
     FontAwesome::PushSolid();
 
-    DrawUIHeaderWithReset("Debug Settings", debugIcon, "Debug", "resetDebug",
+    auto cardStyle = DrawUIHeaderWithReset("Debug Settings", debugIcon, "Debug", "resetDebug",
         SettingWithDefault(&g_debugRaycasts, k_defaultDebugRaycasts),
         SettingWithDefault(&g_loggingLevel, k_defaultLoggingLevel, []() {
 
@@ -3548,15 +3571,6 @@ void UI::DebugSettings() {
         })
 
     );
-
-    // =====================================================================================================================
-    //  Mini-Card Styling
-    // =====================================================================================================================
-
-    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildRounding, 8.0f);
-    ImGuiMCP::PushStyleVar(ImGuiMCP::ImGuiStyleVar_ChildBorderSize, 1.0f);
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_ChildBg, ImGuiMCP::ImVec4{ 0.15f, 0.15f, 0.18f, 1.0f });
-    ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Border, ImGuiMCP::ImVec4{ 0.25f, 0.25f, 0.30f, 1.0f });
 
     // =====================================================================================================================
     //  Debug Raycast Visualization Card
@@ -3632,7 +3646,6 @@ void UI::DebugSettings() {
     DrawSettingCard("loggingCard", loggingCard);
 
     // Pop styling
-    ImGuiMCP::PopStyleColor(2);
-    ImGuiMCP::PopStyleVar(2);
+    PopMiniCardStyling();
 
 }
