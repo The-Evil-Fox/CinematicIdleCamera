@@ -259,13 +259,11 @@ namespace UITemplate {
             std::snprintf(buf, sizeof(buf), a_card.sliderFormat, DisplayValue(*a_card.sliderValue));
             currentValueText = buf;
 
-        }
-        else if (a_card.hasCheckbox) {
+        } else if (a_card.hasCheckbox) {
 
             currentValueText = *a_card.checkboxValue ? "Enabled" : "Disabled";
 
-        }
-        else if (a_card.hasIntSlider) {
+        } else if (a_card.hasIntSlider) {
 
             currentValueText = a_card.intSliderNames[*a_card.intSliderValue];
 
@@ -298,15 +296,13 @@ namespace UITemplate {
             ImGuiMCP::Text("%s", *a_card.checkboxValue ? "Enabled" : "Disabled");
             ImGuiMCP::PopStyleColor();
 
-        }
-        else if (a_card.hasIntSlider) {
+        } else if (a_card.hasIntSlider) {
 
             ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(Colors::GoldLight));
             ImGuiMCP::Text("%s", a_card.intSliderNames[*a_card.intSliderValue]);
             ImGuiMCP::PopStyleColor();
 
-        }
-        else {
+        } else {
 
             ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(Colors::GoldLight));
             ImGuiMCP::Text(a_card.sliderFormat, DisplayValue(*a_card.sliderValue));
@@ -333,8 +329,7 @@ namespace UITemplate {
 
                 ImGuiMCP::PopStyleColor();
 
-            }
-            else if (a_card.hasCheckbox) {
+            } else if (a_card.hasCheckbox) {
 
                 ImGuiMCP::Text("Current: %s", *a_card.checkboxValue ? "Enabled" : "Disabled");
                 ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
@@ -342,8 +337,7 @@ namespace UITemplate {
                 ImGuiMCP::Text("Default: %s", a_card.checkboxDefault ? "Enabled" : "Disabled");
                 ImGuiMCP::PopStyleColor();
 
-            }
-            else if (a_card.hasIntSlider) {
+            } else if (a_card.hasIntSlider) {
 
                 ImGuiMCP::Text("Current: %s", a_card.intSliderNames[*a_card.intSliderValue]);
                 ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
@@ -392,8 +386,7 @@ namespace UITemplate {
 
                 }
 
-            }
-            else {
+            } else {
 
                 if (ImGuiMCP::SliderFloat("##slider", a_card.sliderValue, a_card.sliderMin, a_card.sliderMax, a_card.sliderFormat)) {
 
@@ -482,8 +475,10 @@ namespace UITemplate {
 
         }
 
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, k_cardContentBottomMargin));
+
         ImGuiMCP::EndChild();
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, k_cardSpaceAfter));
 
     }
 
@@ -588,8 +583,7 @@ namespace UITemplate {
 
                 ImGuiMCP::Text("Bonus: +%.0f", *a_card.bonusFactor);
 
-            }
-            else {
+            } else {
 
                 ImGuiMCP::Text("Bonus: Disabled");
 
@@ -604,8 +598,7 @@ namespace UITemplate {
 
                 ImGuiMCP::Text("Default Bonus: +%.0f", a_card.bonusFactorDefault);
 
-            }
-            else {
+            } else {
 
                 ImGuiMCP::Text("Default Bonus: Disabled");
 
@@ -695,8 +688,7 @@ namespace UITemplate {
             ImGuiMCP::PopID();
             ImGuiMCP::PopStyleColor();
 
-        }
-        else {
+        } else {
 
             ApplyCardContentLineMargin();
             ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(Colors::GrayMedium));
@@ -721,8 +713,10 @@ namespace UITemplate {
 
         ImGuiMCP::PopStyleColor();
 
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, k_cardContentBottomMargin));
+
         ImGuiMCP::EndChild();
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 15.0f));
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, k_cardSpaceAfter));
 
     }
 
@@ -917,10 +911,10 @@ namespace UITemplate {
 
         }
 
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 5.0f));
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, k_cardContentBottomMargin));
 
         ImGuiMCP::EndChild();
-        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, k_cardSpaceAfter));
 
     }
 
@@ -928,7 +922,7 @@ namespace UITemplate {
 
         ImGuiMCP::ImGuiStyle* style = ImGuiMCP::GetStyle();
         ImGuiMCP::ImVec2 resetIconSize;
-        ImGuiMCP::CalcTextSize(&resetIconSize, Icons::resetIcon.c_str(), nullptr, false, -1.0f);
+        ImGuiMCP::CalcTextSize(&resetIconSize, Icons::rotateLeftIcon.c_str(), nullptr, false, -1.0f);
         float resetButtonWidth = resetIconSize.x + style->FramePadding.x * 2.0f;
         float resetButtonHeight = resetIconSize.y + style->FramePadding.y * 2.0f;
 
@@ -946,7 +940,7 @@ namespace UITemplate {
         ImGuiMCP::SetCursorPosX(resetStartX + style->FramePadding.x);
         ImGuiMCP::SetCursorPosY(a_y + style->FramePadding.y);
         ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(isHovered ? Colors::BlueLight : Colors::Blue));
-        ImGuiMCP::Text("%s", Icons::resetIcon.c_str());
+        ImGuiMCP::Text("%s", Icons::rotateLeftIcon.c_str());
         ImGuiMCP::PopStyleColor();
 
         if (isHovered) {
@@ -967,46 +961,50 @@ namespace UITemplate {
 
 namespace UITemplate::Icons {
 
-    const std::string                   cameraIcon                      = FontAwesome::UnicodeToUtf8(0xf03d);
-    const std::string                   headTrackIcon                   = FontAwesome::UnicodeToUtf8(0xf06e);
-    const std::string                   poiSystemIcon                   = FontAwesome::UnicodeToUtf8(0xf3c5);
-    const std::string                   debugIcon                       = FontAwesome::UnicodeToUtf8(0xf7d9);
+    const std::string                   addIcon                                 = FontAwesome::UnicodeToUtf8(0xf067);
+    const std::string                   arrowLeftAndRightIcon                   = FontAwesome::UnicodeToUtf8(0xf07e);
+    const std::string                   arrowUpAndDownIcon                      = FontAwesome::UnicodeToUtf8(0xf07d);
+    const std::string                   arrowUpIcon                             = FontAwesome::UnicodeToUtf8(0xf062);
 
-    const std::string                   arrowUpIcon                     = FontAwesome::UnicodeToUtf8(0xf062);
-    const std::string                   arrowLeftAndRightIcon           = FontAwesome::UnicodeToUtf8(0xf07e);
-    const std::string                   arrowUpAndDownIcon              = FontAwesome::UnicodeToUtf8(0xf07d);
-    const std::string                   zoomIcon                        = FontAwesome::UnicodeToUtf8(0xf002);
+    const std::string                   banIcon                                 = FontAwesome::UnicodeToUtf8(0xf05e);
 
-    const std::string                   clockIcon                       = FontAwesome::UnicodeToUtf8(0xf017);
-    const std::string                   filmIcon                        = FontAwesome::UnicodeToUtf8(0xf008);
-    const std::string                   speedIcon                       = FontAwesome::UnicodeToUtf8(0xf625);
-    const std::string                   soundIcon                       = FontAwesome::UnicodeToUtf8(0xf028);
-    const std::string                   radiusIcon                      = FontAwesome::UnicodeToUtf8(0xf192);
-    const std::string                   collisionIcon                   = FontAwesome::UnicodeToUtf8(0xf1b2);
+    const std::string                   circleDotIcon                           = FontAwesome::UnicodeToUtf8(0xf192);
+    const std::string                   circleInfoIcon                          = FontAwesome::UnicodeToUtf8(0xf05a);
+    const std::string                   clockIcon                               = FontAwesome::UnicodeToUtf8(0xf017);
+    const std::string                   crosshairsIcon                          = FontAwesome::UnicodeToUtf8(0xf05b);
+    const std::string                   cubeIcon                                = FontAwesome::UnicodeToUtf8(0xf1b2);
 
-    const std::string                   poiTypesIcon                    = FontAwesome::UnicodeToUtf8(0xf5fd);
-    const std::string                   excludeListIcon                 = FontAwesome::UnicodeToUtf8(0xf023);
-    const std::string                   poiLockIcon                     = FontAwesome::UnicodeToUtf8(0xe51f);
-    const std::string                   followerIcon                    = FontAwesome::UnicodeToUtf8(0xe535);
+    const std::string                   doveIcon                                = FontAwesome::UnicodeToUtf8(0xf4ba);
+    const std::string                   dragonIcon                              = FontAwesome::UnicodeToUtf8(0xf6d5);
 
-    const std::string                   dragonScoreIcon                 = FontAwesome::UnicodeToUtf8(0xf6d5);
-    const std::string                   inCombatScoreIcon               = FontAwesome::UnicodeToUtf8(0xf0e3);
-    const std::string                   movingScoreIcon                 = FontAwesome::UnicodeToUtf8(0xf554);
-    const std::string                   inSceneScoreIcon                = FontAwesome::UnicodeToUtf8(0xf630);
-    const std::string                   personIcon                      = FontAwesome::UnicodeToUtf8(0xf183);
+    const std::string                   eyeIcon                                 = FontAwesome::UnicodeToUtf8(0xf06e);
 
-    const std::string                   flyingCritterIcon               = FontAwesome::UnicodeToUtf8(0xf4ba);
-    const std::string                   fishCritterIcon                 = FontAwesome::UnicodeToUtf8(0xf578);
+    const std::string                   filmIcon                                = FontAwesome::UnicodeToUtf8(0xf008);
+    const std::string                   fishIcon                                = FontAwesome::UnicodeToUtf8(0xf578);
+    const std::string                   folderOpenIcon                          = FontAwesome::UnicodeToUtf8(0xf07c);
 
-    const std::string                   addIcon                         = FontAwesome::UnicodeToUtf8(0xf067);
-    const std::string                   infoIcon                        = FontAwesome::UnicodeToUtf8(0xf05a);
+    const std::string                   gaugeHighIcon                           = FontAwesome::UnicodeToUtf8(0xf625);
+    const std::string                   gavelIcon                               = FontAwesome::UnicodeToUtf8(0xf0e3);
 
-    const std::string                   raycastIcon                     = FontAwesome::UnicodeToUtf8(0xf05b);
-    const std::string                   loggingIcon                     = FontAwesome::UnicodeToUtf8(0xf120);
+    const std::string                   layerGroupIcon                          = FontAwesome::UnicodeToUtf8(0xf5fd);
+    const std::string                   locationDotIcon                         = FontAwesome::UnicodeToUtf8(0xf3c5);
+    const std::string                   locationPinLockIcon                     = FontAwesome::UnicodeToUtf8(0xe51f);
+    const std::string                   lockIcon                                = FontAwesome::UnicodeToUtf8(0xf023);
 
-    const std::string                   deniedIcon                      = FontAwesome::UnicodeToUtf8(0xf05e);
-    const std::string                   folderOpenIcon                  = FontAwesome::UnicodeToUtf8(0xf07c);
+    const std::string                   magnifyingGlassIcon                     = FontAwesome::UnicodeToUtf8(0xf002);
+    const std::string                   masksTheaterIcon                        = FontAwesome::UnicodeToUtf8(0xf630);
 
-    const std::string                   resetIcon                       = FontAwesome::UnicodeToUtf8(0xf2ea);
+    const std::string                   peoplePullingIcon                       = FontAwesome::UnicodeToUtf8(0xe535);
+    const std::string                   personIcon                              = FontAwesome::UnicodeToUtf8(0xf183);
+    const std::string                   personWalkingIcon                       = FontAwesome::UnicodeToUtf8(0xf554);
+
+    const std::string                   rotateLeftIcon                          = FontAwesome::UnicodeToUtf8(0xf2ea);
+
+    const std::string                   screwdriverWrenchIcon                   = FontAwesome::UnicodeToUtf8(0xf7d9);
+
+    const std::string                   terminalIcon                            = FontAwesome::UnicodeToUtf8(0xf120);
+
+    const std::string                   videoIcon                               = FontAwesome::UnicodeToUtf8(0xf03d);
+    const std::string                   volumeHighIcon                          = FontAwesome::UnicodeToUtf8(0xf028);
 
 }

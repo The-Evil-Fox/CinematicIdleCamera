@@ -213,22 +213,22 @@ struct ExclusionListReset {
 
 static const std::vector<ScoreCardData> actorCards = {
 
-    ScoreCardData::Make(dragonScoreIcon.c_str(), "Dragon", Colors::Green,
+    ScoreCardData::Make(dragonIcon.c_str(), "Dragon", Colors::Green,
         &UI::g_dragonScore, k_defaultDragonScore, &UI::g_dragonProximityEnabled, k_defaultDragonProximityEnabled,
         &UI::g_dragonProximityFactor, k_defaultDragonProximityFactor,
         "Base score awarded to a dragon.", "Bonus increases as dragon gets closer.", SaveSettings),
 
-    ScoreCardData::Make(inCombatScoreIcon.c_str(), "In Combat", Colors::Green,
+    ScoreCardData::Make(gavelIcon.c_str(), "In Combat", Colors::Green,
         &UI::g_actorCombatScore, k_defaultActorCombatScore, &UI::g_actorCombatProximityEnabled, k_defaultActorCombatProximityEnabled,
         &UI::g_actorCombatProximityFactor, k_defaultActorCombatProximityFactor,
         "Base score awarded to an actor who is currently in combat.", "Bonus increases as actor gets closer.", SaveSettings),
 
-    ScoreCardData::Make(movingScoreIcon.c_str(), "Moving", Colors::Green,
+    ScoreCardData::Make(personWalkingIcon.c_str(), "Moving", Colors::Green,
         &UI::g_actorMovingScore, k_defaultActorMovingScore, &UI::g_actorMovingProximityEnabled, k_defaultActorMovingProximityEnabled,
         &UI::g_actorMovingProximityFactor, k_defaultActorMovingProximityFactor,
         "Base score awarded to an actor who is currently moving.", "Bonus increases as actor gets closer.", SaveSettings),
 
-    ScoreCardData::Make(inSceneScoreIcon.c_str(), "In Scene", Colors::Green,
+    ScoreCardData::Make(masksTheaterIcon.c_str(), "In Scene", Colors::Green,
         &UI::g_actorInSceneScore, k_defaultActorInSceneScore, &UI::g_actorInSceneProximityEnabled, k_defaultActorInSceneProximityEnabled,
         &UI::g_actorInSceneProximityFactor, k_defaultActorInSceneProximityFactor,
         "Base score awarded to an actor who is actively engaged in a scripted sequence (dialogue, cinematic, or quest scene).",
@@ -248,13 +248,13 @@ static const std::vector<ScoreCardData> actorCards = {
 
 static const std::vector<ScoreCardData> critterCards = {
 
-    ScoreCardData::Make(flyingCritterIcon.c_str(), "Flying Critter", Colors::Pink,
+    ScoreCardData::Make(doveIcon.c_str(), "Flying Critter", Colors::Pink,
         &UI::g_flyingCritterScore, k_defaultFlyingCritterScore, &UI::g_flyingCritterProximityEnabled, k_defaultFlyingCritterProximityEnabled,
         &UI::g_flyingCritterProximityFactor, k_defaultFlyingCritterProximityFactor,
         "Base score awarded to a flying critter (butterflies, moths, dragonflies, fireflies, bees, etc).",
         "Bonus increases as critter gets closer.", SaveSettings),
 
-    ScoreCardData::Make(fishCritterIcon.c_str(), "Fish Critter", Colors::Cyan,
+    ScoreCardData::Make(fishIcon.c_str(), "Fish Critter", Colors::Cyan,
         &UI::g_fishCritterScore, k_defaultFishCritterScore, &UI::g_fishCritterProximityEnabled, k_defaultFishCritterProximityEnabled,
         &UI::g_fishCritterProximityFactor, k_defaultFishCritterProximityFactor,
         "Base score awarded to a fish critter (perches, salmon, pond fish, and other aquatic critters).",
@@ -721,7 +721,7 @@ void UI::DrawCinematicBars() {
 
 void UI::CameraMainSettings() {
 
-    auto cardStyle = DrawHeaderWithReset("Camera Settings - Main Settings", cameraIcon, "Camera Main Settings", "resetCameraMain",
+    auto cardStyle = DrawHeaderWithReset("Camera Settings - Main Settings", videoIcon, "Camera Main Settings", "resetCameraMain",
         MakeResetLogger("Camera Main Settings"),
         SettingWithDefault(&g_idleTimer, k_defaultIdleTimer, []() {
             GameSettings::ApplyFloat("fAutoVanityModeDelay:Camera", g_idleTimer);
@@ -749,13 +749,13 @@ void UI::CameraMainSettings() {
 
     if (g_blackBarsEnabled) {
 
-        CardContent speedCard = CardContent::Slider(speedIcon.c_str(), "Black Bars Slide Speed",
+        CardContent speedCard = CardContent::Slider(gaugeHighIcon.c_str(), "Black Bars Slide Speed",
             "How fast the cinematic bars slide in and out when entering/exiting idle mode.",
             &g_blackBarsSpeed, 0.1f, 5.0f, "%.1f", k_defaultBlackBarsSpeed, SaveSettings);
 
         DrawSettingCard("speedCard", speedCard);
 
-        CardContent soundCard = CardContent::Checkbox(soundIcon.c_str(), "Black Bars Sound Effects",
+        CardContent soundCard = CardContent::Checkbox(volumeHighIcon.c_str(), "Black Bars Sound Effects",
             "Enable or disable the sound effects that play when the cinematic black bars appear or disappear.",
             &g_blackBarsSoundEnabled, k_defaultBlackBarsSoundEnabled, SaveSettings);
 
@@ -771,7 +771,7 @@ void UI::CameraMainSettings() {
 
 void UI::CameraPositionSettings() {
 
-    auto cardStyle = DrawHeaderWithReset("Camera Settings - Position", cameraIcon, "Camera Position", "resetCameraPosition",
+    auto cardStyle = DrawHeaderWithReset("Camera Settings - Position", videoIcon, "Camera Position", "resetCameraPosition",
         MakeResetLogger("Camera Position"),
         SettingWithDefault(&g_IdleCamOffsetX, k_defaultVanityCamOffsetX),
         SettingWithDefault(&g_IdleCamOffsetY, k_defaultVanityCamOffsetY),
@@ -787,7 +787,7 @@ void UI::CameraPositionSettings() {
 
     DrawSettingCard("offsetXCard", offsetXCard);
 
-    CardContent zoomCard = CardContent::Slider(zoomIcon.c_str(), "Idle Camera Zoom",
+    CardContent zoomCard = CardContent::Slider(magnifyingGlassIcon.c_str(), "Idle Camera Zoom",
         "Zoom (Y-axis) offset of the idle camera relative to the player.",
         &g_IdleCamOffsetY, -500.0f, 500.0f, "%.0f", k_defaultVanityCamOffsetY, SaveSettings,
         []() { g_IdleCamOffsetY = std::round(g_IdleCamOffsetY); });
@@ -801,7 +801,7 @@ void UI::CameraPositionSettings() {
 
     DrawSettingCard("offsetZCard", offsetZCard);
 
-    CardContent collisionCard = CardContent::Checkbox(collisionIcon.c_str(), "Vanity Camera World Collision",
+    CardContent collisionCard = CardContent::Checkbox(cubeIcon.c_str(), "Vanity Camera World Collision",
         "When enabled, the vanity camera will collide with world geometry (walls, terrain, objects) instead of clipping through it.\n",
         &g_vanityCameraCollisionEnabled, k_defaultVanityCameraCollisionEnabled, SaveSettings);
 
@@ -821,7 +821,7 @@ void UI::CameraPositionSettings() {
 
 void UI::CameraZoomSettings() {
 
-    auto cardStyle = DrawHeaderWithReset("Camera Settings - Zoom/Dezoom", cameraIcon, "Zoom/Dezoom", "resetCameraZoom",
+    auto cardStyle = DrawHeaderWithReset("Camera Settings - Zoom/Dezoom", videoIcon, "Zoom/Dezoom", "resetCameraZoom",
         MakeResetLogger("Zoom/Dezoom"),
         SettingWithDefault(&g_dezoomTriggerRadius, k_defaultDezoomTriggerRadius),
         SettingWithDefault(&g_dezoomTriggerHeight, k_defaultDezoomTriggerHeight),
@@ -829,7 +829,7 @@ void UI::CameraZoomSettings() {
         SettingWithDefault(&g_dezoomBlendSpeed, k_defaultDezoomBlendSpeed)
     );
 
-    CardContent radiusCard = CardContent::Slider(radiusIcon.c_str(), "Dezoom Trigger Radius",
+    CardContent radiusCard = CardContent::Slider(circleDotIcon.c_str(), "Dezoom Trigger Radius",
         "Horizontal distance from the player within which an overhead POI can trigger the dezoom.",
         &g_dezoomTriggerRadius, 0.0f, 1400.0f, "%.1f m", k_defaultDezoomTriggerRadius, SaveSettings,
         nullptr, true, UITemplate::SKYRIM_UNITS_TO_METERS);
@@ -843,7 +843,7 @@ void UI::CameraZoomSettings() {
 
     DrawSettingCard("heightCard", heightCard);
 
-    CardContent amountCard = CardContent::Slider(zoomIcon.c_str(), "Dezoom Amount",
+    CardContent amountCard = CardContent::Slider(magnifyingGlassIcon.c_str(), "Dezoom Amount",
         "How far the camera pulls back once the dezoom is fully active (added on top of the Idle camera offset Y).",
         &g_dezoomAmount, 0.0f, 500.0f, "%.0f", k_defaultDezoomAmount, SaveSettings,
         []() { g_dezoomAmount = std::round(g_dezoomAmount); });
@@ -864,12 +864,12 @@ void UI::CameraZoomSettings() {
 
 void UI::HeadTrackingSettings() {
 
-    auto cardStyle = DrawHeaderWithReset("Head Tracking Settings", headTrackIcon, "Head Tracking", "resetHeadTracking",
+    auto cardStyle = DrawHeaderWithReset("Head Tracking Settings", eyeIcon, "Head Tracking", "resetHeadTracking",
         MakeResetLogger("Head Tracking"),
         SettingWithDefault(&g_headTrackFadeSpeed, k_defaultHeadTrackFadeSpeed)
     );
 
-    CardContent fadeSpeedCard = CardContent::Slider(speedIcon.c_str(), "Head Tracking Fade Speed",
+    CardContent fadeSpeedCard = CardContent::Slider(gaugeHighIcon.c_str(), "Head Tracking Fade Speed",
         "How quickly the player's head-tracking rotates toward a focused POI.",
         &g_headTrackFadeSpeed, 0.1f, 1.0f, "%.2f units/s", k_defaultHeadTrackFadeSpeed, SaveSettings);
 
@@ -883,7 +883,7 @@ void UI::HeadTrackingSettings() {
 
 void UI::POISystemMainSettings() {
 
-    auto cardStyle = DrawHeaderWithReset("POI System - Main Settings", poiSystemIcon, "POI System Main Settings", "resetPoiGeneral",
+    auto cardStyle = DrawHeaderWithReset("POI System - Main Settings", locationDotIcon, "POI System Main Settings", "resetPoiGeneral",
         MakeResetLogger("POI System Main Settings"),
         SettingWithDefault(&g_poiSystemEnabled, k_defaultPoiSystemEnabled),
         SettingWithDefault(&g_actorPoiEnabled, k_defaultActorPoiEnabled),
@@ -894,7 +894,7 @@ void UI::POISystemMainSettings() {
         SettingWithDefault(&g_lockDuration, k_defaultLockDuration)
     );
 
-    CardContent masterToggleCard = CardContent::Checkbox(poiSystemIcon.c_str(), "POI System Master Toggle",
+    CardContent masterToggleCard = CardContent::Checkbox(locationDotIcon.c_str(), "POI System Master Toggle",
         "Master toggle for the entire POI (Point of Interest) system. When disabled, the camera will not track any POIs automatically.",
         &g_poiSystemEnabled, k_defaultPoiSystemEnabled, SaveSettings);
 
@@ -906,32 +906,32 @@ void UI::POISystemMainSettings() {
 
     }
 
-    DrawMultiCheckboxCard("poiTypeToggles", "POI Type Toggles", poiTypesIcon.c_str(),
+    DrawMultiCheckboxCard("poiTypeToggles", "POI Type Toggles", layerGroupIcon.c_str(),
         {
             { personIcon.c_str(), Colors::Green, &g_actorPoiEnabled, k_defaultActorPoiEnabled, "Actor POIs",
                 { "Allow actors to be considered as points of interest." },
                 nullptr,
                 {
-                    { followerIcon.c_str(), Colors::Orange, &g_preventFollowers, k_defaultPreventFollowers, "Prevent Followers",
+                    { peoplePullingIcon.c_str(), Colors::Orange, &g_preventFollowers, k_defaultPreventFollowers, "Prevent Followers",
                         { "Excludes your followers from being targeted as a POI." } },
                 }
             },
-            { flyingCritterIcon.c_str(), Colors::Pink, &g_flyingCritterPoiEnabled, k_defaultFlyingCritterPoiEnabled, "Flying Critter POIs",
+            { doveIcon.c_str(), Colors::Pink, &g_flyingCritterPoiEnabled, k_defaultFlyingCritterPoiEnabled, "Flying Critter POIs",
                 { "Allow flying critters to be considered as points of interest." } },
-            { fishCritterIcon.c_str(), Colors::Cyan, &g_fishCritterPoiEnabled, k_defaultFishCritterPoiEnabled, "Fish Critter POIs",
+            { fishIcon.c_str(), Colors::Cyan, &g_fishCritterPoiEnabled, k_defaultFishCritterPoiEnabled, "Fish Critter POIs",
                 { "Allow fish critters to be considered as points of interest." } },
         },
     SaveSettings
     );
 
-    CardContent radiusCard = CardContent::Slider(radiusIcon.c_str(), "Maximum Detection Radius",
+    CardContent radiusCard = CardContent::Slider(circleDotIcon.c_str(), "Maximum Detection Radius",
         "Maximum POI detection range from the player.",
         &g_poiDetectionRadius, 0.0f, 7000.0f, "%.1f m", k_defaultPoiDetectionRadius, SaveSettings,
         nullptr, true, UITemplate::SKYRIM_UNITS_TO_METERS);
 
     DrawSettingCard("poiRadiusCard", radiusCard);
 
-    CardContent lockCard = CardContent::Slider(poiLockIcon.c_str(), "Minimum Lock Duration",
+    CardContent lockCard = CardContent::Slider(locationPinLockIcon.c_str(), "Minimum Lock Duration",
         "Minimum time the camera stays locked onto a point of interest before it can switch to another.",
         &g_lockDuration, 0.0f, 30.0f, "%.1f sec", k_defaultLockDuration, SaveSettings);
 
@@ -945,7 +945,7 @@ void UI::POISystemMainSettings() {
 
 void UI::POISystemExclusionListSettings() {
 
-    auto cardStyle = DrawHeaderWithListReset("POI System - Exclusion List", excludeListIcon, "resetPoiExclusion",
+    auto cardStyle = DrawHeaderWithListReset("POI System - Exclusion List", lockIcon, "resetPoiExclusion",
         "Clear All Exclusions", "Removes all actors from the exclusion list.",
         ExclusionListReset(&g_actorExclusionList)
     );
@@ -1024,7 +1024,7 @@ void UI::POISystemExclusionListSettings() {
         // No actor selected
         ApplyCardContentLineMargin();
         ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(Colors::GrayLight));
-        ImGuiMCP::Text("%s To exclude an actor, open the console, click on the actor, then use the button below to add them.", infoIcon.c_str());
+        ImGuiMCP::Text("%s To exclude an actor, open the console, click on the actor, then use the button below to add them.", circleInfoIcon.c_str());
         ImGuiMCP::PopStyleColor();
 
         ApplyCardContentLineMargin();
@@ -1050,7 +1050,7 @@ void UI::POISystemExclusionListSettings() {
         // Selected object is not an actor
         ApplyCardContentLineMargin();
         ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(Colors::Red));
-        ImGuiMCP::Text("%s The currently selected object is not an actor.", deniedIcon.c_str());
+        ImGuiMCP::Text("%s The currently selected object is not an actor.", banIcon.c_str());
         ImGuiMCP::PopStyleColor();
 
         ApplyCardContentLineMargin();
@@ -1075,7 +1075,7 @@ void UI::POISystemExclusionListSettings() {
 
         ApplyCardContentLineMargin();
         ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(Colors::Red));
-        ImGuiMCP::Text("%s The player cannot be excluded.", deniedIcon.c_str());
+        ImGuiMCP::Text("%s The player cannot be excluded.", banIcon.c_str());
         ImGuiMCP::PopStyleColor();
 
         ApplyCardContentLineMargin();
@@ -1102,7 +1102,7 @@ void UI::POISystemExclusionListSettings() {
 
         ApplyCardContentLineMargin();
         ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(Colors::Orange));
-        ImGuiMCP::Text("%s Already Excluded: %s", deniedIcon.c_str(), selectedActor->GetName() ? selectedActor->GetName() : "Unnamed");
+        ImGuiMCP::Text("%s Already Excluded: %s", banIcon.c_str(), selectedActor->GetName() ? selectedActor->GetName() : "Unnamed");
         ImGuiMCP::PopStyleColor();
 
         ApplyCardContentLineMargin();
@@ -1154,10 +1154,10 @@ void UI::POISystemExclusionListSettings() {
 
     }
 
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.0f));
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, k_cardContentBottomMargin));
 
     ImGuiMCP::EndChild();
-    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 10.0f));
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, k_cardSpaceAfter));
 
     // =====================================================================================================================
     //  Card 2: Excluded Actors List
@@ -1181,6 +1181,8 @@ void UI::POISystemExclusionListSettings() {
         ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(Colors::GrayLight));
         ImGuiMCP::Text("%s No actors in exclusion list.", folderOpenIcon.c_str());
         ImGuiMCP::PopStyleColor();
+
+        ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, k_cardContentBottomMargin));
 
         ImGuiMCP::EndChild();
         return;
@@ -1354,6 +1356,7 @@ void UI::POISystemExclusionListSettings() {
     }
 
     ImGuiMCP::EndChild();
+    ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, k_cardContentBottomMargin));
     ImGuiMCP::EndChild();
 
 }
@@ -1364,7 +1367,7 @@ void UI::POISystemExclusionListSettings() {
 
 void UI::POISystemActorScores() {
 
-    auto cardStyle = DrawHeaderWithReset("POI System - Actor Scores", poiTypesIcon, "Actor Score Settings", "resetPoiActor",
+    auto cardStyle = DrawHeaderWithReset("POI System - Actor Scores", layerGroupIcon, "Actor Score Settings", "resetPoiActor",
         MakeResetLogger("Actor Score Settings"),
         SettingWithDefault(&g_dragonScore, k_defaultDragonScore),
         SettingWithDefault(&g_dragonProximityEnabled, k_defaultDragonProximityEnabled),
@@ -1395,7 +1398,7 @@ void UI::POISystemActorScores() {
 
 void UI::POISystemCritterScores() {
 
-    auto cardStyle = DrawHeaderWithReset("POI System - Critter Scores", poiTypesIcon, "Critter Score Settings", "resetPoiCritter",
+    auto cardStyle = DrawHeaderWithReset("POI System - Critter Scores", layerGroupIcon, "Critter Score Settings", "resetPoiCritter",
         MakeResetLogger("Critter Score Settings"),
         SettingWithDefault(&g_flyingCritterScore, k_defaultFlyingCritterScore),
         SettingWithDefault(&g_flyingCritterProximityEnabled, k_defaultFlyingCritterProximityEnabled),
@@ -1417,7 +1420,7 @@ void UI::POISystemCritterScores() {
 
 void UI::DebugSettings() {
 
-    auto cardStyle = DrawHeaderWithReset("Debug Settings", debugIcon, "Debug", "resetDebug",
+    auto cardStyle = DrawHeaderWithReset("Debug Settings", screwdriverWrenchIcon, "Debug", "resetDebug",
         MakeResetLogger("Debug Settings"),
         SettingWithDefault(&g_debugRaycasts, k_defaultDebugRaycasts),
         SettingWithDefault(&g_loggingLevel, k_defaultLoggingLevel, []() {
@@ -1428,13 +1431,13 @@ void UI::DebugSettings() {
             })
     );
 
-    CardContent raycastCard = CardContent::Checkbox(raycastIcon.c_str(), "Debug Raycast Visualization",
+    CardContent raycastCard = CardContent::Checkbox(crosshairsIcon.c_str(), "Debug Raycast Visualization",
         "Draws debug raycast lines used by the POI detection system, for troubleshooting purposes.",
         &g_debugRaycasts, k_defaultDebugRaycasts, SaveSettings);
 
     DrawSettingCard("raycastCard", raycastCard);
 
-    CardContent loggingCard = CardContent::IntSlider(loggingIcon.c_str(), "Logging Level",
+    CardContent loggingCard = CardContent::IntSlider(terminalIcon.c_str(), "Logging Level",
         "Controls how much detail is written to the log file:\n"
         "\n"
         "Quiet - only critical errors that prevent the mod from working.\n"

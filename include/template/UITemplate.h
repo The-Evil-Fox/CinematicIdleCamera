@@ -16,12 +16,22 @@ namespace UITemplate {
     //  Layout constants
     // ==================================================================================================================================================================================
 
+    // Headers
+
+    inline constexpr float              k_marginBetweenBordersInHeader              = 30.0f;
+
+    // Icons & labels
+
     inline constexpr float              k_iconColumnWidth                           = 30.0f;
     inline constexpr float              k_spaceAfterIcon                            = 20.0f;
-    inline constexpr float              k_marginBetweenBordersInHeader              = 30.0f;
+
+    // Cards
+
     inline constexpr float              k_cardCurrentValueRightMargin               = 10.0f;
     inline constexpr float              k_cardContentLeftMargin                     = 15.0f;
     inline constexpr float              k_cardContentTopMargin                      = 15.0f;
+    inline constexpr float              k_cardContentBottomMargin                   = 15.0f;
+    inline constexpr float              k_cardSpaceAfter                            = 10.0f;
 
     // ==================================================================================================================================================================================
     //  Skyrim Constants
@@ -175,47 +185,51 @@ namespace UITemplate {
 
     namespace Icons {
 
-        extern const std::string        cameraIcon;
-        extern const std::string        headTrackIcon;
-        extern const std::string        poiSystemIcon;
-        extern const std::string        debugIcon;
-
-        extern const std::string        arrowUpIcon;
+        extern const std::string        addIcon;
         extern const std::string        arrowLeftAndRightIcon;
         extern const std::string        arrowUpAndDownIcon;
-        extern const std::string        zoomIcon;
+        extern const std::string        arrowUpIcon;
 
+        extern const std::string        banIcon;
+
+        extern const std::string        circleDotIcon;
+        extern const std::string        circleInfoIcon;
         extern const std::string        clockIcon;
+        extern const std::string        crosshairsIcon;
+        extern const std::string        cubeIcon;
+
+        extern const std::string        doveIcon;
+        extern const std::string        dragonIcon;
+
+        extern const std::string        eyeIcon;
+
         extern const std::string        filmIcon;
-        extern const std::string        speedIcon;
-        extern const std::string        soundIcon;
-        extern const std::string        radiusIcon;
-        extern const std::string        collisionIcon;
-
-        extern const std::string        poiTypesIcon;
-        extern const std::string        excludeListIcon;
-        extern const std::string        poiLockIcon;
-        extern const std::string        followerIcon;
-
-        extern const std::string        dragonScoreIcon;
-        extern const std::string        inCombatScoreIcon;
-        extern const std::string        movingScoreIcon;
-        extern const std::string        inSceneScoreIcon;
-        extern const std::string        personIcon;
-
-        extern const std::string        flyingCritterIcon;
-        extern const std::string        fishCritterIcon;
-
-        extern const std::string        addIcon;
-        extern const std::string        infoIcon;
-
-        extern const std::string        raycastIcon;
-        extern const std::string        loggingIcon;
-
-        extern const std::string        deniedIcon;
+        extern const std::string        fishIcon;
         extern const std::string        folderOpenIcon;
 
-        extern const std::string        resetIcon;
+        extern const std::string        gaugeHighIcon;
+        extern const std::string        gavelIcon;
+
+        extern const std::string        layerGroupIcon;
+        extern const std::string        locationDotIcon;
+        extern const std::string        locationPinLockIcon;
+        extern const std::string        lockIcon;
+
+        extern const std::string        magnifyingGlassIcon;
+        extern const std::string        masksTheaterIcon;
+
+        extern const std::string        peoplePullingIcon;
+        extern const std::string        personIcon;
+        extern const std::string        personWalkingIcon;
+
+        extern const std::string        rotateLeftIcon;
+
+        extern const std::string        screwdriverWrenchIcon;
+
+        extern const std::string        terminalIcon;
+
+        extern const std::string        videoIcon;
+        extern const std::string        volumeHighIcon;
 
     }
 
@@ -387,7 +401,7 @@ namespace UITemplate {
 
         const bool hasChanges = HasSettingsChanged(a_settings...);
 
-        std::string fullButtonText = std::format("{} Reset To Default##{}", Icons::resetIcon, a_buttonId);
+        std::string fullButtonText = std::format("{} Reset To Default##{}", Icons::rotateLeftIcon, a_buttonId);
         ImGuiMCP::ImVec2 resetTextSize;
         ImGuiMCP::CalcTextSize(&resetTextSize, fullButtonText.c_str(), nullptr, true, -1.0f);
 
@@ -469,7 +483,7 @@ namespace UITemplate {
 
         const bool hasChanges = a_listReset.HasChanged();
 
-        std::string fullButtonText = std::format("{} {}##{}", Icons::resetIcon, a_buttonLabel, a_buttonId);
+        std::string fullButtonText = std::format("{} {}##{}", Icons::rotateLeftIcon, a_buttonLabel, a_buttonId);
         ImGuiMCP::ImVec2 resetTextSize;
         ImGuiMCP::CalcTextSize(&resetTextSize, fullButtonText.c_str(), nullptr, true, -1.0f);
 
