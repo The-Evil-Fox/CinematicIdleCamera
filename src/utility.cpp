@@ -463,3 +463,29 @@ void IniParser::Save() {
     logger::info("User config saved successfully.");
 
 }
+
+namespace GameSettings {
+
+    void ApplyFloat(const std::string& a_settingName, float a_value) {
+
+        auto* iniSettings = RE::INISettingCollection::GetSingleton();
+
+        if (iniSettings) {
+
+            auto* setting = iniSettings->GetSetting(a_settingName);
+
+            if (setting) {
+
+                setting->data.f = a_value;
+
+            } else {
+
+                logger::error("Setting not found in INISettingCollection: {}", a_settingName);
+
+            }
+
+        }
+
+    }
+
+}

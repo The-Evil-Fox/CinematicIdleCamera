@@ -72,23 +72,7 @@ static void MessageHandler(SKSE::MessagingInterface::Message* msg) {
         // So it doesn't overwrite user's existing params in skyrimprefs since this copy is not saved once the game is shut down.
         // ===================================================================================================================================================================================
 
-        auto* iniSettings = RE::INISettingCollection::GetSingleton();
-
-        if (iniSettings) {
-
-            auto* vanityModeDelaySetting = iniSettings->GetSetting("fAutoVanityModeDelay:Camera");
-
-            if (vanityModeDelaySetting) {
-
-                vanityModeDelaySetting->data.f = UI::g_idleTimer;
-
-            } else {
-
-                logger::error("Setting not found in INISettingCollection !");
-
-            }
-
-        }
+        GameSettings::ApplyFloat("fAutoVanityModeDelay:Camera", UI::g_idleTimer);
 
         Hooks::MenuMonitor::Register();
         Hooks::KillMoveCameraStateHook::Install();

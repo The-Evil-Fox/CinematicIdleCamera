@@ -1,5 +1,6 @@
 #pragma once
 #include "SKSEMenuFramework.h"
+#include "template/UITemplate.h"
 #include "logger.hpp"
 
 namespace UI {
@@ -117,16 +118,16 @@ namespace UI {
     void                RemoveFromActorExclusionList(size_t index);
     bool                IsActorExcluded(RE::Actor* a_actor);
 
-    static void         CameraMainSettings();
-    static void         CameraPositionSettings();
-    static void         CameraZoomSettings();
+    void                CameraMainSettings();
+    void                CameraPositionSettings();
+    void                CameraZoomSettings();
 
     void                HeadTrackingSettings();
 
-    static void         POISystemMainSettings();
-    static void         POISystemActorScores();
+    void                POISystemMainSettings();
+    void                POISystemActorScores();
     void                POISystemExclusionListSettings();
-    static void         POISystemCritterScores();
+    void                POISystemCritterScores();
 
     void                DebugSettings();
 
