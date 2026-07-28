@@ -723,8 +723,6 @@ namespace UITemplate {
 
     };
 
-    // a_onSave is called any time any checkbox (top-level or nested) is toggled
-    // or reset — hook your save/ini logic here.
     void DrawMultiCheckboxCard(const std::string& a_cardId, const std::string& a_title, const char* a_icon, std::vector<CheckboxItem> a_items, const std::function<void()>& a_onSave);
 
     void ApplyCardContentLineMargin(bool a_isSliderLine = false);

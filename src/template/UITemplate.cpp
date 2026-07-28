@@ -18,9 +18,9 @@ namespace UITemplate {
     //  Converts a 24-bit RGB or 32-bit RGBA hex color to ImVec4 with optional alpha override.
     // 
     //  The function extracts RGB from the hex value (ignoring any alpha in the hex itself):
-    //    - Bits 16-23: Red channel (0x00 to 0xFF)
-    //    - Bits 8-15:  Green channel (0x00 to 0xFF)  
-    //    - Bits 0-7:   Blue channel (0x00 to 0xFF)
+    //    Bits 16-23: Red channel (0x00 to 0xFF)
+    //    Bits 8-15:  Green channel (0x00 to 0xFF)  
+    //    Bits 0-7:   Blue channel (0x00 to 0xFF)
     //
     //  Alpha is controlled by the a_alpha parameter (default = 1.0f for fully opaque):
     //    0.0f = fully transparent
