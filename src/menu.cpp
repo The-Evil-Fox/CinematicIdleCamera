@@ -21,31 +21,31 @@ using namespace UITemplate::Icons;
 
 // Main Settings
 
-static constexpr float              k_defaultIdleTimer = 30.0f;
-static constexpr bool               k_defaultBlackBarsEnabled = true;
-static constexpr float              k_defaultBlackBarsSpeed = 1.0f;
-static constexpr bool               k_defaultBlackBarsSoundEnabled = true;
+static constexpr float                  k_defaultIdleTimer                              = 30.0f;
+static constexpr bool                   k_defaultBlackBarsEnabled                       = true;
+static constexpr float                  k_defaultBlackBarsSpeed                         = 1.0f;
+static constexpr bool                   k_defaultBlackBarsSoundEnabled                  = true;
 
 // Position/Transition
 
-static constexpr float              k_defaultVanityCamOffsetX = 75.0f;
-static constexpr float              k_defaultVanityCamOffsetY = 130.0f;
-static constexpr float              k_defaultVanityCamOffsetZ = 0.0f;
-static constexpr bool               k_defaultVanityCameraCollisionEnabled = false;
-static constexpr float              k_defaultBlendDuration = 5.0f;
+static constexpr float                  k_defaultVanityCamOffsetX                       = 75.0f;
+static constexpr float                  k_defaultVanityCamOffsetY                       = 130.0f;
+static constexpr float                  k_defaultVanityCamOffsetZ                       = 0.0f;
+static constexpr bool                   k_defaultVanityCameraCollisionEnabled           = false;
+static constexpr float                  k_defaultBlendDuration                          = 5.0f;
 
 // Zoom/Dezoom
 
-static constexpr float              k_defaultDezoomTriggerRadius = 350.0f;
-static constexpr float              k_defaultDezoomTriggerHeight = 210.0f;
-static constexpr float              k_defaultDezoomAmount = 250.0f;
-static constexpr float              k_defaultDezoomBlendSpeed = 0.7f;
+static constexpr float                  k_defaultDezoomTriggerRadius                    = 350.0f;
+static constexpr float                  k_defaultDezoomTriggerHeight                    = 210.0f;
+static constexpr float                  k_defaultDezoomAmount                           = 250.0f;
+static constexpr float                  k_defaultDezoomBlendSpeed                       = 0.7f;
 
 // =====================================================================================================================
 //  Head Tracking
 // =====================================================================================================================
 
-static constexpr float              k_defaultHeadTrackFadeSpeed = 0.3f;
+static constexpr float                  k_defaultHeadTrackFadeSpeed                     = 0.3f;
 
 // =====================================================================================================================
 //  POI System
@@ -53,54 +53,54 @@ static constexpr float              k_defaultHeadTrackFadeSpeed = 0.3f;
 
 // Main settings
 
-static constexpr bool               k_defaultPoiSystemEnabled = true;
-static constexpr bool               k_defaultActorPoiEnabled = true;
-static constexpr bool               k_defaultPreventFollowers = true;
-static constexpr bool               k_defaultFlyingCritterPoiEnabled = true;
-static constexpr bool               k_defaultFishCritterPoiEnabled = true;
-static constexpr float              k_defaultPoiDetectionRadius = 1050.0f;
-static constexpr float              k_defaultLockDuration = 5.0f;
+static constexpr bool                   k_defaultPoiSystemEnabled                       = true;
+static constexpr bool                   k_defaultActorPoiEnabled                        = true;
+static constexpr bool                   k_defaultPreventFollowers                       = true;
+static constexpr bool                   k_defaultFlyingCritterPoiEnabled                = true;
+static constexpr bool                   k_defaultFishCritterPoiEnabled                  = true;
+static constexpr float                  k_defaultPoiDetectionRadius                     = 1050.0f;
+static constexpr float                  k_defaultLockDuration                           = 5.0f;
 
 // Actors score system
 
-static constexpr float              k_defaultDragonScore = 2000.0f;
-static constexpr bool               k_defaultDragonProximityEnabled = true;
-static constexpr float              k_defaultDragonProximityFactor = 1000.0f;
+static constexpr float                  k_defaultDragonScore                            = 2000.0f;
+static constexpr bool                   k_defaultDragonProximityEnabled                 = true;
+static constexpr float                  k_defaultDragonProximityFactor                  = 1000.0f;
 
-static constexpr float              k_defaultActorCombatScore = 600.0f;
-static constexpr bool               k_defaultActorCombatProximityEnabled = true;
-static constexpr float              k_defaultActorCombatProximityFactor = 200.0f;
+static constexpr float                  k_defaultActorCombatScore                       = 600.0f;
+static constexpr bool                   k_defaultActorCombatProximityEnabled            = true;
+static constexpr float                  k_defaultActorCombatProximityFactor             = 200.0f;
 
-static constexpr float              k_defaultActorMovingScore = 400.0f;
-static constexpr bool               k_defaultActorMovingProximityEnabled = true;
-static constexpr float              k_defaultActorMovingProximityFactor = 150.0f;
+static constexpr float                  k_defaultActorMovingScore                       = 400.0f;
+static constexpr bool                   k_defaultActorMovingProximityEnabled            = true;
+static constexpr float                  k_defaultActorMovingProximityFactor             = 150.0f;
 
-static constexpr float              k_defaultActorInSceneScore = 300.0f;
-static constexpr bool               k_defaultActorInSceneProximityEnabled = true;
-static constexpr float              k_defaultActorInSceneProximityFactor = 50.0f;
+static constexpr float                  k_defaultActorInSceneScore                      = 300.0f;
+static constexpr bool                   k_defaultActorInSceneProximityEnabled           = true;
+static constexpr float                  k_defaultActorInSceneProximityFactor            = 50.0f;
 
-static constexpr float              k_defaultActorIdleScore = 10.0f;
-static constexpr bool               k_defaultActorIdleProximityEnabled = true;
-static constexpr float              k_defaultActorIdleProximityFactor = 50.0f;
+static constexpr float                  k_defaultActorIdleScore                         = 10.0f;
+static constexpr bool                   k_defaultActorIdleProximityEnabled              = true;
+static constexpr float                  k_defaultActorIdleProximityFactor               = 50.0f;
 
 // Flying critters score system
 
-static constexpr float              k_defaultFlyingCritterScore = 400.0f;
-static constexpr bool               k_defaultFlyingCritterProximityEnabled = true;
-static constexpr float              k_defaultFlyingCritterProximityFactor = 150.0f;
+static constexpr float                  k_defaultFlyingCritterScore                     = 400.0f;
+static constexpr bool                   k_defaultFlyingCritterProximityEnabled          = true;
+static constexpr float                  k_defaultFlyingCritterProximityFactor           = 150.0f;
 
 // Fish critters score system
 
-static constexpr float              k_defaultFishCritterScore = 300.0f;
-static constexpr bool               k_defaultFishCritterProximityEnabled = true;
-static constexpr float              k_defaultFishCritterProximityFactor = 150.0f;
+static constexpr float                  k_defaultFishCritterScore                       = 300.0f;
+static constexpr bool                   k_defaultFishCritterProximityEnabled            = true;
+static constexpr float                  k_defaultFishCritterProximityFactor             = 150.0f;
 
 // =====================================================================================================================
 //  Debug
 // =====================================================================================================================
 
-static constexpr bool               k_defaultDebugRaycasts = false;
-static constexpr int                k_defaultLoggingLevel = 2; // 0 = critical, 1 = warn, 2 = info, 3 = debug
+static constexpr bool                   k_defaultDebugRaycasts                          = false;
+static constexpr int                    k_defaultLoggingLevel                           = 2; // 0 = critical, 1 = warn, 2 = info, 3 = debug
 
 // ==================================================================================================================================================================================
 //  Initalize the sliders in the ui with the default values (used only when the INI doesn't exist or a param in it was completely removed)
@@ -110,61 +110,61 @@ static constexpr int                k_defaultLoggingLevel = 2; // 0 = critical, 
 //  Camera
 // =====================================================================================================================
 
-float                               UI::g_idleTimer = k_defaultIdleTimer;
-bool                                UI::g_blackBarsEnabled = k_defaultBlackBarsEnabled;
-float                               UI::g_blackBarsSpeed = k_defaultBlackBarsSpeed;
-bool                                UI::g_blackBarsSoundEnabled = k_defaultBlackBarsSoundEnabled;
+float                                   UI::g_idleTimer                                 = k_defaultIdleTimer;
+bool                                    UI::g_blackBarsEnabled                          = k_defaultBlackBarsEnabled;
+float                                   UI::g_blackBarsSpeed                            = k_defaultBlackBarsSpeed;
+bool                                    UI::g_blackBarsSoundEnabled                     = k_defaultBlackBarsSoundEnabled;
 
-float                               UI::g_IdleCamOffsetX = k_defaultVanityCamOffsetX;
-float                               UI::g_IdleCamOffsetY = k_defaultVanityCamOffsetY;
-float                               UI::g_IdleCamOffsetZ = k_defaultVanityCamOffsetZ;
-bool                                UI::g_vanityCameraCollisionEnabled = k_defaultVanityCameraCollisionEnabled;
-float                               UI::g_blendDuration = k_defaultBlendDuration;
+float                                   UI::g_IdleCamOffsetX                            = k_defaultVanityCamOffsetX;
+float                                   UI::g_IdleCamOffsetY                            = k_defaultVanityCamOffsetY;
+float                                   UI::g_IdleCamOffsetZ                            = k_defaultVanityCamOffsetZ;
+bool                                    UI::g_vanityCameraCollisionEnabled              = k_defaultVanityCameraCollisionEnabled;
+float                                   UI::g_blendDuration                             = k_defaultBlendDuration;
 
-float                               UI::g_dezoomTriggerRadius = k_defaultDezoomTriggerRadius;
-float                               UI::g_dezoomTriggerHeight = k_defaultDezoomTriggerHeight;
-float                               UI::g_dezoomAmount = k_defaultDezoomAmount;
-float                               UI::g_dezoomBlendSpeed = k_defaultDezoomBlendSpeed;
+float                                   UI::g_dezoomTriggerRadius                       = k_defaultDezoomTriggerRadius;
+float                                   UI::g_dezoomTriggerHeight                       = k_defaultDezoomTriggerHeight;
+float                                   UI::g_dezoomAmount                              = k_defaultDezoomAmount;
+float                                   UI::g_dezoomBlendSpeed                          = k_defaultDezoomBlendSpeed;
 
-float                               UI::g_headTrackFadeSpeed = k_defaultHeadTrackFadeSpeed;
+float                                   UI::g_headTrackFadeSpeed                        = k_defaultHeadTrackFadeSpeed;
 
-bool                                UI::g_poiSystemEnabled = k_defaultPoiSystemEnabled;
-bool                                UI::g_actorPoiEnabled = k_defaultActorPoiEnabled;
-bool                                UI::g_preventFollowers = k_defaultPreventFollowers;
-bool                                UI::g_flyingCritterPoiEnabled = k_defaultFlyingCritterPoiEnabled;
-bool                                UI::g_fishCritterPoiEnabled = k_defaultFishCritterPoiEnabled;
-float                               UI::g_poiDetectionRadius = k_defaultPoiDetectionRadius;
-float                               UI::g_lockDuration = k_defaultLockDuration;
+bool                                    UI::g_poiSystemEnabled                          = k_defaultPoiSystemEnabled;
+bool                                    UI::g_actorPoiEnabled                           = k_defaultActorPoiEnabled;
+bool                                    UI::g_preventFollowers                          = k_defaultPreventFollowers;
+bool                                    UI::g_flyingCritterPoiEnabled                   = k_defaultFlyingCritterPoiEnabled;
+bool                                    UI::g_fishCritterPoiEnabled                     = k_defaultFishCritterPoiEnabled;
+float                                   UI::g_poiDetectionRadius                        = k_defaultPoiDetectionRadius;
+float                                   UI::g_lockDuration                              = k_defaultLockDuration;
 
-float                               UI::g_dragonScore = k_defaultDragonScore;
-bool                                UI::g_dragonProximityEnabled = k_defaultDragonProximityEnabled;
-float                               UI::g_dragonProximityFactor = k_defaultDragonProximityFactor;
+float                                   UI::g_dragonScore                               = k_defaultDragonScore;
+bool                                    UI::g_dragonProximityEnabled                    = k_defaultDragonProximityEnabled;
+float                                   UI::g_dragonProximityFactor                     = k_defaultDragonProximityFactor;
 
-float                               UI::g_actorCombatScore = k_defaultActorCombatScore;
-bool                                UI::g_actorCombatProximityEnabled = k_defaultActorCombatProximityEnabled;
-float                               UI::g_actorCombatProximityFactor = k_defaultActorCombatProximityFactor;
+float                                   UI::g_actorCombatScore                          = k_defaultActorCombatScore;
+bool                                    UI::g_actorCombatProximityEnabled               = k_defaultActorCombatProximityEnabled;
+float                                   UI::g_actorCombatProximityFactor                = k_defaultActorCombatProximityFactor;
 
-float                               UI::g_actorMovingScore = k_defaultActorMovingScore;
-bool                                UI::g_actorMovingProximityEnabled = k_defaultActorMovingProximityEnabled;
-float                               UI::g_actorMovingProximityFactor = k_defaultActorMovingProximityFactor;
+float                                   UI::g_actorMovingScore                          = k_defaultActorMovingScore;
+bool                                    UI::g_actorMovingProximityEnabled               = k_defaultActorMovingProximityEnabled;
+float                                   UI::g_actorMovingProximityFactor                = k_defaultActorMovingProximityFactor;
 
-float                               UI::g_actorInSceneScore = k_defaultActorInSceneScore;
-bool                                UI::g_actorInSceneProximityEnabled = k_defaultActorInSceneProximityEnabled;
-float                               UI::g_actorInSceneProximityFactor = k_defaultActorInSceneProximityFactor;
+float                                   UI::g_actorInSceneScore                         = k_defaultActorInSceneScore;
+bool                                    UI::g_actorInSceneProximityEnabled              = k_defaultActorInSceneProximityEnabled;
+float                                   UI::g_actorInSceneProximityFactor               = k_defaultActorInSceneProximityFactor;
 
-float                               UI::g_actorIdleScore = k_defaultActorIdleScore;
-bool                                UI::g_actorIdleProximityEnabled = k_defaultActorIdleProximityEnabled;
-float                               UI::g_actorIdleProximityFactor = k_defaultActorIdleProximityFactor;
+float                                   UI::g_actorIdleScore                            = k_defaultActorIdleScore;
+bool                                    UI::g_actorIdleProximityEnabled                 = k_defaultActorIdleProximityEnabled;
+float                                   UI::g_actorIdleProximityFactor                  = k_defaultActorIdleProximityFactor;
 
-float                               UI::g_flyingCritterScore = k_defaultFlyingCritterScore;
-bool                                UI::g_flyingCritterProximityEnabled = k_defaultFlyingCritterProximityEnabled;
-float                               UI::g_flyingCritterProximityFactor = k_defaultFlyingCritterProximityFactor;
+float                                   UI::g_flyingCritterScore                        = k_defaultFlyingCritterScore;
+bool                                    UI::g_flyingCritterProximityEnabled             = k_defaultFlyingCritterProximityEnabled;
+float                                   UI::g_flyingCritterProximityFactor              = k_defaultFlyingCritterProximityFactor;
 
-float                               UI::g_fishCritterScore = k_defaultFishCritterScore;
-bool                                UI::g_fishCritterProximityEnabled = k_defaultFishCritterProximityEnabled;
-float                               UI::g_fishCritterProximityFactor = k_defaultFishCritterProximityFactor;
+float                                   UI::g_fishCritterScore                          = k_defaultFishCritterScore;
+bool                                    UI::g_fishCritterProximityEnabled               = k_defaultFishCritterProximityEnabled;
+float                                   UI::g_fishCritterProximityFactor                = k_defaultFishCritterProximityFactor;
 
-std::vector<UI::ActorExclusionEntry> UI::g_actorExclusionList;
+std::vector<UI::ActorExclusionEntry>    UI::g_actorExclusionList;
 
 namespace Hooks {
 
@@ -172,8 +172,8 @@ namespace Hooks {
 
 }
 
-bool                                UI::g_debugRaycasts = k_defaultDebugRaycasts;
-int                                 UI::g_loggingLevel = k_defaultLoggingLevel;
+bool                                    UI::g_debugRaycasts                             = k_defaultDebugRaycasts;
+int                                     UI::g_loggingLevel                              = k_defaultLoggingLevel;
 
 // ==================================================================================================================================================================================
 //  Mod-specific exclusion-list reset target (list->clear() + IniParser::Save()).
