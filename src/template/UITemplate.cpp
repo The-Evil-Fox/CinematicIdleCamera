@@ -134,6 +134,34 @@ namespace UITemplate {
     }
 
     // ==================================================================================================================
+    //  Wrapped text helper: wraps at the current content region's right edge
+    //  (minus a_rightMargin) instead of overflowing the card. Since availWidth
+    //  is recalculated every frame, this stays correct across window resizes.
+    // ==================================================================================================================
+
+    void DrawWrappedText(const char* a_text, uint32_t a_color, float a_rightMargin) {
+
+        if (!a_text) {
+
+            return;
+
+        }
+
+        ImGuiMCP::ImVec2 avail;
+        ImGuiMCP::GetContentRegionAvail(&avail);
+
+        float wrapWidth = std::max(avail.x - a_rightMargin, 50.0f);
+        float cursorX = ImGuiMCP::GetCursorPosX();
+
+        ImGuiMCP::PushTextWrapPos(cursorX + wrapWidth);
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(a_color));
+        ImGuiMCP::Text("%s", a_text);
+        ImGuiMCP::PopStyleColor();
+        ImGuiMCP::PopTextWrapPos();
+
+    }
+
+    // ==================================================================================================================
     //  DrawSettingCard
     // ==================================================================================================================
 
@@ -469,9 +497,7 @@ namespace UITemplate {
 
             ApplyCardContentLineMargin();
 
-            ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(Colors::GrayLight));
-            ImGuiMCP::Text("%s", a_card.tooltipText);
-            ImGuiMCP::PopStyleColor();
+            DrawWrappedText(a_card.tooltipText, Colors::GrayLight);
 
         }
 
@@ -701,17 +727,14 @@ namespace UITemplate {
         ImGuiMCP::Separator();
 
         ApplyCardContentLineMargin();
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(Colors::GrayLight));
-        ImGuiMCP::Text("%s", a_card.tooltip);
+        DrawWrappedText(a_card.tooltip, Colors::GrayLight);
 
         if (*a_card.bonusEnabled) {
 
             ApplyCardContentLineMargin();
-            ImGuiMCP::Text("%s", a_card.bonusTooltip);
+            DrawWrappedText(a_card.bonusTooltip, Colors::GrayLight);
 
         }
-
-        ImGuiMCP::PopStyleColor();
 
         ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, k_cardContentBottomMargin));
 

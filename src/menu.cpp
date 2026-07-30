@@ -31,7 +31,7 @@ static constexpr bool               k_defaultBlackBarsSoundEnabled = true;
 static constexpr float              k_defaultVanityCamOffsetX = 75.0f;
 static constexpr float              k_defaultVanityCamOffsetY = 130.0f;
 static constexpr float              k_defaultVanityCamOffsetZ = 0.0f;
-static constexpr bool               k_defaultVanityCameraCollisionEnabled = true;
+static constexpr bool               k_defaultVanityCameraCollisionEnabled = false;
 static constexpr float              k_defaultBlendDuration = 5.0f;
 
 // Zoom/Dezoom
@@ -1023,9 +1023,7 @@ void UI::POISystemExclusionListSettings() {
 
         // No actor selected
         ApplyCardContentLineMargin();
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(Colors::GrayLight));
-        ImGuiMCP::Text("%s To exclude an actor, open the console, click on the actor, then use the button below to add them.", circleInfoIcon.c_str());
-        ImGuiMCP::PopStyleColor();
+        DrawWrappedText(std::format("{} To exclude an actor, open the console, click on the actor, then use the button below to add them.", circleInfoIcon).c_str(), Colors::GrayLight);
 
         ApplyCardContentLineMargin();
 
@@ -1049,9 +1047,7 @@ void UI::POISystemExclusionListSettings() {
 
         // Selected object is not an actor
         ApplyCardContentLineMargin();
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(Colors::Red));
-        ImGuiMCP::Text("%s The currently selected object is not an actor.", banIcon.c_str());
-        ImGuiMCP::PopStyleColor();
+        DrawWrappedText(std::format("{} The currently selected object is not an actor.", banIcon).c_str(), Colors::Red);
 
         ApplyCardContentLineMargin();
 
@@ -1074,9 +1070,7 @@ void UI::POISystemExclusionListSettings() {
     } else if (isPlayer) {
 
         ApplyCardContentLineMargin();
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(Colors::Red));
-        ImGuiMCP::Text("%s The player cannot be excluded.", banIcon.c_str());
-        ImGuiMCP::PopStyleColor();
+        DrawWrappedText(std::format("{} The player cannot be excluded.", banIcon).c_str(), Colors::Red);
 
         ApplyCardContentLineMargin();
 
@@ -1101,9 +1095,7 @@ void UI::POISystemExclusionListSettings() {
     } else if (isExcluded) {
 
         ApplyCardContentLineMargin();
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(Colors::Orange));
-        ImGuiMCP::Text("%s Already Excluded: %s", banIcon.c_str(), selectedActor->GetName() ? selectedActor->GetName() : "Unnamed");
-        ImGuiMCP::PopStyleColor();
+        DrawWrappedText(std::format("{} Already Excluded: {}", banIcon, selectedActor->GetName() ? selectedActor->GetName() : "Unnamed").c_str(), Colors::Orange);
 
         ApplyCardContentLineMargin();
 
@@ -1178,9 +1170,7 @@ void UI::POISystemExclusionListSettings() {
     if (g_actorExclusionList.empty()) {
 
         ApplyCardContentLineMargin();
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(Colors::GrayLight));
-        ImGuiMCP::Text("%s No actors in exclusion list.", folderOpenIcon.c_str());
-        ImGuiMCP::PopStyleColor();
+        DrawWrappedText(std::format("{} No actors in exclusion list.", folderOpenIcon).c_str(), Colors::GrayLight);
 
         ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, k_cardContentBottomMargin));
 

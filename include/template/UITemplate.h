@@ -727,4 +727,6 @@ namespace UITemplate {
 
     void ApplyCardContentLineMargin(bool a_isSliderLine = false);
 
+    void DrawWrappedText(const char* a_text, uint32_t a_color = Colors::GrayLight, float a_rightMargin = k_cardContentLeftMargin);
+
 }
