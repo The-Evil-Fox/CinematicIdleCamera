@@ -516,7 +516,8 @@ namespace UITemplate {
 
         return (*a_card.baseScore != a_card.baseDefault) ||
             (*a_card.bonusEnabled != a_card.bonusEnabledDefault) ||
-            (*a_card.bonusFactor != a_card.bonusFactorDefault);
+            (*a_card.bonusFactor != a_card.bonusFactorDefault) ||
+            (*a_card.enabled != a_card.enabledDefault);
 
     }
 
@@ -525,6 +526,13 @@ namespace UITemplate {
         *a_card.baseScore = a_card.baseDefault;
         *a_card.bonusEnabled = a_card.bonusEnabledDefault;
         *a_card.bonusFactor = a_card.bonusFactorDefault;
+        *a_card.enabled = a_card.enabledDefault;
+
+        if (a_card.onEnabledChange) {
+
+            a_card.onEnabledChange();
+
+        }
 
         if (a_card.onSave) {
 
@@ -570,21 +578,45 @@ namespace UITemplate {
 
         const bool hasChanges = HasScoreCardChanged(a_card);
 
+        // Category off = the parent master toggle (Actor POIs / Insects & fish POIs) this
+        // card doesn't own is currently disabled. Only meaningful while the card
+        // itself is enabled if the card is disabled, "Disabled" already says it all.
+        const bool categoryOff = (*a_card.enabled) && a_card.categoryEnabled && !(*a_card.categoryEnabled);
+
         float totalScore = *a_card.baseScore + (*a_card.bonusEnabled ? *a_card.bonusFactor : 0.0f);
         float defaultTotalScore = a_card.baseDefault + (a_card.bonusEnabledDefault ? a_card.bonusFactorDefault : 0.0f);
 
-        std::string scoreText = std::format("{:.0f}", totalScore);
-        ImGuiMCP::ImVec2 scoreTextSize;
-        ImGuiMCP::CalcTextSize(&scoreTextSize, scoreText.c_str(), nullptr, false, -1.0f);
+        // Header value: red "Disabled" if the card itself is off, orange "Inactive"
+        // if it's on but its category is currently off, otherwise the gold score.
+        std::string headerValueText;
+
+        if (!*a_card.enabled) {
+
+            headerValueText = "Disabled";
+
+        }
+        else if (categoryOff) {
+
+            headerValueText = "Inactive";
+
+        }
+        else {
+
+            headerValueText = std::format("{:.0f}", totalScore);
+
+        }
+
+        ImGuiMCP::ImVec2 valueTextSize;
+        ImGuiMCP::CalcTextSize(&valueTextSize, headerValueText.c_str(), nullptr, false, -1.0f);
 
         float rightEdge = headerX + (availWidth - k_cardContentLeftMargin) - k_cardCurrentValueRightMargin;
 
-        const float scoreStartX = rightEdge - scoreTextSize.x;
+        const float valueStartX = rightEdge - valueTextSize.x;
         float minX = currentX + 10.0f;
 
         if (hasChanges) {
 
-            if (DrawMiniResetButton(a_card.label, scoreStartX, headerY, minX, "Reset this card's settings to default values.")) {
+            if (DrawMiniResetButton(a_card.label, valueStartX, headerY, minX, "Reset this card's settings to default values.")) {
 
                 ResetScoreCard(a_card);
 
@@ -592,41 +624,88 @@ namespace UITemplate {
 
         }
 
-        ImGuiMCP::SetCursorPosX(scoreStartX);
+        ImGuiMCP::SetCursorPosX(valueStartX);
         ImGuiMCP::SetCursorPosY(headerY);
 
-        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(Colors::GoldLight));
-        ImGuiMCP::Text("%.0f", totalScore);
+        uint32_t headerValueColor = Colors::GoldLight;
+
+        if (!*a_card.enabled) {
+
+            headerValueColor = Colors::Red;
+
+        }
+        else if (categoryOff) {
+
+            headerValueColor = Colors::Orange;
+
+        }
+
+        ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(headerValueColor));
+        ImGuiMCP::Text("%s", headerValueText.c_str());
         ImGuiMCP::PopStyleColor();
 
         if (ImGuiMCP::IsItemHovered()) {
 
             ImGuiMCP::BeginTooltip();
-            ImGuiMCP::Text("Total Score: %.0f", totalScore);
-            ImGuiMCP::Text("Base Score: %.0f", *a_card.baseScore);
 
-            if (*a_card.bonusEnabled) {
+            if (!*a_card.enabled) {
 
-                ImGuiMCP::Text("Bonus: +%.0f", *a_card.bonusFactor);
+                ImGuiMCP::Text("This POI type is currently disabled.");
+
+            }
+            else if (categoryOff) {
+
+                ImGuiMCP::Text("%s are currently disabled in POI System Main Settings, so this card's settings", a_card.categoryLabel ? a_card.categoryLabel : "This card's category");
+                ImGuiMCP::Text("have no effect until they're re-enabled.");
+                ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
+                ImGuiMCP::Text("Total Score: %.0f", totalScore);
+                ImGuiMCP::Text("Base Score: %.0f", *a_card.baseScore);
+
+                if (*a_card.bonusEnabled) {
+
+                    ImGuiMCP::Text("Bonus: +%.0f", *a_card.bonusFactor);
+
+                } else {
+
+                    ImGuiMCP::Text("Bonus: Disabled");
+
+                }
 
             } else {
 
-                ImGuiMCP::Text("Bonus: Disabled");
+                ImGuiMCP::Text("Total Score: %.0f", totalScore);
+                ImGuiMCP::Text("Base Score: %.0f", *a_card.baseScore);
+
+                if (*a_card.bonusEnabled) {
+
+                    ImGuiMCP::Text("Bonus: +%.0f", *a_card.bonusFactor);
+
+                } else {
+
+                    ImGuiMCP::Text("Bonus: Disabled");
+
+                }
 
             }
 
             ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 4.0f));
             ImGuiMCP::PushStyleColor(ImGuiMCP::ImGuiCol_Text, HexToImVec4RGBA(Colors::Blue));
-            ImGuiMCP::Text("Default Total Score: %.0f", defaultTotalScore);
-            ImGuiMCP::Text("Default Base Score: %.0f", a_card.baseDefault);
+            ImGuiMCP::Text("Default: %s", a_card.enabledDefault ? "Enabled" : "Disabled");
 
-            if (a_card.bonusEnabledDefault) {
+            if (a_card.enabledDefault) {
 
-                ImGuiMCP::Text("Default Bonus: +%.0f", a_card.bonusFactorDefault);
+                ImGuiMCP::Text("Default Total Score: %.0f", defaultTotalScore);
+                ImGuiMCP::Text("Default Base Score: %.0f", a_card.baseDefault);
 
-            } else {
+                if (a_card.bonusEnabledDefault) {
 
-                ImGuiMCP::Text("Default Bonus: Disabled");
+                    ImGuiMCP::Text("Default Bonus: +%.0f", a_card.bonusFactorDefault);
+
+                } else {
+
+                    ImGuiMCP::Text("Default Bonus: Disabled");
+
+                }
 
             }
 
@@ -639,6 +718,77 @@ namespace UITemplate {
         ImGuiMCP::SetCursorPosY(headerY + frameHeight + 4.0f);
 
         ImGuiMCP::Separator();
+
+        // =====================================================================================================================
+        //  Enable/disable toggle - always shown first, regardless of state. While
+        //  disabled, none of the rest of the card (base slider, bonus, tooltip)
+        //  is drawn. Values are left untouched so they can be reused once this
+        //  POI type is re-enabled - we never zero them out.
+        // =====================================================================================================================
+
+        ApplyCardContentLineMargin();
+        ImGuiMCP::Text("Enabled");
+        ImGuiMCP::SameLine();
+        ImGuiMCP::SetCursorPosX(ImGuiMCP::GetCursorPosX() + 10.0f);
+
+        ImGuiMCP::PushID(a_card.label);
+
+        if (ImGuiMCP::Checkbox("##EnabledToggle", a_card.enabled)) {
+
+            if (a_card.onSave) {
+
+                a_card.onSave();
+
+            }
+
+            if (a_card.onEnabledChange) {
+
+                a_card.onEnabledChange();
+
+            }
+
+        }
+
+        ImGuiMCP::PopID();
+
+        if (ImGuiMCP::IsItemHovered()) {
+
+            ImGuiMCP::SetMouseCursor(ImGuiMCP::ImGuiMouseCursor_Hand);
+
+            ImGuiMCP::BeginTooltip();
+            ImGuiMCP::Text("Whether this POI type is considered by the detection system at all.");
+            ImGuiMCP::EndTooltip();
+
+        }
+
+        if (!*a_card.enabled) {
+
+            ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, k_cardContentBottomMargin));
+
+            ImGuiMCP::EndChild();
+            ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, k_cardSpaceAfter));
+
+            return;
+
+        }
+
+        // =====================================================================================================================
+        //  Category-off hint banner. Shown only when the card itself is enabled
+        //  but its parent category toggle is currently off - the rest of the card
+        //  below stays fully visible and editable either way.
+        // =====================================================================================================================
+
+        if (categoryOff) {
+
+            ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, k_cardContentTopMargin));
+            ImGuiMCP::Separator();
+
+            ApplyCardContentLineMargin();
+            std::string hintText = std::format("{} are inactive. {} are turned off in POI System Main Settings !",
+                a_card.label, a_card.categoryLabel ? a_card.categoryLabel : "its category");
+            DrawWrappedText(hintText.c_str(), Colors::Orange);
+
+        }
 
         ApplyCardContentLineMargin();
         ImGuiMCP::Text("Base Score");
@@ -990,6 +1140,7 @@ namespace UITemplate::Icons {
     const std::string                   arrowUpIcon                             = FontAwesome::UnicodeToUtf8(0xf062);
 
     const std::string                   banIcon                                 = FontAwesome::UnicodeToUtf8(0xf05e);
+    const std::string                   bugIcon                                 = FontAwesome::UnicodeToUtf8(0xf188);
 
     const std::string                   circleDotIcon                           = FontAwesome::UnicodeToUtf8(0xf192);
     const std::string                   circleInfoIcon                          = FontAwesome::UnicodeToUtf8(0xf05a);
@@ -1004,6 +1155,7 @@ namespace UITemplate::Icons {
 
     const std::string                   filmIcon                                = FontAwesome::UnicodeToUtf8(0xf008);
     const std::string                   fishIcon                                = FontAwesome::UnicodeToUtf8(0xf578);
+    const std::string                   fishFinsIcon                            = FontAwesome::UnicodeToUtf8(0xe4f2);
     const std::string                   folderOpenIcon                          = FontAwesome::UnicodeToUtf8(0xf07c);
 
     const std::string                   gaugeHighIcon                           = FontAwesome::UnicodeToUtf8(0xf625);

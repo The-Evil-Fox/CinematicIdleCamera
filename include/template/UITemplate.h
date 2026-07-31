@@ -191,6 +191,7 @@ namespace UITemplate {
         extern const std::string        arrowUpIcon;
 
         extern const std::string        banIcon;
+        extern const std::string        bugIcon;
 
         extern const std::string        circleDotIcon;
         extern const std::string        circleInfoIcon;
@@ -205,6 +206,7 @@ namespace UITemplate {
 
         extern const std::string        filmIcon;
         extern const std::string        fishIcon;
+        extern const std::string        fishFinsIcon;
         extern const std::string        folderOpenIcon;
 
         extern const std::string        gaugeHighIcon;
@@ -643,11 +645,19 @@ namespace UITemplate {
     void DrawSettingCard(const std::string& a_cardId, CardContent& a_card);
 
     // ==================================================================================================================
-    //  Weighted score card: a base value plus an optional toggleable bonus,
-    //  displayed as icon + label + total on top, then a base slider and a
-    //  bonus checkbox+slider below. Useful for any "priority/weight" system
-    //  (e.g. this mod's POI scoring), not just Skyrim actors.
-    // ==================================================================================================================
+        //  Weighted score card: a base value plus an optional toggleable bonus,
+        //  displayed as icon + label + total on top, then a base slider and a
+        //  bonus checkbox+slider below.
+        //
+        //  Also carries its own enable/disable toggle. When disabled, the card
+        //  collapses to just that toggle (see DrawScoreCard). The underlying
+        //  values are left untouched so they can be reused once re-enabled.
+        //
+        //  Optionally aware of a parent "category" master toggle (e.g. "Actor
+        //  POIs" / "Insects & fish POIs") it doesn't own. When that category is off,
+        //  the card stays fully visible and editable, but shows a visual hint
+        //  that its settings currently have no effect.
+        // ==================================================================================================================
 
     struct ScoreCardData {
 
@@ -657,7 +667,7 @@ namespace UITemplate {
 
         float* baseScore;
         float                                   baseDefault;
-        float                                   baseMin = 0.0f;
+        float                                   baseMin = 1.0f;
         float                                   baseMax = 2000.0f;
 
         bool* bonusEnabled;
@@ -668,15 +678,26 @@ namespace UITemplate {
         float                                   bonusMin = 0.0f;
         float                                   bonusMax = 1000.0f;
 
+        bool* enabled;
+        bool                                     enabledDefault;
+
         const char* tooltip;
         const char* bonusTooltip;
 
         std::function<void()>                   onSave;
+        std::function<void()>                   onEnabledChange; // optional, called after `enabled` is toggled (e.g. to sync a parent master toggle)
+
+        // Optional: read-only pointer to a parent category toggle this card doesn't own
+        // (e.g. &UI::g_actorPoiEnabled). Purely visual - never written to from here.
+        const bool* categoryEnabled = nullptr;
+        const char* categoryLabel = nullptr; // e.g. "Actor POIs", used in the hint message
 
         static ScoreCardData Make(const char* a_icon, const char* a_label, uint32_t a_iconColor,
             float* a_baseScore, float a_baseDefault, bool* a_bonusEnabled, bool a_bonusEnabledDefault,
             float* a_bonusFactor, float a_bonusFactorDefault, const char* a_tooltip, const char* a_bonusTooltip,
-            std::function<void()> a_onSave, float a_baseMin = 0.0f, float a_baseMax = 2000.0f,
+            std::function<void()> a_onSave, bool* a_enabled, bool a_enabledDefault,
+            std::function<void()> a_onEnabledChange = nullptr, const bool* a_categoryEnabled = nullptr,
+            const char* a_categoryLabel = nullptr, float a_baseMin = 1.0f, float a_baseMax = 2000.0f,
             float a_bonusMin = 0.0f, float a_bonusMax = 1000.0f) {
 
             ScoreCardData card{};
@@ -693,9 +714,14 @@ namespace UITemplate {
             card.bonusFactorDefault = a_bonusFactorDefault;
             card.bonusMin = a_bonusMin;
             card.bonusMax = a_bonusMax;
+            card.enabled = a_enabled;
+            card.enabledDefault = a_enabledDefault;
             card.tooltip = a_tooltip;
             card.bonusTooltip = a_bonusTooltip;
             card.onSave = a_onSave;
+            card.onEnabledChange = a_onEnabledChange;
+            card.categoryEnabled = a_categoryEnabled;
+            card.categoryLabel = a_categoryLabel;
             return card;
 
         }

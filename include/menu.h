@@ -48,12 +48,23 @@ namespace UI {
     // Main Settings
 
     extern bool         g_poiSystemEnabled;
-    extern bool         g_actorPoiEnabled;
+    extern bool         g_actorPoisEnabled;
     extern bool         g_preventFollowers;
-    extern bool         g_flyingCritterPoiEnabled;
-    extern bool         g_fishCritterPoiEnabled;
+    extern bool         g_insectsAndFishPoisEnabled;
     extern float        g_poiDetectionRadius;
     extern float        g_lockDuration;
+
+    // Actor per-action enable/disable
+    extern bool         g_dragonEnabled;
+    extern bool         g_actorCombatEnabled;
+    extern bool         g_actorMovingEnabled;
+    extern bool         g_actorInSceneEnabled;
+    extern bool         g_actorIdleEnabled;
+
+    // Insects & Fish per-type enable/disable
+    extern bool         g_insectsEnabled;
+    extern bool         g_fishEnabled;
+
 
     // Actors scores
 
@@ -77,17 +88,17 @@ namespace UI {
     extern bool         g_actorIdleProximityEnabled;
     extern float        g_actorIdleProximityFactor;
 
-    // Flying critters scores
+    // Insects scores
 
-    extern float        g_flyingCritterScore;
-    extern bool         g_flyingCritterProximityEnabled;
-    extern float        g_flyingCritterProximityFactor;
+    extern float        g_insectsScore;
+    extern bool         g_insectsProximityEnabled;
+    extern float        g_insectsProximityFactor;
 
-    // Fish critters scores
+    // Fish scores
 
-    extern float        g_fishCritterScore;
-    extern bool         g_fishCritterProximityEnabled;
-    extern float        g_fishCritterProximityFactor;
+    extern float        g_fishScore;
+    extern bool         g_fishProximityEnabled;
+    extern float        g_fishProximityFactor;
 
     // Exclusion list
     struct ActorExclusionEntry {
@@ -127,7 +138,7 @@ namespace UI {
     void                POISystemMainSettings();
     void                POISystemActorScores();
     void                POISystemExclusionListSettings();
-    void                POISystemCritterScores();
+    void                POISystemInsectsAndFishScores();
 
     void                DebugSettings();
 

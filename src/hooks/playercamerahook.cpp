@@ -248,9 +248,9 @@ namespace Hooks {
         const RE::NiColorA turningColor = kBlue;
         const RE::NiColorA settledColor = kGreen;
 
-        // Determine if the target is a critter (flying critter or pond fish)
+        // Determine if the target is an insect or a fish
         // g_currentPOI is the currently focused POI from the global state
-        bool isCritter = false;
+        bool isInsectOrFish = false;
 
         if (g_currentPOI) {
 
@@ -258,7 +258,7 @@ namespace Hooks {
 
             if (!actor) {
 
-                // Not an actor, check if it's a critter Activator
+                // Not an actor, check if it's an insect or fish Activator
                 auto* base = g_currentPOI->GetBaseObject();
 
                 if (base) {
@@ -267,25 +267,25 @@ namespace Hooks {
 
                     if (acti) {
 
-                        // Check if it's a critter by EditorID or model path
+                        // Check by EditorID (most insects & fish use this convention) or model path
                         const char* edid = acti->GetFormEditorID();
                         const char* model = acti->model.c_str();
 
                         if ((edid && containsCaseInsensitive(edid, "Critter")) || (model && model[0] != '\0')) {
 
-                            // Check for critter tokens in the model path
-                            static constexpr std::array<std::string_view, 10> kCritterTokens = {
+                            // Check for insects and fish tokens in the model path
+                            static constexpr std::array<std::string_view, 10> kInsectsAndFishTokens = {
 
                                 "butterfly", "moth", "dragonfly", "firefly", "bee", "luna",
                                 "fish", "pondfish", "salmon", "perch"
 
                             };
 
-                            for (auto token : kCritterTokens) {
+                            for (auto token : kInsectsAndFishTokens) {
 
                                 if (containsCaseInsensitive(model, token)) {
 
-                                    isCritter = true;
+                                    isInsectOrFish = true;
                                     break;
 
                                 }
@@ -305,8 +305,8 @@ namespace Hooks {
         // Player start point always uses chest height
         const float playerHeight = 110.0f;
 
-        // POI end point uses lower height for critters, chest height for actors/other
-        const float poiHeight = isCritter ? 0.0f : 110.0f;
+        // POI end point uses lower height for insects & fish, chest height for actors/other
+        const float poiHeight = isInsectOrFish ? 0.0f : 110.0f;
 
         // From the player
         RE::NiPoint3 startMid = start + RE::NiPoint3(0, 0, playerHeight);
@@ -316,7 +316,7 @@ namespace Hooks {
 
         bool hitMid = TESRayHitStatic(world, startMid, endMid, settled ? settledColor : turningColor, true);
 
-        logger::debug("Ray results: mid {} (isCritter: {})", hitMid, isCritter);
+        logger::debug("Ray results: mid {} (isInsectOrFish: {})", hitMid, isInsectOrFish);
 
         return hitMid;
 
@@ -688,12 +688,33 @@ namespace Hooks {
 
         if (actor) {
 
-            // It's an actor - check if actor POIs are enabled
-            return UI::g_actorPoiEnabled;
+            if (!UI::g_actorPoisEnabled) {
+
+                return false;
+
+            }
+
+            switch (AutoVanityStateHook::GetActorAction(actor)) {
+
+                case POIAction::Dragon:    return UI::g_dragonEnabled;
+                case POIAction::InCombat:  return UI::g_actorCombatEnabled;
+                case POIAction::Moving:    return UI::g_actorMovingEnabled;
+                case POIAction::InScene:   return UI::g_actorInSceneEnabled;
+                case POIAction::Idle:      return UI::g_actorIdleEnabled;
+                default:                   return false;
+
+            }
 
         }
 
-        // Not an actor - check if it's a critter
+        // Not an actor so let's check if it's an insect or fish
+        // But first let's also check if those are both enabled before going further
+        if (!UI::g_insectsAndFishPoisEnabled) {
+
+            return false;
+
+        }
+
         auto* base = a_poi->GetBaseObject();
 
         if (base) {
@@ -709,17 +730,17 @@ namespace Hooks {
                     std::string modelStr = model;
                     std::transform(modelStr.begin(), modelStr.end(), modelStr.begin(), ::tolower);
 
-                    // Check for pond fish keywords
+                    // Check for fish keywords
                     if (modelStr.find("fish") != std::string::npos ||
                         modelStr.find("pondfish") != std::string::npos ||
                         modelStr.find("salmon") != std::string::npos ||
                         modelStr.find("perch") != std::string::npos) {
 
-                        return UI::g_fishCritterPoiEnabled;
+                        return UI::g_fishEnabled;
 
                     }
 
-                    // Check for flying critters keywords
+                    // Check for insects keywords
                     if (modelStr.find("butterfly") != std::string::npos ||
                         modelStr.find("moth") != std::string::npos ||
                         modelStr.find("dragonfly") != std::string::npos ||
@@ -727,7 +748,7 @@ namespace Hooks {
                         modelStr.find("bee") != std::string::npos ||
                         modelStr.find("luna") != std::string::npos) {
 
-                        return UI::g_flyingCritterPoiEnabled;
+                        return UI::g_insectsEnabled;
 
                     }
 
@@ -747,7 +768,7 @@ namespace Hooks {
     //  Compares and select the boi POI to be focused by the vanity camera
     // 
     //  Logic is like this:
-    //  CASE 1 = Activable critters
+    //  CASE 1 = Activable insects or fish
     //  CASE 2 = Actors
     // ==================================================================================================================================================================================
 
@@ -781,7 +802,7 @@ namespace Hooks {
 
             }
 
-            // Skip FLORA type references (hanging fishs on display rack, ingredients, etc.)
+            // Skip FLORA type references (hanging fish on display rack, ingredients, etc.)
             auto* base = ref->GetBaseObject();
 
             if (base && base->GetFormType() == RE::FormType::Flora || base && base->GetFormType() == RE::FormType::Furniture) {
@@ -791,33 +812,33 @@ namespace Hooks {
 
             }
 
-            // Skips everything that is not an actor (humans, creatures, etc), unless it's a critter Activator.
+            // Skips everything that is not an actor (humans, creatures, etc), unless it's an insect or a fish Activator.
             auto* actor = ref->As<RE::Actor>();
 
             if (!actor) {
 
                 // ===========================================================================================================
-                //  CASE 1: CRITTER POI PROCESSING (Activators like flying critters, pond fish, etc.)
+                //  CASE 1: INSECTS & FISH POI PROCESSING
                 // -----------------------------------------------------------------------------------------------------------
                 //
-                //  Critters (flying bugs, pond fish, etc) are TESObjectACTI refs, not Actors,
+                //  Insects & fish are TESObjectACTI refs, not Actors,
                 //  so they can't be filtered the way NPCs/creatures are, and don't get a base score from
                 //  the switch below. We identify them via:
                 //
                 //    1. EditorID convention: vanilla + most critter-replacer mods name these "Critter<Name>"
                 //       (e.g. "CritterMothBlue", "CritterDragonfly01", "CritterPondFish01").
                 //
-                //    2. Fallback: model path substring match against common critter tokens, in case a
+                //    2. Fallback: model path substring match against common insects and fish tokens, in case a
                 //       mod doesn't follow the EditorID convention.
                 // ============================================================================================================
 
-                if (!UI::g_flyingCritterPoiEnabled && !UI::g_fishCritterPoiEnabled) {
+                if (!UI::g_insectsAndFishPoisEnabled) {
 
                     return RE::BSContainer::ForEachResult::kContinue;
 
                 }
 
-                auto isCritter = [&](RE::TESObjectREFR* a_ref) {
+                auto isInsectOrFish = [&](RE::TESObjectREFR* a_ref) {
 
                     if (!a_ref) {
 
@@ -849,14 +870,14 @@ namespace Hooks {
 
                     if (const char* model = acti->model.c_str(); model && model[0] != '\0') {
 
-                        static constexpr std::array<std::string_view, 10> kCritterTokens = {
+                        static constexpr std::array<std::string_view, 10> kInsectsAndFishTokens = {
 
                             "butterfly", "moth", "dragonfly", "firefly", "bee", "luna",
                             "fish", "pondfish", "salmon", "perch"
 
                         };
 
-                        for (auto token : kCritterTokens) {
+                        for (auto token : kInsectsAndFishTokens) {
 
                             if (containsCaseInsensitive(model, token)) {
 
@@ -872,7 +893,7 @@ namespace Hooks {
 
                 };
 
-                if (!isCritter(ref)) {
+                if (!isInsectOrFish(ref)) {
 
                     return RE::BSContainer::ForEachResult::kContinue;
 
@@ -886,7 +907,7 @@ namespace Hooks {
 
                 if (HasAnythingBetween(player->GetPosition(), ref->GetPosition())) {
 
-                    logger::debug("{} rejected: the critter is occluded!", ref->GetName());
+                    logger::debug("{} rejected: the target is occluded!", ref->GetName());
                     return RE::BSContainer::ForEachResult::kContinue;
 
                 }
@@ -894,7 +915,7 @@ namespace Hooks {
                 float dist = player->GetPosition().GetDistance(ref->GetPosition());
                 float proximityFactor = std::max(0.0f, (UI::g_poiDetectionRadius - dist) / UI::g_poiDetectionRadius);
 
-                // Determine if this is a flying critter or pond fish
+                // Determine if this is an insect or a fish
                 float score = 0.0f;
                 POIAction action = POIAction::None;
 
@@ -946,27 +967,27 @@ namespace Hooks {
 
                             }
 
-                            // Check for pond fish keywords
+                            // Check for fish keywords
                             if (modelStr.find("fish") != std::string::npos ||
                                 modelStr.find("pondfish") != std::string::npos ||
                                 modelStr.find("salmon") != std::string::npos ||
                                 modelStr.find("perch") != std::string::npos) {
 
-                                if (!UI::g_fishCritterPoiEnabled) {
+                                if (!UI::g_fishEnabled) {
 
-                                    logger::debug("{} rejected: fish POIs disabled", ref->GetName());
+                                    logger::debug("{} rejected: fish are disabled", ref->GetName());
                                     return RE::BSContainer::ForEachResult::kContinue;
 
                                 }
 
                                 // Skip persistent references that are NOT fish (racks, etc.)
-                                // But allow persistent fish (CC pond fish are persistent)
+                                // But allow persistent fish (CC fish are persistent)
                                 if (ref->IsPersistent()) {
 
-                                    // Check if it's actually a critter fish by looking at EditorID and allows it to be a targetable POI if that's the case
+                                    // Check if it's actually a fish by looking at EditorID and allows it to be a targetable POI if that's the case
                                     if (edid && (containsCaseInsensitive(edid, "Fish") || containsCaseInsensitive(edid, "Critter"))) {
 
-                                        logger::debug("{} seems to be a persistent fish critter. Proceeding...", ref->GetName());
+                                        logger::debug("{} seems to be a persistent fish. Proceeding...", ref->GetName());
 
                                     } else {
 
@@ -977,44 +998,44 @@ namespace Hooks {
 
                                 }
 
-                                // It's a pond fish
-                                logger::debug("{} accepted as fish critter", ref->GetName());
-                                score = UI::g_fishCritterScore;
+                                // It's a fish
+                                logger::debug("{} accepted as fish", ref->GetName());
+                                score = UI::g_fishScore;
 
-                                if (UI::g_fishCritterProximityEnabled) {
+                                if (UI::g_fishProximityEnabled) {
 
-                                    score += proximityFactor * UI::g_fishCritterProximityFactor;
+                                    score += proximityFactor * UI::g_fishProximityFactor;
 
                                 }
 
-                                action = POIAction::PondFish;
+                                action = POIAction::Fish;
 
-                            // Otherwise check for flying critters keywords
-                            }  else if (modelStr.find("butterfly") != std::string::npos ||
-                                modelStr.find("moth") != std::string::npos ||
-                                modelStr.find("dragonfly") != std::string::npos ||
-                                modelStr.find("firefly") != std::string::npos ||
-                                modelStr.find("bee") != std::string::npos ||
-                                modelStr.find("luna") != std::string::npos) {
+                            // Otherwise check for insects keywords
+                            } else if (modelStr.find("butterfly") != std::string::npos ||
+                               modelStr.find("moth") != std::string::npos ||
+                               modelStr.find("dragonfly") != std::string::npos ||
+                               modelStr.find("firefly") != std::string::npos ||
+                               modelStr.find("bee") != std::string::npos ||
+                               modelStr.find("luna") != std::string::npos) {
 
-                                if (!UI::g_flyingCritterPoiEnabled) {
+                                if (!UI::g_insectsEnabled) {
 
-                                    logger::debug("{} rejected: flying critter POIs disabled", ref->GetName());
+                                    logger::debug("{} rejected: insects are disabled", ref->GetName());
                                     return RE::BSContainer::ForEachResult::kContinue;
 
                                 }
 
-                                // It's a flying critter
-                               logger::debug("{} accepted as flying critter", ref->GetName());
-                               score = UI::g_flyingCritterScore;
+                                // It's an insect
+                               logger::debug("{} accepted as insect", ref->GetName());
+                               score = UI::g_insectsScore;
 
-                               if (UI::g_flyingCritterProximityEnabled) {
+                               if (UI::g_insectsProximityEnabled) {
 
-                                   score += proximityFactor * UI::g_flyingCritterProximityFactor;
+                                   score += proximityFactor * UI::g_insectsProximityFactor;
 
                                }
 
-                               action = POIAction::FlyingCritter;
+                               action = POIAction::Insect;
 
                             }
 
@@ -1047,7 +1068,7 @@ namespace Hooks {
                 //  CASE 2: ACTOR POI PROCESSING
                 // ===========================================================================================================
 
-                if (!UI::g_actorPoiEnabled) {
+                if (!UI::g_actorPoisEnabled) {
 
                     return RE::BSContainer::ForEachResult::kContinue;
 
@@ -1079,7 +1100,7 @@ namespace Hooks {
 
                 if (HasAnythingBetween(player->GetPosition(), ref->GetPosition())) {
 
-                    logger::debug("{} rejected: the reference is occluded!", ref->GetName());
+                    logger::debug("{} rejected: the target is occluded!", ref->GetName());
                     return RE::BSContainer::ForEachResult::kContinue;
 
                 }
@@ -1092,79 +1113,114 @@ namespace Hooks {
 
                 switch (action) {
 
-                case POIAction::Dragon:
+                    case POIAction::Dragon:
 
-                    score = UI::g_dragonScore;
+                        if (!UI::g_dragonEnabled) {
 
-                    if (UI::g_dragonProximityEnabled) {
+                            logger::debug("{} rejected: dragons are disabled", ref->GetName());
+                            return RE::BSContainer::ForEachResult::kContinue;
 
-                        score += proximityFactor * UI::g_dragonProximityFactor;
+                        }
 
-                    }
+                        score = UI::g_dragonScore;
 
-                    logger::debug("{} accepted as Dragon with score: {:.1f}", ref->GetName(), score);
+                        if (UI::g_dragonProximityEnabled) {
 
-                    break;
+                            score += proximityFactor * UI::g_dragonProximityFactor;
 
-                case POIAction::InCombat:
+                        }
 
-                    score = UI::g_actorCombatScore;
+                        logger::debug("{} accepted as dragon with score: {:.1f}", ref->GetName(), score);
 
-                    if (UI::g_actorCombatProximityEnabled) {
+                        break;
 
-                        score += proximityFactor * UI::g_actorCombatProximityFactor;
+                    case POIAction::InCombat:
 
-                    }
+                        if (!UI::g_actorCombatEnabled) {
 
-                    logger::debug("{} accepted as InCombat with score: {:.1f}", ref->GetName(), score);
+                            logger::debug("{} rejected: actors in combat are disabled", ref->GetName());
+                            return RE::BSContainer::ForEachResult::kContinue;
 
-                    break;
+                        }
 
-                case POIAction::Moving:
+                        score = UI::g_actorCombatScore;
 
-                    score = UI::g_actorMovingScore;
+                        if (UI::g_actorCombatProximityEnabled) {
 
-                    if (UI::g_actorMovingProximityEnabled) {
+                            score += proximityFactor * UI::g_actorCombatProximityFactor;
 
-                        score += proximityFactor * UI::g_actorMovingProximityFactor;
+                        }
 
-                    }
+                        logger::debug("{} accepted as actor in combat with score: {:.1f}", ref->GetName(), score);
 
-                    logger::debug("{} accepted as Moving with score: {:.1f}", ref->GetName(), score);
+                        break;
 
-                    break;
+                    case POIAction::Moving:
 
-                case POIAction::InScene:
+                        if (!UI::g_actorMovingEnabled) {
 
-                    score = UI::g_actorInSceneScore;
+                            logger::debug("{} rejected: moving actors are disabled", ref->GetName());
+                            return RE::BSContainer::ForEachResult::kContinue;
 
-                    if (UI::g_actorInSceneProximityEnabled) {
+                        }
 
-                        score += proximityFactor * UI::g_actorInSceneProximityFactor;
+                        score = UI::g_actorMovingScore;
 
-                    }
+                        if (UI::g_actorMovingProximityEnabled) {
 
-                    logger::debug("{} accepted as InScene with score: {:.1f}", ref->GetName(), score);
+                            score += proximityFactor * UI::g_actorMovingProximityFactor;
 
-                    break;
+                        }
 
-                case POIAction::Idle:
+                        logger::debug("{} accepted as moving actor with score: {:.1f}", ref->GetName(), score);
 
-                    score = UI::g_actorIdleScore;
+                        break;
 
-                    if (UI::g_actorIdleProximityEnabled) {
+                    case POIAction::InScene:
 
-                        score += proximityFactor * UI::g_actorIdleProximityFactor;
+                        if (!UI::g_actorInSceneEnabled) {
 
-                    }
+                            logger::debug("{} rejected: actors in scene are disabled", ref->GetName());
+                            return RE::BSContainer::ForEachResult::kContinue;
 
-                    logger::debug("{} accepted as Idle with score: {:.1f}", ref->GetName(), score);
+                        }
 
-                    break;
+                        score = UI::g_actorInSceneScore;
 
-                default:
+                        if (UI::g_actorInSceneProximityEnabled) {
 
-                    break;
+                            score += proximityFactor * UI::g_actorInSceneProximityFactor;
+
+                        }
+
+                        logger::debug("{} accepted as actor in scene with score: {:.1f}", ref->GetName(), score);
+
+                        break;
+
+                    case POIAction::Idle:
+
+                        if (!UI::g_actorIdleEnabled) {
+
+                            logger::debug("{} rejected: actor idling are disabled", ref->GetName());
+                            return RE::BSContainer::ForEachResult::kContinue;
+
+                        }
+
+                        score = UI::g_actorIdleScore;
+
+                        if (UI::g_actorIdleProximityEnabled) {
+
+                            score += proximityFactor * UI::g_actorIdleProximityFactor;
+
+                        }
+
+                        logger::debug("{} accepted as actor idling with score: {:.1f}", ref->GetName(), score);
+
+                        break;
+
+                    default:
+
+                        break;
 
                 }
 
@@ -1250,8 +1306,8 @@ namespace Hooks {
 
             RE::NiPoint3 poiPos = a_target->GetPosition();
 
-            // Determine if the target is a critter (flying critter or pond fish)
-            bool isCritter = false;
+            // Determine if the target is an insect or fish
+            bool isInsectOrFish = false;
             auto* actor = a_target->As<RE::Actor>();
 
             if (!actor) {
@@ -1269,18 +1325,18 @@ namespace Hooks {
 
                         if ((edid && containsCaseInsensitive(edid, "Critter")) || (model && model[0] != '\0')) {
 
-                            static constexpr std::array<std::string_view, 10> kCritterTokens = {
+                            static constexpr std::array<std::string_view, 10> kInsectsAndFishTokens = {
 
                                 "butterfly", "moth", "dragonfly", "firefly", "bee", "luna",
                                 "fish", "pondfish", "salmon", "perch"
 
                             };
 
-                            for (auto token : kCritterTokens) {
+                            for (auto token : kInsectsAndFishTokens) {
 
                                 if (containsCaseInsensitive(model, token)) {
 
-                                    isCritter = true;
+                                    isInsectOrFish = true;
                                     break;
 
                                 }
@@ -1295,9 +1351,9 @@ namespace Hooks {
             }
 
             // Apply appropriate height offset to the target position
-            // Critters (fish, insects) should be tracked at their actual position (0 offset)
+            // Insects and fish should be tracked at their actual position (0 offset)
             // Actors/NPCs should be tracked at chest height (110 offset)
-            const float poiHeight = isCritter ? 0.0f : 110.0f;
+            const float poiHeight = isInsectOrFish ? 0.0f : 110.0f;
             poiPos.z += poiHeight;
 
             float easedW = Smoothstep(a_weight);
@@ -1648,7 +1704,7 @@ namespace Hooks {
 
             } else {
 
-                // Non-actor POI (flying critter): there's no "dead" state, so validate
+                // Non-actor POI (insect): there's no "dead" state, so validate
                 // 3D/enabled status instead.
                 gone = (!g_currentPOI->Is3DLoaded() || g_currentPOI->IsDisabled());
 

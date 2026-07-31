@@ -1,6 +1,6 @@
-#include "Menu.h"
+#include "menu.h"
 #include <format>
-#include "hooks/playercameraHook.h"
+#include "hooks/playercamerahook.h"
 #include "utility.h"
 #include "template/UITemplate.h"
 #include <Windows.h>
@@ -56,10 +56,22 @@ static constexpr float                  k_defaultHeadTrackFadeSpeed             
 static constexpr bool                   k_defaultPoiSystemEnabled                       = true;
 static constexpr bool                   k_defaultActorPoiEnabled                        = true;
 static constexpr bool                   k_defaultPreventFollowers                       = true;
-static constexpr bool                   k_defaultFlyingCritterPoiEnabled                = true;
-static constexpr bool                   k_defaultFishCritterPoiEnabled                  = true;
+static constexpr bool                   k_defaultInsectsAndFishPoisEnabled              = true;
 static constexpr float                  k_defaultPoiDetectionRadius                     = 1050.0f;
 static constexpr float                  k_defaultLockDuration                           = 5.0f;
+
+// Actor per-action enable/disable (all considered by default, same as before)
+
+static constexpr bool                   k_defaultDragonEnabled                          = true;
+static constexpr bool                   k_defaultActorCombatEnabled                     = true;
+static constexpr bool                   k_defaultActorMovingEnabled                     = true;
+static constexpr bool                   k_defaultActorInSceneEnabled                    = true;
+static constexpr bool                   k_defaultActorIdleEnabled                       = true;
+
+// Insects & Fish per-type enable/disable
+
+static constexpr bool                   k_defaultInsectsEnabled                         = true;
+static constexpr bool                   k_defaultFishEnabled                            = true;
 
 // Actors score system
 
@@ -83,17 +95,17 @@ static constexpr float                  k_defaultActorIdleScore                 
 static constexpr bool                   k_defaultActorIdleProximityEnabled              = true;
 static constexpr float                  k_defaultActorIdleProximityFactor               = 50.0f;
 
-// Flying critters score system
+// Insects score system
 
-static constexpr float                  k_defaultFlyingCritterScore                     = 400.0f;
-static constexpr bool                   k_defaultFlyingCritterProximityEnabled          = true;
-static constexpr float                  k_defaultFlyingCritterProximityFactor           = 150.0f;
+static constexpr float                  k_defaultInsectsScore                           = 400.0f;
+static constexpr bool                   k_defaultInsectsProximityEnabled                = true;
+static constexpr float                  k_defaultInsectsProximityFactor                 = 150.0f;
 
-// Fish critters score system
+// Fish score system
 
-static constexpr float                  k_defaultFishCritterScore                       = 300.0f;
-static constexpr bool                   k_defaultFishCritterProximityEnabled            = true;
-static constexpr float                  k_defaultFishCritterProximityFactor             = 150.0f;
+static constexpr float                  k_defaultFishScore                              = 300.0f;
+static constexpr bool                   k_defaultFishProximityEnabled                   = true;
+static constexpr float                  k_defaultFishProximityFactor                    = 150.0f;
 
 // =====================================================================================================================
 //  Debug
@@ -129,12 +141,20 @@ float                                   UI::g_dezoomBlendSpeed                  
 float                                   UI::g_headTrackFadeSpeed                        = k_defaultHeadTrackFadeSpeed;
 
 bool                                    UI::g_poiSystemEnabled                          = k_defaultPoiSystemEnabled;
-bool                                    UI::g_actorPoiEnabled                           = k_defaultActorPoiEnabled;
+bool                                    UI::g_actorPoisEnabled                           = k_defaultActorPoiEnabled;
 bool                                    UI::g_preventFollowers                          = k_defaultPreventFollowers;
-bool                                    UI::g_flyingCritterPoiEnabled                   = k_defaultFlyingCritterPoiEnabled;
-bool                                    UI::g_fishCritterPoiEnabled                     = k_defaultFishCritterPoiEnabled;
+bool                                    UI::g_insectsAndFishPoisEnabled                 = k_defaultInsectsAndFishPoisEnabled;
 float                                   UI::g_poiDetectionRadius                        = k_defaultPoiDetectionRadius;
 float                                   UI::g_lockDuration                              = k_defaultLockDuration;
+
+bool                                    UI::g_dragonEnabled                             = k_defaultDragonEnabled;
+bool                                    UI::g_actorCombatEnabled                        = k_defaultActorCombatEnabled;
+bool                                    UI::g_actorMovingEnabled                        = k_defaultActorMovingEnabled;
+bool                                    UI::g_actorInSceneEnabled                       = k_defaultActorInSceneEnabled;
+bool                                    UI::g_actorIdleEnabled                          = k_defaultActorIdleEnabled;
+
+bool                                    UI::g_insectsEnabled                            = k_defaultInsectsEnabled;
+bool                                    UI::g_fishEnabled                               = k_defaultFishEnabled;
 
 float                                   UI::g_dragonScore                               = k_defaultDragonScore;
 bool                                    UI::g_dragonProximityEnabled                    = k_defaultDragonProximityEnabled;
@@ -156,13 +176,13 @@ float                                   UI::g_actorIdleScore                    
 bool                                    UI::g_actorIdleProximityEnabled                 = k_defaultActorIdleProximityEnabled;
 float                                   UI::g_actorIdleProximityFactor                  = k_defaultActorIdleProximityFactor;
 
-float                                   UI::g_flyingCritterScore                        = k_defaultFlyingCritterScore;
-bool                                    UI::g_flyingCritterProximityEnabled             = k_defaultFlyingCritterProximityEnabled;
-float                                   UI::g_flyingCritterProximityFactor              = k_defaultFlyingCritterProximityFactor;
+float                                   UI::g_insectsScore                              = k_defaultInsectsScore;
+bool                                    UI::g_insectsProximityEnabled                   = k_defaultInsectsProximityEnabled;
+float                                   UI::g_insectsProximityFactor                    = k_defaultInsectsProximityFactor;
 
-float                                   UI::g_fishCritterScore                          = k_defaultFishCritterScore;
-bool                                    UI::g_fishCritterProximityEnabled               = k_defaultFishCritterProximityEnabled;
-float                                   UI::g_fishCritterProximityFactor                = k_defaultFishCritterProximityFactor;
+float                                   UI::g_fishScore                                 = k_defaultFishScore;
+bool                                    UI::g_fishProximityEnabled                      = k_defaultFishProximityEnabled;
+float                                   UI::g_fishProximityFactor                       = k_defaultFishProximityFactor;
 
 std::vector<UI::ActorExclusionEntry>    UI::g_actorExclusionList;
 
@@ -213,52 +233,66 @@ struct ExclusionListReset {
 
 static const std::vector<ScoreCardData> actorCards = {
 
-    ScoreCardData::Make(dragonIcon.c_str(), "Dragon", Colors::Green,
+    ScoreCardData::Make(dragonIcon.c_str(), "Dragons", Colors::Green,
         &UI::g_dragonScore, k_defaultDragonScore, &UI::g_dragonProximityEnabled, k_defaultDragonProximityEnabled,
         &UI::g_dragonProximityFactor, k_defaultDragonProximityFactor,
-        "Base score awarded to a dragon.", "Bonus increases as dragon gets closer.", SaveSettings),
+        "Base score awarded to a dragon.", "Bonus increases as dragon gets closer.", SaveSettings,
+        &UI::g_dragonEnabled, k_defaultDragonEnabled, nullptr,
+        &UI::g_actorPoisEnabled, "Actors"),
 
-    ScoreCardData::Make(gavelIcon.c_str(), "In Combat", Colors::Green,
+    ScoreCardData::Make(gavelIcon.c_str(), "Actors in combat", Colors::Green,
         &UI::g_actorCombatScore, k_defaultActorCombatScore, &UI::g_actorCombatProximityEnabled, k_defaultActorCombatProximityEnabled,
         &UI::g_actorCombatProximityFactor, k_defaultActorCombatProximityFactor,
-        "Base score awarded to an actor who is currently in combat.", "Bonus increases as actor gets closer.", SaveSettings),
+        "Base score awarded to an actor who is currently in combat.", "Bonus increases as actor gets closer.", SaveSettings,
+        &UI::g_actorCombatEnabled, k_defaultActorCombatEnabled, nullptr,
+        &UI::g_actorPoisEnabled, "Actors"),
 
-    ScoreCardData::Make(personWalkingIcon.c_str(), "Moving", Colors::Green,
+    ScoreCardData::Make(personWalkingIcon.c_str(), "Actors moving", Colors::Green,
         &UI::g_actorMovingScore, k_defaultActorMovingScore, &UI::g_actorMovingProximityEnabled, k_defaultActorMovingProximityEnabled,
         &UI::g_actorMovingProximityFactor, k_defaultActorMovingProximityFactor,
-        "Base score awarded to an actor who is currently moving.", "Bonus increases as actor gets closer.", SaveSettings),
+        "Base score awarded to an actor who is currently moving.", "Bonus increases as actor gets closer.", SaveSettings,
+        &UI::g_actorMovingEnabled, k_defaultActorMovingEnabled, nullptr,
+        &UI::g_actorPoisEnabled, "Actors"),
 
-    ScoreCardData::Make(masksTheaterIcon.c_str(), "In Scene", Colors::Green,
+    ScoreCardData::Make(masksTheaterIcon.c_str(), "Actors in Scene", Colors::Green,
         &UI::g_actorInSceneScore, k_defaultActorInSceneScore, &UI::g_actorInSceneProximityEnabled, k_defaultActorInSceneProximityEnabled,
         &UI::g_actorInSceneProximityFactor, k_defaultActorInSceneProximityFactor,
         "Base score awarded to an actor who is actively engaged in a scripted sequence (dialogue, cinematic, or quest scene).",
-        "Bonus increases as actor gets closer.", SaveSettings),
+        "Bonus increases as actor gets closer.", SaveSettings,
+        &UI::g_actorInSceneEnabled, k_defaultActorInSceneEnabled, nullptr,
+        &UI::g_actorPoisEnabled, "Actors"),
 
-    ScoreCardData::Make(personIcon.c_str(), "Idle", Colors::Green,
+    ScoreCardData::Make(personIcon.c_str(), "Actors idling", Colors::Green,
         &UI::g_actorIdleScore, k_defaultActorIdleScore, &UI::g_actorIdleProximityEnabled, k_defaultActorIdleProximityEnabled,
         &UI::g_actorIdleProximityFactor, k_defaultActorIdleProximityFactor,
         "Base score awarded to an actor who is in an idle animation (not moving, not in combat and not in a scene).",
-        "Bonus increases as actor gets closer.", SaveSettings)
+        "Bonus increases as actor gets closer.", SaveSettings,
+        &UI::g_actorIdleEnabled, k_defaultActorIdleEnabled, nullptr,
+        &UI::g_actorPoisEnabled, "Actors")
 
 };
 
 // =====================================================================================================================
-//  Critter Score Cards Data
+//  Insects & fish Score Cards Data
 // =====================================================================================================================
 
-static const std::vector<ScoreCardData> critterCards = {
+static const std::vector<ScoreCardData> insectsAndFishCards = {
 
-    ScoreCardData::Make(doveIcon.c_str(), "Flying Critter", Colors::Pink,
-        &UI::g_flyingCritterScore, k_defaultFlyingCritterScore, &UI::g_flyingCritterProximityEnabled, k_defaultFlyingCritterProximityEnabled,
-        &UI::g_flyingCritterProximityFactor, k_defaultFlyingCritterProximityFactor,
-        "Base score awarded to a flying critter (butterflies, moths, dragonflies, fireflies, bees, etc).",
-        "Bonus increases as critter gets closer.", SaveSettings),
+    ScoreCardData::Make(bugIcon.c_str(), "Insects", Colors::Cyan,
+        &UI::g_insectsScore, k_defaultInsectsScore, &UI::g_insectsProximityEnabled, k_defaultInsectsProximityEnabled,
+        &UI::g_insectsProximityFactor, k_defaultInsectsProximityFactor,
+        "Base score awarded to an insect (butterflies, moths, dragonflies, fireflies, bees, etc).",
+        "Bonus increases as insect gets closer.", SaveSettings,
+        &UI::g_insectsEnabled, k_defaultInsectsEnabled, nullptr,
+        &UI::g_insectsAndFishPoisEnabled, "Insects & fish"),
 
-    ScoreCardData::Make(fishIcon.c_str(), "Fish Critter", Colors::Cyan,
-        &UI::g_fishCritterScore, k_defaultFishCritterScore, &UI::g_fishCritterProximityEnabled, k_defaultFishCritterProximityEnabled,
-        &UI::g_fishCritterProximityFactor, k_defaultFishCritterProximityFactor,
-        "Base score awarded to a fish critter (perches, salmon, pond fish, and other aquatic critters).",
-        "Bonus increases as critter gets closer.", SaveSettings)
+    ScoreCardData::Make(fishFinsIcon.c_str(), "Fish", Colors::Cyan,
+        &UI::g_fishScore, k_defaultFishScore, &UI::g_fishProximityEnabled, k_defaultFishProximityEnabled,
+        &UI::g_fishProximityFactor, k_defaultFishProximityFactor,
+        "Base score awarded to a fish (perches, salmon, pond fish, etc).",
+        "Bonus increases as fish gets closer.", SaveSettings,
+        &UI::g_fishEnabled, k_defaultFishEnabled, nullptr,
+        &UI::g_insectsAndFishPoisEnabled, "Insects & fish")
 
 };
 
@@ -277,12 +311,12 @@ static void DrawActorScoreCards() {
 }
 
 // =====================================================================================================================
-//  Draw all critter score cards
+//  Draw all insects & fish score cards
 // =====================================================================================================================
 
-static void DrawCritterScoreCards() {
+static void DrawInsectsAndFishScoreCards() {
 
-    for (const auto& card : critterCards) {
+    for (const auto& card : insectsAndFishCards) {
 
         DrawScoreCard(card);
 
@@ -608,7 +642,7 @@ void UI::Register() {
     SKSEMenuFramework::AddSectionItem(std::string("POI System/Main Settings"), POISystemMainSettings);
     SKSEMenuFramework::AddSectionItem(std::string("POI System/Exclusion List"), POISystemExclusionListSettings);
     SKSEMenuFramework::AddSectionItem(std::string("POI System/Actor Scores"), POISystemActorScores);
-    SKSEMenuFramework::AddSectionItem(std::string("POI System/Critter Scores"), POISystemCritterScores);
+    SKSEMenuFramework::AddSectionItem(std::string("POI System/Insects & Fish Scores"), POISystemInsectsAndFishScores);
 
     SKSEMenuFramework::AddSectionItem(std::string("Debug"), DebugSettings);
 
@@ -886,10 +920,9 @@ void UI::POISystemMainSettings() {
     auto cardStyle = DrawHeaderWithReset("POI System - Main Settings", locationDotIcon, "POI System Main Settings", "resetPoiGeneral",
         MakeResetLogger("POI System Main Settings"),
         SettingWithDefault(&g_poiSystemEnabled, k_defaultPoiSystemEnabled),
-        SettingWithDefault(&g_actorPoiEnabled, k_defaultActorPoiEnabled),
+        SettingWithDefault(&g_actorPoisEnabled, k_defaultActorPoiEnabled),
         SettingWithDefault(&g_preventFollowers, k_defaultPreventFollowers),
-        SettingWithDefault(&g_flyingCritterPoiEnabled, k_defaultFlyingCritterPoiEnabled),
-        SettingWithDefault(&g_fishCritterPoiEnabled, k_defaultFishCritterPoiEnabled),
+        SettingWithDefault(&g_insectsAndFishPoisEnabled, k_defaultInsectsAndFishPoisEnabled),
         SettingWithDefault(&g_poiDetectionRadius, k_defaultPoiDetectionRadius),
         SettingWithDefault(&g_lockDuration, k_defaultLockDuration)
     );
@@ -908,7 +941,7 @@ void UI::POISystemMainSettings() {
 
     DrawMultiCheckboxCard("poiTypeToggles", "POI Type Toggles", layerGroupIcon.c_str(),
         {
-            { personIcon.c_str(), Colors::Green, &g_actorPoiEnabled, k_defaultActorPoiEnabled, "Actor POIs",
+            { personIcon.c_str(), Colors::Green, &g_actorPoisEnabled, k_defaultActorPoiEnabled, "Actors",
                 { "Allow actors to be considered as points of interest." },
                 nullptr,
                 {
@@ -916,12 +949,10 @@ void UI::POISystemMainSettings() {
                         { "Excludes your followers from being targeted as a POI." } },
                 }
             },
-            { doveIcon.c_str(), Colors::Pink, &g_flyingCritterPoiEnabled, k_defaultFlyingCritterPoiEnabled, "Flying Critter POIs",
-                { "Allow flying critters to be considered as points of interest." } },
-            { fishIcon.c_str(), Colors::Cyan, &g_fishCritterPoiEnabled, k_defaultFishCritterPoiEnabled, "Fish Critter POIs",
-                { "Allow fish critters to be considered as points of interest." } },
+            { bugIcon.c_str(), Colors::Cyan, &g_insectsAndFishPoisEnabled, k_defaultInsectsAndFishPoisEnabled, "Insects & Fish",
+                { "Allow fish & insects to be considered as points of interest." } },
         },
-    SaveSettings
+        SaveSettings
     );
 
     CardContent radiusCard = CardContent::Slider(circleDotIcon.c_str(), "Maximum Detection Radius",
@@ -1357,23 +1388,28 @@ void UI::POISystemExclusionListSettings() {
 
 void UI::POISystemActorScores() {
 
-    auto cardStyle = DrawHeaderWithReset("POI System - Actor Scores", layerGroupIcon, "Actor Score Settings", "resetPoiActor",
+    auto cardStyle = DrawHeaderWithReset("POI System - Actor Scores", layerGroupIcon, "Actor Score Settings", "resetPoiActors",
         MakeResetLogger("Actor Score Settings"),
         SettingWithDefault(&g_dragonScore, k_defaultDragonScore),
         SettingWithDefault(&g_dragonProximityEnabled, k_defaultDragonProximityEnabled),
         SettingWithDefault(&g_dragonProximityFactor, k_defaultDragonProximityFactor),
+        SettingWithDefault(&g_dragonEnabled, k_defaultDragonEnabled),
         SettingWithDefault(&g_actorCombatScore, k_defaultActorCombatScore),
         SettingWithDefault(&g_actorCombatProximityEnabled, k_defaultActorCombatProximityEnabled),
         SettingWithDefault(&g_actorCombatProximityFactor, k_defaultActorCombatProximityFactor),
+        SettingWithDefault(&g_actorCombatEnabled, k_defaultActorCombatEnabled),
         SettingWithDefault(&g_actorMovingScore, k_defaultActorMovingScore),
         SettingWithDefault(&g_actorMovingProximityEnabled, k_defaultActorMovingProximityEnabled),
         SettingWithDefault(&g_actorMovingProximityFactor, k_defaultActorMovingProximityFactor),
+        SettingWithDefault(&g_actorMovingEnabled, k_defaultActorMovingEnabled),
         SettingWithDefault(&g_actorInSceneScore, k_defaultActorInSceneScore),
         SettingWithDefault(&g_actorInSceneProximityEnabled, k_defaultActorInSceneProximityEnabled),
         SettingWithDefault(&g_actorInSceneProximityFactor, k_defaultActorInSceneProximityFactor),
+        SettingWithDefault(&g_actorInSceneEnabled, k_defaultActorInSceneEnabled),
         SettingWithDefault(&g_actorIdleScore, k_defaultActorIdleScore),
         SettingWithDefault(&g_actorIdleProximityEnabled, k_defaultActorIdleProximityEnabled),
-        SettingWithDefault(&g_actorIdleProximityFactor, k_defaultActorIdleProximityFactor)
+        SettingWithDefault(&g_actorIdleProximityFactor, k_defaultActorIdleProximityFactor),
+        SettingWithDefault(&g_actorIdleEnabled, k_defaultActorIdleEnabled)
     );
 
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.5f));
@@ -1383,24 +1419,26 @@ void UI::POISystemActorScores() {
 }
 
 // ==================================================================================================================================================================================
-//  POI System - Critter Scores
+//  POI System - Insects & Fish Scores
 // ==================================================================================================================================================================================
 
-void UI::POISystemCritterScores() {
+void UI::POISystemInsectsAndFishScores() {
 
-    auto cardStyle = DrawHeaderWithReset("POI System - Critter Scores", layerGroupIcon, "Critter Score Settings", "resetPoiCritter",
-        MakeResetLogger("Critter Score Settings"),
-        SettingWithDefault(&g_flyingCritterScore, k_defaultFlyingCritterScore),
-        SettingWithDefault(&g_flyingCritterProximityEnabled, k_defaultFlyingCritterProximityEnabled),
-        SettingWithDefault(&g_flyingCritterProximityFactor, k_defaultFlyingCritterProximityFactor),
-        SettingWithDefault(&g_fishCritterScore, k_defaultFishCritterScore),
-        SettingWithDefault(&g_fishCritterProximityEnabled, k_defaultFishCritterProximityEnabled),
-        SettingWithDefault(&g_fishCritterProximityFactor, k_defaultFishCritterProximityFactor)
+    auto cardStyle = DrawHeaderWithReset("POI System - Insects & Fish Scores", layerGroupIcon, "Insects & Fish Score Settings", "resetPoiInsectsFish",
+        MakeResetLogger("Insects & Fish Score Settings"),
+        SettingWithDefault(&g_insectsScore, k_defaultInsectsScore),
+        SettingWithDefault(&g_insectsProximityEnabled, k_defaultInsectsProximityEnabled),
+        SettingWithDefault(&g_insectsProximityFactor, k_defaultInsectsProximityFactor),
+        SettingWithDefault(&g_insectsEnabled, k_defaultInsectsEnabled),
+        SettingWithDefault(&g_fishScore, k_defaultFishScore),
+        SettingWithDefault(&g_fishProximityEnabled, k_defaultFishProximityEnabled),
+        SettingWithDefault(&g_fishProximityFactor, k_defaultFishProximityFactor),
+        SettingWithDefault(&g_fishEnabled, k_defaultFishEnabled)
     );
 
     ImGuiMCP::Dummy(ImGuiMCP::ImVec2(0.0f, 2.5f));
 
-    DrawCritterScoreCards();
+    DrawInsectsAndFishScoreCards();
 
 }
 

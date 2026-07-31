@@ -130,23 +130,18 @@ void IniParser::Load() {
         }
         else if (key == "actorPoiEnabled") {
 
-            UI::g_actorPoiEnabled = (value == "1" || value == "true");
-            logger::debug("Loaded actorPoiEnabled: {}", UI::g_actorPoiEnabled);
+            UI::g_actorPoisEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded actorPoiEnabled: {}", UI::g_actorPoisEnabled);
 
         } else if (key == "preventFollowers") {
 
             UI::g_preventFollowers = (value == "1" || value == "true");
             logger::debug("Loaded preventFollowers: {}", UI::g_preventFollowers);
 
-        } else if (key == "flyingCritterPoiEnabled") {
+        } else if (key == "insectsAndFishPoisEnabled") {
 
-            UI::g_flyingCritterPoiEnabled = (value == "1" || value == "true");
-            logger::debug("Loaded flyingCritterPoiEnabled: {}", UI::g_flyingCritterPoiEnabled);
-
-        } else if (key == "fishCritterPoiEnabled") {
-
-            UI::g_fishCritterPoiEnabled = (value == "1" || value == "true");
-            logger::debug("Loaded fishCritterPoiEnabled: {}", UI::g_fishCritterPoiEnabled);
+            UI::g_insectsAndFishPoisEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded insectsAndFishPoisEnabled: {}", UI::g_insectsAndFishPoisEnabled);
 
         } else if (key == "poiDetectionRadius") {
 
@@ -158,7 +153,8 @@ void IniParser::Load() {
             UI::g_lockDuration = std::stof(value);
             logger::debug("Loaded lockDuration: {}", UI::g_lockDuration);
 
-        } else if (key == "exclusionList") {
+        }
+        else if (key == "exclusionList") {
 
             // Format: "FormID" (name is retrieved at runtime)
             UI::ActorExclusionEntry entry;
@@ -169,12 +165,48 @@ void IniParser::Load() {
                 UI::g_actorExclusionList.push_back(entry);
                 logger::debug("Loaded exclusion entry: 0x{:08X}", entry.formID);
 
-            } catch (const std::exception& e) {
+            }
+            catch (const std::exception& e) {
 
                 logger::warn("Failed to parse exclusion entry: {} - {}", value, e.what());
 
             }
-            
+
+        } else if (key == "dragonEnabled") {
+
+            UI::g_dragonEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded dragonEnabled: {}", UI::g_dragonEnabled);
+
+        } else if (key == "actorCombatEnabled") {
+
+            UI::g_actorCombatEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded actorCombatEnabled: {}", UI::g_actorCombatEnabled);
+
+        } else if (key == "actorMovingEnabled") {
+
+            UI::g_actorMovingEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded actorMovingEnabled: {}", UI::g_actorMovingEnabled);
+
+        } else if (key == "actorInSceneEnabled") {
+
+            UI::g_actorInSceneEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded actorInSceneEnabled: {}", UI::g_actorInSceneEnabled);
+
+        } else if (key == "actorIdleEnabled") {
+
+            UI::g_actorIdleEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded actorIdleEnabled: {}", UI::g_actorIdleEnabled);
+
+        } else if (key == "insectsEnabled") {
+
+            UI::g_insectsEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded insectsEnabled: {}", UI::g_insectsEnabled);
+
+        } else if (key == "fishEnabled") {
+
+            UI::g_fishEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded fishEnabled: {}", UI::g_fishEnabled);
+
         } else if (key == "dragonScore") {
 
             UI::g_dragonScore = std::stof(value);
@@ -250,35 +282,35 @@ void IniParser::Load() {
             UI::g_actorIdleProximityFactor = std::stof(value);
             logger::debug("Loaded actorIdleProximityFactor: {}", UI::g_actorIdleProximityFactor);
 
-        } else if (key == "flyingCritterScore") {
+        } else if (key == "insectsScore") {
 
-            UI::g_flyingCritterScore = std::stof(value);
-            logger::debug("Loaded actorFlyingCritterScore: {}", UI::g_flyingCritterScore);
+            UI::g_insectsScore = std::stof(value);
+            logger::debug("Loaded insectsScore: {}", UI::g_insectsScore);
 
-        } else if (key == "flyingCritterProximityEnabled") {
+        } else if (key == "insectsProximityEnabled") {
 
-            UI::g_flyingCritterProximityEnabled = (value == "1" || value == "true");
-            logger::debug("Loaded actorFlyingCritterProximityEnabled: {}", UI::g_flyingCritterProximityEnabled);
+            UI::g_insectsProximityEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded insectsProximityEnabled: {}", UI::g_insectsProximityEnabled);
 
-        } else if (key == "flyingCritterProximityFactor") {
+        } else if (key == "insectsProximityFactor") {
 
-            UI::g_flyingCritterProximityFactor = std::stof(value);
-            logger::debug("Loaded actorFlyingCritterProximityFactor: {}", UI::g_flyingCritterProximityFactor);
+            UI::g_insectsProximityFactor = std::stof(value);
+            logger::debug("Loaded insectsProximityFactor: {}", UI::g_insectsProximityFactor);
 
-        } else if (key == "fishCritterScore") {
+        } else if (key == "fishScore") {
 
-            UI::g_fishCritterScore = std::stof(value);
-            logger::debug("Loaded fishCritterScore: {}", UI::g_fishCritterScore);
+            UI::g_fishScore = std::stof(value);
+            logger::debug("Loaded fishScore: {}", UI::g_fishScore);
 
-        } else if (key == "fishCritterProximityEnabled") {
+        } else if (key == "fishProximityEnabled") {
 
-            UI::g_fishCritterProximityEnabled = (value == "1" || value == "true");
-            logger::debug("Loaded pondFishProximityEnabled: {}", UI::g_fishCritterProximityEnabled);
+            UI::g_fishProximityEnabled = (value == "1" || value == "true");
+            logger::debug("Loaded fishProximityEnabled: {}", UI::g_fishProximityEnabled);
 
-        } else if (key == "fishCritterProximityFactor") {
+        } else if (key == "fishProximityFactor") {
 
-            UI::g_fishCritterProximityFactor = std::stof(value);
-            logger::debug("Loaded fishCritterProximityFactor: {}", UI::g_fishCritterProximityFactor);
+            UI::g_fishProximityFactor = std::stof(value);
+            logger::debug("Loaded fishProximityFactor: {}", UI::g_fishProximityFactor);
 
         } else if (key == "debugRaycasts") {
 
@@ -376,9 +408,8 @@ void IniParser::Save() {
     file << "poiSystemEnabled=" << (UI::g_poiSystemEnabled ? "1" : "0") << "\n";
     file << "\n";
     file << "; POI type toggles (0 = off, 1 = on)\n";
-    file << "actorPoiEnabled=" << (UI::g_actorPoiEnabled ? "1" : "0") << "\n";
-    file << "flyingCritterPoiEnabled=" << (UI::g_flyingCritterPoiEnabled ? "1" : "0") << "\n";
-    file << "fishCritterPoiEnabled=" << (UI::g_fishCritterPoiEnabled ? "1" : "0") << "\n";
+    file << "actorPoiEnabled=" << (UI::g_actorPoisEnabled ? "1" : "0") << "\n";
+    file << "insectsAndFishPoisEnabled=" << (UI::g_insectsAndFishPoisEnabled ? "1" : "0") << "\n";
     file << "\n";
     file << "; Prevent Followers from being targeted (0 = off, 1 = on)\n";
     file << "preventFollowers=" << (UI::g_preventFollowers ? "1" : "0") << "\n";
@@ -421,35 +452,42 @@ void IniParser::Save() {
     file << "dragonScore=" << UI::g_dragonScore << "\n";
     file << "dragonProximityEnabled=" << (UI::g_dragonProximityEnabled ? "1" : "0") << "\n";
     file << "dragonProximityFactor=" << UI::g_dragonProximityFactor << "\n";
+    file << "dragonEnabled=" << (UI::g_dragonEnabled ? "1" : "0") << "\n";
     file << "\n";
     file << "actorCombatScore=" << UI::g_actorCombatScore << "\n";
     file << "actorCombatProximityEnabled=" << (UI::g_actorCombatProximityEnabled ? "1" : "0") << "\n";
     file << "actorCombatProximityFactor=" << UI::g_actorCombatProximityFactor << "\n";
+    file << "actorCombatEnabled=" << (UI::g_actorCombatEnabled ? "1" : "0") << "\n";
     file << "\n";
     file << "actorMovingScore=" << UI::g_actorMovingScore << "\n";
     file << "actorMovingProximityEnabled=" << (UI::g_actorMovingProximityEnabled ? "1" : "0") << "\n";
     file << "actorMovingProximityFactor=" << UI::g_actorMovingProximityFactor << "\n";
+    file << "actorMovingEnabled=" << (UI::g_actorMovingEnabled ? "1" : "0") << "\n";
     file << "\n";
     file << "actorInSceneScore=" << UI::g_actorInSceneScore << "\n";
     file << "actorInSceneProximityEnabled=" << (UI::g_actorInSceneProximityEnabled ? "1" : "0") << "\n";
     file << "actorInSceneProximityFactor=" << UI::g_actorInSceneProximityFactor << "\n";
+    file << "actorInSceneEnabled=" << (UI::g_actorInSceneEnabled ? "1" : "0") << "\n";
     file << "\n";
     file << "actorIdleScore=" << UI::g_actorIdleScore << "\n";
     file << "actorIdleProximityEnabled=" << (UI::g_actorIdleProximityEnabled ? "1" : "0") << "\n";
     file << "actorIdleProximityFactor=" << UI::g_actorIdleProximityFactor << "\n";
+    file << "actorIdleEnabled=" << (UI::g_actorIdleEnabled ? "1" : "0") << "\n";
     file << "\n";
     file << "\n";
-    file << ";===============================CRITTER SCORE SETTINGS=================================\n";
+    file << ";============================INSECTS & FISH SCORE SETTINGS=============================\n";
     file << "\n";
-    file << "; Flying critters (butterflies, moths, dragonflies, etc)\n";
-    file << "flyingCritterScore=" << UI::g_flyingCritterScore << "\n";
-    file << "flyingCritterProximityEnabled=" << (UI::g_flyingCritterProximityEnabled ? "1" : "0") << "\n";
-    file << "flyingCritterProximityFactor=" << UI::g_flyingCritterProximityFactor << "\n";
+    file << "; Insects (butterflies, moths, dragonflies, etc)\n";
+    file << "insectsScore=" << UI::g_insectsScore << "\n";
+    file << "insectsProximityEnabled=" << (UI::g_insectsProximityEnabled ? "1" : "0") << "\n";
+    file << "insectsProximityFactor=" << UI::g_insectsProximityFactor << "\n";
+    file << "insectsEnabled=" << (UI::g_insectsEnabled ? "1" : "0") << "\n";
     file << "\n";
-    file << "; Fish critters (perches, salmon, etc)\n";
-    file << "fishCritterScore=" << UI::g_fishCritterScore << "\n";
-    file << "fishCritterProximityEnabled=" << (UI::g_fishCritterProximityEnabled ? "1" : "0") << "\n";
-    file << "fishCritterProximityFactor=" << UI::g_fishCritterProximityFactor << "\n";
+    file << "; Fish (perches, salmon, etc)\n";
+    file << "fishScore=" << UI::g_fishScore << "\n";
+    file << "fishProximityEnabled=" << (UI::g_fishProximityEnabled ? "1" : "0") << "\n";
+    file << "fishProximityFactor=" << UI::g_fishProximityFactor << "\n";
+    file << "fishEnabled=" << (UI::g_fishEnabled ? "1" : "0") << "\n";
     file << "\n";
     file << "\n";
     file << ";==================================DEBUG SETTINGS======================================\n";

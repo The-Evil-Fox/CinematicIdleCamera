@@ -15,12 +15,12 @@ namespace Hooks {
 
         None,
         Dragon,
-        FlyingCritter,
+        Fish,
         Idle,
         InCombat,
+        Insect,
         InScene,
-        Moving,
-        PondFish
+        Moving
 
     };
 
