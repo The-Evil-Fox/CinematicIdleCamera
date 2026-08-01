@@ -463,18 +463,30 @@ namespace Hooks {
         SKSE::AllocTrampoline(1 << 7);
         auto& trampoline = SKSE::GetTrampoline();
 
-        // Patch call site inside GetTranslation
-        REL::Relocation<std::uintptr_t> site1{ REL::Offset(0x8DDD39) };
+        std::array targets{
 
-        // Patch call site inside Update
-        REL::Relocation<std::uintptr_t> site2{ REL::Offset(0x8DDEC5) };
+            // Call site 1: AutoVanityState::Update -> GetTranslationHelper
+            std::make_pair(
+                RELOCATION_ID(49781, 50709),  // SE: 49781, AE: 50709
+                REL::VariantOffset{ 0x49, 0x49, 0x49 }
+            ),
 
-        func = trampoline.write_call<5>(site1.address(), thunk);
-        trampoline.write_call<5>(site2.address(), thunk);
+            // Call site 2: AutoVanityState::GetTranslation -> GetTranslationHelper
+            std::make_pair(
+                RELOCATION_ID(49784, 50712),  // SE: 49784, AE: 50712
+                REL::VariantOffset{ 0x35, 0x35, 0x35 }
+            )
 
-        logger::debug("site1: {:x}", site1.address());
-        logger::debug("site2: {:x}", site2.address());
-        logger::debug("func.get(): {:x}", reinterpret_cast<std::uintptr_t>(func.get()));
+        };
+
+        for (const auto& [id, offset] : targets) {
+
+            REL::Relocation<std::uintptr_t> target{ id, offset };
+            func = trampoline.write_call<5>(target.address(), thunk);
+
+        }
+
+        logger::debug("AutoVanityState_GetTranslationHelper installed");
 
     }
 
