@@ -16,6 +16,7 @@ namespace UI {
     // Main settings
 
     extern float        g_idleTimer;
+    extern bool         g_preventVanityInCombat;
     extern bool         g_blackBarsEnabled;
     extern float        g_blackBarsSpeed;
     extern bool         g_blackBarsSoundEnabled;

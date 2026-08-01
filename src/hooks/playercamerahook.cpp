@@ -673,6 +673,77 @@ namespace Hooks {
     }
 
     // ==================================================================================================================================================================================
+    //  Combat-state hook: blocks auto-vanity while the player is in combat
+    // ==================================================================================================================================================================================
+
+    CombatStateHook* CombatStateHook::GetSingleton() {
+
+        static CombatStateHook singleton;
+        return &singleton;
+
+    }
+
+    RE::BSEventNotifyControl CombatStateHook::ProcessEvent(const RE::TESCombatEvent* a_event, RE::BSTEventSource<RE::TESCombatEvent>*) {
+
+        if (!a_event) {
+
+            return RE::BSEventNotifyControl::kContinue;
+
+        }
+
+        auto* player = RE::PlayerCharacter::GetSingleton();
+
+        if (!player) {
+
+            return RE::BSEventNotifyControl::kContinue;
+
+        }
+
+        auto* eventActor = a_event->actor.get() ? a_event->actor.get()->As<RE::Actor>() : nullptr;
+        auto* eventTarget = a_event->targetActor.get() ? a_event->targetActor.get()->As<RE::Actor>() : nullptr;
+
+        if (eventActor != player && eventTarget != player) {
+
+            return RE::BSEventNotifyControl::kContinue;
+
+        }
+
+        auto* camera = RE::PlayerCamera::GetSingleton();
+
+        if (camera) {
+
+            const bool inCombat = player->IsInCombat();
+            const bool shouldBlock = UI::g_preventVanityInCombat && inCombat;
+
+            camera->GetRuntimeData2().allowAutoVanityMode = !shouldBlock;
+
+            logger::debug("CombatStateHook: player combat state changed - allowAutoVanityMode = {} (preventEnabled: {}, inCombat: {})",
+                !shouldBlock, UI::g_preventVanityInCombat, inCombat);
+
+        }
+
+        return RE::BSEventNotifyControl::kContinue;
+
+    }
+
+    void CombatStateHook::Register() {
+
+        auto* holder = RE::ScriptEventSourceHolder::GetSingleton();
+
+        if (!holder) {
+
+            logger::warn("CombatStateHook: ScriptEventSourceHolder singleton not available yet");
+            return;
+
+        }
+
+        holder->AddEventSink(GetSingleton());
+
+        logger::info("CombatStateHook registered for TESCombatEvent");
+
+    }
+
+    // ==================================================================================================================================================================================
     //  Check if the current POI is still valid based on enabled POI types
     // ==================================================================================================================================================================================
 

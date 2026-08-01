@@ -76,6 +76,7 @@ static void MessageHandler(SKSE::MessagingInterface::Message* msg) {
 
         Hooks::MenuMonitor::Register();
         Hooks::KillMoveCameraStateHook::Install();
+        Hooks::CombatStateHook::Register();
 
         break;
 

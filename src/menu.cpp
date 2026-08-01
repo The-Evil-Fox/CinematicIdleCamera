@@ -22,6 +22,7 @@ using namespace UITemplate::Icons;
 // Main Settings
 
 static constexpr float                  k_defaultIdleTimer                              = 30.0f;
+static constexpr bool                   k_defaultPreventVanityInCombat                  = true;
 static constexpr bool                   k_defaultBlackBarsEnabled                       = true;
 static constexpr float                  k_defaultBlackBarsSpeed                         = 1.0f;
 static constexpr bool                   k_defaultBlackBarsSoundEnabled                  = true;
@@ -123,6 +124,7 @@ static constexpr int                    k_defaultLoggingLevel                   
 // =====================================================================================================================
 
 float                                   UI::g_idleTimer                                 = k_defaultIdleTimer;
+bool                                    UI::g_preventVanityInCombat                     = k_defaultPreventVanityInCombat;
 bool                                    UI::g_blackBarsEnabled                          = k_defaultBlackBarsEnabled;
 float                                   UI::g_blackBarsSpeed                            = k_defaultBlackBarsSpeed;
 bool                                    UI::g_blackBarsSoundEnabled                     = k_defaultBlackBarsSoundEnabled;
@@ -670,6 +672,15 @@ void UI::DrawCinematicBars() {
 
     auto* playerCamera = RE::PlayerCamera::GetSingleton();
 
+    // Force sync allowAutoVanityMode with combat state every frame
+
+    if (auto* player = RE::PlayerCharacter::GetSingleton(); player && playerCamera) {
+
+        const bool shouldBlock = UI::g_preventVanityInCombat && player->IsInCombat();
+        playerCamera->GetRuntimeData2().allowAutoVanityMode = !shouldBlock;
+
+    }
+
     if (!playerCamera || !playerCamera->currentState || !g_blackBarsEnabled) {
 
         return;
@@ -760,6 +771,7 @@ void UI::CameraMainSettings() {
         SettingWithDefault(&g_idleTimer, k_defaultIdleTimer, []() {
             GameSettings::ApplyFloat("fAutoVanityModeDelay:Camera", g_idleTimer);
         }),
+        SettingWithDefault(&g_preventVanityInCombat, k_defaultPreventVanityInCombat),
         SettingWithDefault(&g_blackBarsEnabled, k_defaultBlackBarsEnabled),
         SettingWithDefault(&g_blackBarsSpeed, k_defaultBlackBarsSpeed),
         SettingWithDefault(&g_blackBarsSoundEnabled, k_defaultBlackBarsSoundEnabled)
@@ -774,6 +786,12 @@ void UI::CameraMainSettings() {
         });
 
     DrawSettingCard("idleTimerCard", idleTimerCard);
+
+    CardContent preventCombatCard = CardContent::Checkbox(shieldHalvedIcon.c_str(), "Block Idle Camera In Combat",
+        "When enabled, the idle camera will not engage while the player is in combat.",
+        &g_preventVanityInCombat, k_defaultPreventVanityInCombat, SaveSettings);
+
+    DrawSettingCard("preventCombatCard", preventCombatCard);
 
     CardContent blackBarsCard = CardContent::Checkbox(filmIcon.c_str(), "Cinematic Black Bars",
         "Enable or disable the cinematic black bars that appear when entering idle mode.",

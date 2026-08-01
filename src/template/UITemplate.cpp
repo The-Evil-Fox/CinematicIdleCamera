@@ -1176,6 +1176,7 @@ namespace UITemplate::Icons {
     const std::string                   rotateLeftIcon                          = FontAwesome::UnicodeToUtf8(0xf2ea);
 
     const std::string                   screwdriverWrenchIcon                   = FontAwesome::UnicodeToUtf8(0xf7d9);
+    const std::string                   shieldHalvedIcon                        = FontAwesome::UnicodeToUtf8(0xf3ed);
 
     const std::string                   terminalIcon                            = FontAwesome::UnicodeToUtf8(0xf120);
 

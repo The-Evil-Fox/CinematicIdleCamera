@@ -227,6 +227,7 @@ namespace UITemplate {
         extern const std::string        rotateLeftIcon;
 
         extern const std::string        screwdriverWrenchIcon;
+        extern const std::string        shieldHalvedIcon;
 
         extern const std::string        terminalIcon;
 
