@@ -52,6 +52,11 @@ void IniParser::Load() {
             UI::g_idleTimer = std::stof(value);
             logger::debug("Loaded fIdleTimer: {}", UI::g_idleTimer);
 
+        } else if (key == "preventVanityInCombat") {
+
+            UI::g_preventVanityInCombat = (value == "1" || value == "true");
+            logger::debug("Loaded preventVanityInCombat: {}", UI::g_preventVanityInCombat);
+
         } else if (key == "blackBarsEnabled") {
 
             UI::g_blackBarsEnabled = (value == "1" || value == "true");
@@ -352,8 +357,11 @@ void IniParser::Save() {
 
     file << ";=================================CAMERA MAIN SETTINGS=================================\n";
     file << "\n";
-    file << "; Camera Idle Timer (seconds without any player input before vanity mode activates)\n";
+    file << "; Camera Idle Timer (seconds without any player input before idle mode activates)\n";
     file << "fIdleTimer=" << UI::g_idleTimer << "\n";
+    file << "\n";
+    file << "; Block Idle Camera In Combat (0 = off, 1 = on)\n";
+    file << "preventVanityInCombat=" << (UI::g_preventVanityInCombat ? "1" : "0") << "\n";
     file << "\n";
     file << "; Cinematic Black Bars Enabled (0 = off, 1 = on)\n";
     file << "blackBarsEnabled=" << (UI::g_blackBarsEnabled ? "1" : "0") << "\n";
@@ -372,7 +380,7 @@ void IniParser::Save() {
     file << "idleCameraOffsetY=" << UI::g_IdleCamOffsetY << "\n";
     file << "idleCameraOffsetZ=" << UI::g_IdleCamOffsetZ << "\n";
     file << "\n";
-    file << "; Vanity Camera World Collision (0 = off, 1 = on)\n";
+    file << "; Idle Camera World Collision (0 = off, 1 = on)\n";
     file << "vanityCameraCollisionEnabled=" << (UI::g_vanityCameraCollisionEnabled ? "1" : "0") << "\n";
     file << "\n";
     file << "; Camera Blend Duration (seconds for a POI-switch / entry / exit blend)\n";
