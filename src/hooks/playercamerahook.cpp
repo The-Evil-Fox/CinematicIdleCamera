@@ -46,7 +46,11 @@ namespace Hooks {
 
     static float                            s_headTrackWeight               = 0.0f;
 
+    // Accumulates time the current POI has been continuously occluded; reset to 0 when visible, drops lock when it reaches kOcclusionConfirmDuration
+
     static float                            s_occlusionConfirmTimer         = 0.0f;
+
+    // Minimum seconds occlusion must persist before dropping the lock (prevents flicker from brief LOS interruptions)
 
     static constexpr float                  kOcclusionConfirmDuration       = 0.15f; // seconds occlusion must persist before we act on it
 

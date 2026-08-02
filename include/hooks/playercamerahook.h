@@ -33,19 +33,23 @@ namespace Hooks {
         public:
 
             static void                                     RegisterListener() noexcept;
+
             static void                                     RequestInterface() noexcept;
-            static bool                                     Acquire() noexcept; // now returns whether control is held
+
+            static bool                                     Acquire() noexcept;
+
             static void                                     Release() noexcept;
 
-            // True once another mod has been observed holding SmoothCam camera
-            // control. Once set, this mod stops trying entirely for the rest of
-            // the session rather than repeatedly contesting it.
+            // True once another mod has been observed holding SmoothCam camera control.
+            // Once set, this mod stops trying entirely for the rest of the session rather than repeatedly contesting it.
             static bool                                     IsDisabledByConflict() noexcept { return s_disabledByConflict; }
 
         private:
 
             static inline                                   SmoothCamAPI::IVSmoothCam3* s_api = nullptr;
+
             static inline bool                              s_holding = false;
+
             static inline bool                              s_disabledByConflict = false;
 
     };
