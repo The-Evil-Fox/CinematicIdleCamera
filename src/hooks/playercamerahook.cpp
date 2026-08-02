@@ -46,6 +46,10 @@ namespace Hooks {
 
     static float                            s_headTrackWeight               = 0.0f;
 
+    static float                            s_occlusionConfirmTimer         = 0.0f;
+
+    static constexpr float                  kOcclusionConfirmDuration       = 0.15f; // seconds occlusion must persist before we act on it
+
     // ==================================================================================================================================================================================
     //  Dynamic dezoom state
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -214,7 +218,7 @@ namespace Hooks {
     //  To detect if the raycast is colliding with something between the player & the target
     // ==================================================================================================================================================================================
 
-    inline bool HasAnythingBetween(RE::NiPoint3 start, RE::NiPoint3 end) {
+    inline bool HasAnythingBetween(RE::NiPoint3 start, RE::NiPoint3 end, RE::TESObjectREFR* a_target) {
 
         auto* player = RE::PlayerCharacter::GetSingleton();
 
@@ -240,6 +244,14 @@ namespace Hooks {
 
         }
 
+        // Guard against a stale/invalid target ref (e.g. an object that lost its
+        // 3D or was unloaded between being selected as a candidate and this call).
+        if (a_target && (!a_target->Is3DLoaded() || a_target->IsDisabled())) {
+
+            a_target = nullptr;
+
+        }
+
         // Settled = camera has finished blending onto the current focus target.
         const bool settled = (s_blendT >= 1.0f);
 
@@ -252,14 +264,14 @@ namespace Hooks {
         // g_currentPOI is the currently focused POI from the global state
         bool isInsectOrFish = false;
 
-        if (g_currentPOI) {
+        if (a_target) {
 
-            auto* actor = g_currentPOI->As<RE::Actor>();
+            auto* actor = a_target->As<RE::Actor>();
 
             if (!actor) {
 
                 // Not an actor, check if it's an insect or fish Activator
-                auto* base = g_currentPOI->GetBaseObject();
+                auto* base = a_target->GetBaseObject();
 
                 if (base) {
 
@@ -360,28 +372,45 @@ namespace Hooks {
 
     void SmoothCamCompat::RequestInterface() noexcept {
 
-        // Sends the actual interface request to SmoothCam.
-        // SmoothCam responds by invoking the callback registered above.
-        SmoothCamAPI::RequestInterface(SKSE::GetMessagingInterface(), SmoothCamAPI::InterfaceVersion::V3);
+        const bool dispatched = SmoothCamAPI::RequestInterface(SKSE::GetMessagingInterface(), SmoothCamAPI::InterfaceVersion::V3);
+
+        if (!dispatched) {
+
+            logger::info("SmoothCamCompat: interface request dispatch failed (no listener yet?)");
+
+        }
 
     }
 
-    void SmoothCamCompat::Acquire() noexcept {
+    bool SmoothCamCompat::Acquire() noexcept {
 
-        if (!s_api || s_holding) return;
+        if (s_disabledByConflict) return false;
+        if (!s_api) return false;
+        if (s_holding) return true;
 
         const auto result = s_api->RequestCameraControl(SKSE::GetPluginHandle());
 
         if (result == SmoothCamAPI::APIResult::OK || result == SmoothCamAPI::APIResult::AlreadyGiven) {
 
             s_holding = true;
-            logger::debug("SmoothCamCompat: camera control acquired");
+            return true;
+
+        }
+
+        if (result == SmoothCamAPI::APIResult::AlreadyTaken) {
+
+            // Another mod holds camera control. Don't fight over it - disable
+            // idle mode entirely for the rest of the session.
+            s_disabledByConflict = true;
+            logger::warn("SmoothCamCompat: another mod currently holds SmoothCam camera control. Disabling Cinematic Idle Camera's idle mode for this session to avoid conflicts.");
 
         } else {
 
             logger::warn("SmoothCamCompat: RequestCameraControl returned {}", static_cast<int>(result));
 
         }
+
+        return false;
 
     }
 
@@ -394,7 +423,6 @@ namespace Hooks {
         if (result == SmoothCamAPI::APIResult::OK || result == SmoothCamAPI::APIResult::NotOwner) {
 
             s_holding = false;
-            logger::debug("SmoothCamCompat: camera control released");
 
         } else {
 
@@ -921,6 +949,43 @@ namespace Hooks {
 
                 }
 
+                // Reject CC fishing gear clutter BEFORE classification - its model path
+                // contains "fish" as a substring ("FishingGear_Cluster01.nif"), which would
+                // otherwise cause it to be misclassified as a fish POI.
+                if (auto* baseEarly = ref->GetBaseObject()) {
+
+                    if (auto* actiEarly = baseEarly->As<RE::TESObjectACTI>()) {
+
+                        if (const char* edidEarly = actiEarly->GetFormEditorID()) {
+
+                            std::string edidStr = edidEarly;
+                            std::transform(edidStr.begin(), edidStr.end(), edidStr.begin(), ::tolower);
+
+                            if (edidStr.find("cc") != std::string::npos && edidStr.find("fishing") != std::string::npos) {
+
+                                return RE::BSContainer::ForEachResult::kContinue;
+
+                            }
+
+                        }
+
+                        if (const char* modelEarly = actiEarly->model.c_str(); modelEarly && modelEarly[0] != '\0') {
+
+                            std::string modelStr = modelEarly;
+                            std::transform(modelStr.begin(), modelStr.end(), modelStr.begin(), ::tolower);
+
+                            if (modelStr.find("fishinggear") != std::string::npos || modelStr.find("fishingrod") != std::string::npos) {
+
+                                return RE::BSContainer::ForEachResult::kContinue;
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
                 auto isInsectOrFish = [&](RE::TESObjectREFR* a_ref) {
 
                     if (!a_ref) {
@@ -988,7 +1053,7 @@ namespace Hooks {
 
                 }
 
-                if (HasAnythingBetween(player->GetPosition(), ref->GetPosition())) {
+                if (HasAnythingBetween(player->GetPosition(), ref->GetPosition(), ref)) {
 
                     logger::debug("{} rejected: the target is occluded!", ref->GetName());
                     return RE::BSContainer::ForEachResult::kContinue;
@@ -1012,22 +1077,6 @@ namespace Hooks {
 
                         const char* edid = acti->GetFormEditorID();
                         const char* model = acti->model.c_str();
-
-                        // Skip Creation Club fishing gear
-                        if (edid) {
-
-                            std::string edidStr = edid;
-                            std::transform(edidStr.begin(), edidStr.end(), edidStr.begin(), ::tolower);
-
-                            // Check for CC content with "fishing" in the EditorID
-                            if (edidStr.find("cc") != std::string::npos && edidStr.find("fishing") != std::string::npos) {
-
-                                logger::debug("{} rejected: seems to be a CC fishing gear", ref->GetName());
-                                return RE::BSContainer::ForEachResult::kContinue;
-
-                            }
-
-                        }
 
                         // Skip initially disabled references
                         if (ref->IsInitiallyDisabled()) {
@@ -1181,7 +1230,7 @@ namespace Hooks {
                 // Line-of-sight check: skip POIs that are fully occluded.
                 // NOTE: s_drawDebugForThisCall stays false for the whole scan, so this never draws regardless of UI::g_debugRaycasts.
 
-                if (HasAnythingBetween(player->GetPosition(), ref->GetPosition())) {
+                if (HasAnythingBetween(player->GetPosition(), ref->GetPosition(), ref)) {
 
                     logger::debug("{} rejected: the target is occluded!", ref->GetName());
                     return RE::BSContainer::ForEachResult::kContinue;
@@ -1528,10 +1577,21 @@ namespace Hooks {
     //  Disable collisions on the Vanity Camera
     // ==================================================================================================================================================================================
 
-    static std::uint64_t                    s_originalCameraMask                = 0;
-    static bool                             s_maskCaptured                      = false;
+    static std::uint64_t                    s_originalCameraMask            = 0;
+    static bool                             s_maskCaptured                  = false;
+    static bool                             s_collisionLastApplied          = false;
+    static bool                             s_collisionEverApplied          = false;
 
     void SetVanityCameraWorldCollisionEnabled(bool isEnabled) {
+
+        if (s_collisionEverApplied && s_collisionLastApplied == isEnabled) {
+
+            return;
+
+        }
+
+        s_collisionLastApplied = isEnabled;
+        s_collisionEverApplied = true;
 
         auto* filter = RE::bhkCollisionFilter::GetSingleton();
 
@@ -1631,9 +1691,11 @@ namespace Hooks {
 
         }
 
-        constexpr std::uint32_t kCameraLayerIndex = 39; // COL_LAYER::kCamera = 39
+        constexpr std::uint32_t kCameraLayerIndex = 39;
         filter->layerBitfields[kCameraLayerIndex] = s_originalCameraMask;
         logger::debug("Restored original camera collision mask = {:x}", s_originalCameraMask);
+
+        s_collisionEverApplied = false; // force next entry to re-apply, since we just changed the mask externally
 
     }
 
@@ -1651,7 +1713,18 @@ namespace Hooks {
 
         }
 
-        SmoothCamCompat::Acquire();
+        if (SmoothCamCompat::IsDisabledByConflict()) {
+
+            _Update(a_this, a_nextState); // let vanilla AutoVanityState run untouched
+            return;
+
+        }
+
+        if (!SmoothCamCompat::Acquire()) {
+
+            return; // not disabled yet, just this frame's request failed/pending - your existing per-frame Acquire() call below in this function becomes redundant, remove it
+
+        }
 
         float baseRot = player->GetAngleZ();
 
@@ -1808,13 +1881,26 @@ namespace Hooks {
             // =====================================================================================================================
 
             s_drawDebugForThisCall = true;
-            bool occluded = HasAnythingBetween(player->GetPosition(), g_currentPOI->GetPosition());
+            bool occludedThisFrame = HasAnythingBetween(player->GetPosition(), g_currentPOI->GetPosition(), g_currentPOI);
             s_drawDebugForThisCall = false;
+
+            if (occludedThisFrame) {
+
+                s_occlusionConfirmTimer += dt;
+
+            } else {
+
+                s_occlusionConfirmTimer = 0.0f;
+
+            }
+
+            bool occluded = (s_occlusionConfirmTimer >= kOcclusionConfirmDuration);
 
             if (!gone && occluded) {
 
                 logger::debug("Current POI {} became occluded - dropping lock", g_currentPOI->GetName());
                 gone = true;
+                s_occlusionConfirmTimer = 0.0f;
 
             }
 
@@ -2021,6 +2107,7 @@ namespace Hooks {
 
         s_headTrackWeight = 0.0f;
         s_dezoomWeight = 0.0f;
+        s_occlusionConfirmTimer = 0.0f;
 
         // ===================================================================================
         //  Give back the controls of the camera to SmoothCam after exiting Vanity Mode
