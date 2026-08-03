@@ -1,4 +1,5 @@
 #include "hooks/menumonitor.h"
+#include "hooks/playercamerahook.h"
 
 namespace logger = SKSE::log;
 
@@ -76,7 +77,7 @@ namespace Hooks {
         // Initial sync: in case one of the blocking menus is already open at the
         // moment we register, e.g. the plugin loading mid-session.
 
-        RefreshAllowAutoVanity();
+        RefreshAllowAutoVanityMode();
 
     }
 
@@ -102,35 +103,22 @@ namespace Hooks {
     }
 
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    //  Pushes the current blocking-menu state onto PlayerCamera::allowAutoVanityMode.
+    //  Public, cheap, on-demand check for whether any denylisted menu is currently
+    //  open. Resolves RE::UI itself so external callers (Hooks::RefreshAllowAutoVanityMode)
+    //  don't need to.
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-    void MenuMonitor::RefreshAllowAutoVanity() {
+    bool MenuMonitor::IsBlockingMenuOpen() {
 
         auto* ui = RE::UI::GetSingleton();
 
         if (!ui) {
 
-            logger::warn("MenuMonitor::RefreshAllowAutoVanity: RE::UI singleton not available");
-            return;
+            return false;
 
         }
 
-        auto* camera = RE::PlayerCamera::GetSingleton();
-
-        if (!camera) {
-
-            logger::warn("MenuMonitor::RefreshAllowAutoVanity: PlayerCamera singleton not available");
-            return;
-
-        }
-
-        const bool blocked = AnyBlockingMenuOpen(ui);
-        const bool allow = !blocked;
-
-        camera->GetRuntimeData2().allowAutoVanityMode = allow;
-
-        logger::debug("MenuMonitor: allowAutoVanityMode = {} (blocked = {})", allow, blocked);
+        return AnyBlockingMenuOpen(ui);
 
     }
 
@@ -149,7 +137,7 @@ namespace Hooks {
 
         }
 
-        RefreshAllowAutoVanity();
+        RefreshAllowAutoVanityMode();
 
         return RE::BSEventNotifyControl::kContinue;
 

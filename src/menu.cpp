@@ -1,6 +1,7 @@
 #include "menu.h"
 #include <format>
 #include "hooks/playercamerahook.h"
+#include "hooks/menumonitor.h"
 #include "utility.h"
 #include "template/UITemplate.h"
 #include <Windows.h>
@@ -672,14 +673,7 @@ void UI::DrawCinematicBars() {
 
     auto* playerCamera = RE::PlayerCamera::GetSingleton();
 
-    // Force sync allowAutoVanityMode with combat state every frame
-
-    if (auto* player = RE::PlayerCharacter::GetSingleton(); player && playerCamera) {
-
-        const bool shouldBlock = UI::g_preventVanityInCombat && player->IsInCombat();
-        playerCamera->GetRuntimeData2().allowAutoVanityMode = !shouldBlock;
-
-    }
+    Hooks::RefreshAllowAutoVanityMode();
 
     if (!playerCamera || !playerCamera->currentState || !g_blackBarsEnabled) {
 

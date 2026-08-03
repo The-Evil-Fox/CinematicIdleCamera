@@ -25,6 +25,12 @@ namespace Hooks {
     };
 
     // ==================================================================================================================================================================================
+    //  Single source of truth for RE::PlayerCamera::allowAutoVanityMode.
+    // ==================================================================================================================================================================================
+
+    void RefreshAllowAutoVanityMode();
+
+    // ==================================================================================================================================================================================
     // SmoothCam compatibility hook
     // ==================================================================================================================================================================================
 
@@ -102,21 +108,25 @@ namespace Hooks {
 
     class KillMoveCameraStateHook {
 
-        public:
+    public:
 
-            static void                                     Install();
+        static void                                     Install();
 
-        private:
+        static bool                                     IsActive() noexcept { return s_active; }
 
-            static void                                     Update(RE::TESCameraState* a_this, RE::BSTSmartPointer<RE::TESCameraState>& a_nextState);
+    private:
 
-            inline static                                   REL::Relocation<decltype(Update)> _Update;
+        static void                                     Update(RE::TESCameraState* a_this, RE::BSTSmartPointer<RE::TESCameraState>& a_nextState);
 
-            static void                                     EndState(RE::TESCameraState* a_this);
+        inline static                                   REL::Relocation<decltype(Update)> _Update;
 
-            inline static                                   REL::Relocation<decltype(EndState)> _EndState;
+        static void                                     EndState(RE::TESCameraState* a_this);
 
-            static inline                                   bool s_installed = false;
+        inline static                                   REL::Relocation<decltype(EndState)> _EndState;
+
+        static inline                                   bool s_installed = false;
+
+        static inline                                   bool s_active = false;
 
     };
 

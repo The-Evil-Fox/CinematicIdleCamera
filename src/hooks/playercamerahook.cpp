@@ -1,4 +1,5 @@
 ﻿#include "hooks/playercamerahook.h"
+#include "hooks/menumonitor.h"
 #include "menu.h"
 #include <DrawDebug.hpp>
 
@@ -641,14 +642,8 @@ namespace Hooks {
 
         logger::debug("KillMoveCameraStateHook::Update fired");
 
-        auto* camera = RE::PlayerCamera::GetSingleton();
-
-        if (camera) {
-
-            camera->GetRuntimeData2().allowAutoVanityMode = false;
-            logger::debug("KillMoveCameraStateHook::Update Vanity mode set to false during the killmove");
-
-        }
+        s_active = true;
+        RefreshAllowAutoVanityMode();
 
         _Update(a_this, a_nextState);
 
@@ -660,14 +655,8 @@ namespace Hooks {
 
         _EndState(a_this);
 
-        auto* camera = RE::PlayerCamera::GetSingleton();
-
-        if (camera) {
-
-            camera->GetRuntimeData2().allowAutoVanityMode = true;
-            logger::debug("KillMoveCameraStateHook::EndState Vanity mode set to true after the end of the killmove");
-
-        }
+        s_active = false;
+        RefreshAllowAutoVanityMode();
 
     }
 
@@ -752,19 +741,9 @@ namespace Hooks {
 
         }
 
-        auto* camera = RE::PlayerCamera::GetSingleton();
+        RefreshAllowAutoVanityMode();
 
-        if (camera) {
-
-            const bool inCombat = player->IsInCombat();
-            const bool shouldBlock = UI::g_preventVanityInCombat && inCombat;
-
-            camera->GetRuntimeData2().allowAutoVanityMode = !shouldBlock;
-
-            logger::debug("CombatStateHook: player combat state changed - allowAutoVanityMode = {} (preventEnabled: {}, inCombat: {})",
-                !shouldBlock, UI::g_preventVanityInCombat, inCombat);
-
-        }
+        logger::debug("CombatStateHook: player combat state changed, refreshed allowAutoVanityMode");
 
         return RE::BSEventNotifyControl::kContinue;
 
@@ -1700,6 +1679,33 @@ namespace Hooks {
         logger::debug("Restored original camera collision mask = {:x}", s_originalCameraMask);
 
         s_collisionEverApplied = false; // force next entry to re-apply, since we just changed the mask externally
+
+    }
+
+    // ==================================================================================================================================================================================
+    //  RefreshAllowAutoVanityMode
+    // ==================================================================================================================================================================================
+
+    void RefreshAllowAutoVanityMode() {
+
+        auto* camera = RE::PlayerCamera::GetSingleton();
+        auto* player = RE::PlayerCharacter::GetSingleton();
+
+        if (!camera || !player) {
+
+            return;
+
+        }
+
+        const bool combatBlocked = UI::g_preventVanityInCombat && player->IsInCombat();
+        const bool menuBlocked = MenuMonitor::IsBlockingMenuOpen();
+        const bool killmoveBlocked = KillMoveCameraStateHook::IsActive();
+
+        const bool allow = !(combatBlocked || menuBlocked || killmoveBlocked);
+
+        camera->GetRuntimeData2().allowAutoVanityMode = allow;
+
+        logger::debug("RefreshAllowAutoVanityMode: allow = {} (combat: {}, menu: {}, killmove: {})", allow, combatBlocked, menuBlocked, killmoveBlocked);
 
     }
 
