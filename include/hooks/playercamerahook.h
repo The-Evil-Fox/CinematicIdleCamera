@@ -47,8 +47,11 @@ namespace Hooks {
             static void                                     Release() noexcept;
 
             // True once another mod has been observed holding SmoothCam camera control.
-            // Once set, this mod stops trying entirely for the rest of the session rather than repeatedly contesting it.
+            // Once set, Cinematic Idle Camera stops trying entirely for the rest of the session rather than repeatedly contesting it.
             static bool                                     IsDisabledByConflict() noexcept { return s_disabledByConflict; }
+
+            // True once SmoothCam has actually registered its interface with us. False for the entire session if SmoothCam isn't installed at all
+            static bool                                     HasAPI() noexcept { return s_api != nullptr; }
 
         private:
 

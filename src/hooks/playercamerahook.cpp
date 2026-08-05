@@ -1730,9 +1730,10 @@ namespace Hooks {
 
         }
 
-        if (!SmoothCamCompat::Acquire()) {
+        // Only attempt the SmoothCam handshake if SmoothCam is actually installed.
+        if (SmoothCamCompat::HasAPI() && !SmoothCamCompat::Acquire()) {
 
-            return; // not disabled yet, just this frame's request failed/pending - your existing per-frame Acquire() call below in this function becomes redundant, remove it
+            return; // SmoothCam is present but hasn't granted control yet this frame
 
         }
 

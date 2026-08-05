@@ -129,7 +129,7 @@ namespace Hooks {
     //  runs on open/close events, never per-frame.
     // ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-    RE::BSEventNotifyControl MenuMonitor::ProcessEvent(const RE::MenuOpenCloseEvent* a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>* a_source) {
+    RE::BSEventNotifyControl MenuMonitor::ProcessEvent(const RE::MenuOpenCloseEvent* a_event, RE::BSTEventSource<RE::MenuOpenCloseEvent>* /*a_source*/) {
 
         if (!a_event) {
 
